@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Dictionary</title>
+   
+    <link rel="stylesheet" type="text/css" href="cross-page-assets/hoothoot_style.css">
+    <style>
+        .form{
+            background-color: rgb(14, 104, 163);
+            margin-right:29%;
+            margin-left: 29%;
+            padding-left:0%;
+            padding-top: 1px;
+        }
+        
+        .form-element {
+            display: flex;
+            justify-content: space-between;
+            max-width: 53%;
+            padding: 10px 0;
+            margin-left:25%;
+            margin-bottom: 16px;
+        }
+        .form-element button {
+            text-align: center;
+        }
+
+        .boton {
+            background-color: rgb(1, 175, 243);
+            color: white;
+            padding: 15px 32px;
+            text-align: center;
+            display: inline-block;
+            text-decoration: none;
+           
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        input {
+            display: inline-block;
+            width: 47%;
+        }
+    </style>
+<script src="https://code.jquery.com/jquery-3.3.1.js">
+</script>
+<script> 
+    // Load header from banner.html
+    $(function(){
+        $(".banner").load("cross-page-assets/banner.html"); 
+    });
+</script>
+
+</head>
+<body>
+    <div class="banner"></div>
+    <div class="form">
+        <div style="text-align: center;">
+            <h2>New Dictionary</h2>
+        </div>
+        <div class="form-element">
+            <label for="name">Name:</label>
+            <input type="text" id="name" name="name">
+        </div>
+        <div class="form-element">
+            <label for="name">URL:</label>
+            <input type="url" id="url" name="url">
+        </div>
+        <div class="form-element">
+            <label for="lang">Language:</label>
+            <input type="text" id="lang" name="lang">
+        </div>
+        <div class="form-element">
+            <label for="img">Image Icon:</label>
+            <input type="file" id="img" name="img">
+        </div>
+        <div style="text-align: center;">
+            <p class="boton" id="submit">Create New Dictionary</p>
+        </div>
+    </div>
+    
+</body>
+</html>

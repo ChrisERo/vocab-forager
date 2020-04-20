@@ -1,0 +1,21 @@
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    margin: 0px;
+    background-color: rgb(9, 154, 250);
+    font-size: 16pt;
+    color: #FFF;
+}
+
+.banner {
+    background-color: rgb(1, 175, 243);
+    margin-bottom:20px;
+    padding-bottom: 25px;
+    padding-top: 25px;
+    text-align:center;
+}
+
+.banner h1 {
+    /* Remove margins impued to banner by h1 tags on default*/
+    margin-top: 0px;
+    margin-bottom: 0px;
+}
