@@ -19,3 +19,15 @@ body {
     margin-top: 0px;
     margin-bottom: 0px;
 }
+
+.boton {
+    background-color: rgb(1, 175, 243);
+    color: white;
+    padding: 15px 32px;
+    text-align: center;
+    display: inline-block;
+    text-decoration: none;
+
+    cursor: pointer;
+    border-radius: 5px;
+}
