@@ -1,4 +1,31 @@
+
+// Initialization code for testing memory retreival'
+let storage_counter = 0; // used fore local storage purposes
+function hilight_json_data(json_data) {
+    let range = store_data_to_range(json_data); 
+    let surrounding_node = document.createElement('div');
+    surrounding_node.setAttribute("id", `word_${storage_counter}`);
+    storage_counter += 1;
+    surrounding_node.setAttribute('style', 'background-color: #ffff01; display: inline;')
+    range.surroundContents(surrounding_node);
+}
+
+// TODO: change all code to use SQLite later and partition better
+
 document.body.style.border = "5px solid red";
+let local_vocabulario_data = localStorage.getItem('vocabulario_data');
+
+if (local_vocabulario_data == null) {
+    local_vocabulario_data = [];
+}
+else {
+    local_vocabulario_data = JSON.parse(local_vocabulario_data)
+    let i;
+    for (i = 0; i < local_vocabulario_data.length; i++) {
+        hilight_json_data(local_vocabulario_data[i]);
+    }
+}
+
 
 function storeNode(node) {
     let node_child_indecies = []; // indecies of elements in parents' child array, with last element being child of root
@@ -53,18 +80,19 @@ function store_data_to_range(store_data) {
     return range;
 }
 
+
+function store_data(json_data) {
+    local_vocabulario_data.push(json_data);
+    let save_data = JSON.stringify(local_vocabulario_data);
+    localStorage.setItem('vocabulario_data', save_data);
+}
+
 function log_selection() {
     let selected = window.getSelection();
     if (selected.toString() != '') {
-        let store_data = selection_to_store_data(selected);
-        // MOCK STORAGE and RETREIVAL
-        let range = store_data_to_range(store_data);
-
-        // after simulated retreival from non-volatile storage
-        let surrounding_node = document.createElement('div');
-        surrounding_node.setAttribute("id", "my_id");
-        surrounding_node.setAttribute('style', 'background-color: #ffff01; display: inline;')
-        range.surroundContents(surrounding_node);
+        let json_data = selection_to_store_data(selected);
+        store_data(json_data);
+        hilight_json_data(json_data); // TODO: Replace with standard selection.getRangeAt(0) once done
     }
 }
 
