@@ -1,14 +1,24 @@
+// Initialize dictionaries data if need be
+// TODO: Consider adding in seperate background script and changing this one's name
+let creating = browser.tabs.create({
+    url:"new_dict.html"
+  });
+
+if (window.localStorage.getItem('dicts') == null) {
+    window.localStorage.setItem('dicts', '{}');
+}
+
 // TODO: Have class use IndexedDB
 
 function store_data(json_data, page) {
     let save_data = JSON.stringify(json_data);
-    localStorage.setItem(page, save_data);
+    window.localStorage.setItem(page, save_data);
     console.log(`Data Stored: ${save_data}`);
 }
 
 function get_page_vocab(site) {
     console.log('Made it in ehre');
-    let page_vocab =  window.localStorage.getItem(site);
+    let page_vocab =  localStorage.getItem(site);
     if (page_vocab == null) {
         return [];
     } else {
