@@ -1,3 +1,5 @@
+let vocabulario_data = [];
+document.body.style.border = "5px solid red"; // TODO: Delete once code finalized, currently use to make sure things are workign
 
 // Initialization code for testing memory retreival'
 let storage_counter = 0; // used fore local storage purposes
@@ -9,23 +11,6 @@ function hilight_json_data(json_data) {
     surrounding_node.setAttribute('style', 'background-color: #ffff01; display: inline;')
     range.surroundContents(surrounding_node);
 }
-
-// TODO: change all code to use SQLite later and partition better
-
-document.body.style.border = "5px solid red";
-let local_vocabulario_data = localStorage.getItem('vocabulario_data');
-
-if (local_vocabulario_data == null) {
-    local_vocabulario_data = [];
-}
-else {
-    local_vocabulario_data = JSON.parse(local_vocabulario_data)
-    let i;
-    for (i = 0; i < local_vocabulario_data.length; i++) {
-        hilight_json_data(local_vocabulario_data[i]);
-    }
-}
-
 
 function storeNode(node) {
     let node_child_indecies = []; // indecies of elements in parents' child array, with last element being child of root
@@ -61,7 +46,7 @@ function selection_to_store_data(selection) {
         'startNodePath': storeNode(range.startContainer),
         'endNodePath': storeNode(range.endContainer) 
     };
-    console.log(`GOT: ${JSON.stringify(data)}`);
+    console.log(`ATTEMPT: ${JSON.stringify(data)}`);
     return data;
 }
 
@@ -80,20 +65,38 @@ function store_data_to_range(store_data) {
     return range;
 }
 
-
-function store_data(json_data) {
-    local_vocabulario_data.push(json_data);
-    let save_data = JSON.stringify(local_vocabulario_data);
-    localStorage.setItem('vocabulario_data', save_data);
-}
-
 function log_selection() {
     let selected = window.getSelection();
     if (selected.toString() != '') {
         let json_data = selection_to_store_data(selected);
-        store_data(json_data);
-        hilight_json_data(json_data); // TODO: Replace with standard selection.getRangeAt(0) once done
+
+        vocabulario_data.push(json_data);
+        let save_data = browser.runtime.sendMessage({type: 'store_data', data: vocabulario_data, page:  window.location.href});
+        save_data.then(function (result) {
+            hilight_json_data(json_data);
+        },
+        function (failReason) {
+            alert('Data Failed to Save: ' + failReason);
+            local_vocabulario_data.pop()
+        });
     }
 }
 
-document.onmouseup = log_selection;  // set action up
+// Load data from memory and use to hilight things previously selected
+
+let load_data_for_page = browser.runtime.sendMessage({type: 'get_page_vocab', page: window.location.href });
+load_data_for_page.then(function (result) {
+    vocabulario_data = result.data;
+    console.log(`RECEIVED: ${JSON.stringify(vocabulario_data)}`);
+    console.log(result)
+    let i;
+    for (i = 0; i < vocabulario_data.length; i++) {
+        hilight_json_data(vocabulario_data[i]); // TODO: make this a try-catch and test with Diccionario in italix dle.rae.es
+    }
+
+    document.onmouseup = log_selection; // add this after promise completion to avoid "race condition" when making new hilights
+},
+function (failReason) {
+    alert('Data Failed to Load: ' + failReason);
+    document.onmouseup = log_selection;
+});
