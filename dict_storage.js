@@ -29,11 +29,28 @@ function get_current_dictionary_info(){
     //return JSON.parse(window.localStorage.getItem('dicts')[current_info.language][current_info.index]);
 }
 
-function set_current_dictionary(language, index){
-    let chosen_dict = JSON.stringify({language: language, index: index});
-    window.localStorage.setItem('default_dict', chosen_dict);
+function get_dictionary_from_info(dict_info) {
+    if (dict_info == null) {
+        return null;
+    }
+    console.log(dict_info);
+    let dicts = window.localStorage.getItem('dicts');
+    dicts = JSON.parse(dicts);
+    return dicts[dict_info.language][dict_info.index];
 }
 
+let current_dictionary = get_dictionary_from_info(get_current_dictionary_info());
+
+function set_current_dictionary(language, index){
+    let chosen_dict_info = {language: language, index: index};
+    window.localStorage.setItem('default_dict', JSON.stringify(chosen_dict_info));
+    current_dictionary =  get_dictionary_from_info(chosen_dict_info);
+}
+
+function search_word_url(word) {
+    let template = current_dictionary.url;
+    return template.replace('{word}', word);
+}
 
 function handler2(request, sender, sendResponse) {
     console.log('REQUEST2');
@@ -47,7 +64,10 @@ function handler2(request, sender, sendResponse) {
     } else if (request.type == "set_current_dictionary") {
         set_current_dictionary(request.language, request.index);
         sendResponse();
-    } else {
+    } else if (request.type == "search_word_url") {
+        console.log('searching')
+        sendResponse(search_word_url(request.word));
+    }else {
         console.log('My ISSUE');
         console.log(JSON.stringify(request));
     }
