@@ -19,20 +19,24 @@
   ],
 
   "background": {
-    "scripts": ["storage.js", "dict_storage.js", "listener.js"]
+    "scripts": [
+	    "background_scripts/hilight_storage.js ",
+	    "background_scripts/dict_storage.js",
+	    "background_scripts/listener.js"
+    ]
   },
 
   "content_scripts": [
     {
       "matches": ["*://*/*"],
-      "js": ["get_hilights.js"]
+      "js": ["content_scripts/get_hilights.js"]
     }
   ],
 
   "browser_action": {
     "default_icon": "icons/icon.png",
     "default_title": "HootHoot",
-    "default_popup": "popup.html"
+    "default_popup": "web_pages/popup.html"
   }
 
 }
