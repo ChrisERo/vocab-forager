@@ -19,7 +19,7 @@
   ],
 
   "background": {
-    "scripts": ["storage.js", "dict_storage.js"]
+    "scripts": ["storage.js", "dict_storage.js", "listener.js"]
   },
 
   "content_scripts": [
