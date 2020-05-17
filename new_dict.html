@@ -8,7 +8,8 @@
     <link rel="stylesheet" type="text/css" href="cross-page-assets/hoothoot_style.css">
     <style>
         .form{
-            background-color: rgb(14, 104, 163);
+            background-color: rgb(1, 175, 243);
+            margin-top: 50px;
             margin-right:29%;
             margin-left: 29%;
             padding-left:0%;
@@ -22,6 +23,7 @@
             padding: 10px 0;
             margin-left:25%;
             margin-bottom: 16px;
+            font-weight: bold;
         }
         .form-element button {
             text-align: center;
@@ -32,18 +34,12 @@
             width: 47%;
         }
     </style>
-<script src="https://code.jquery.com/jquery-3.3.1.js">
-</script>
-<script> 
-    // Load header from banner.html
-    $(function(){
-        $(".banner").load("cross-page-assets/banner.html"); 
-    });
-</script>
 
 </head>
 <body>
-    <div class="banner"></div>
+    <div class="banner">
+        <h1>Hoot Hoot</h1>
+    </div>
     <div class="form">
         <div style="text-align: center;">
             <h2>New Dictionary</h2>
@@ -53,21 +49,23 @@
             <input type="text" id="name" name="name">
         </div>
         <div class="form-element">
-            <label for="name">URL:</label>
+            <label for="name">URL Regex:</label>
             <input type="url" id="url" name="url">
         </div>
         <div class="form-element">
             <label for="lang">Language:</label>
             <input type="text" id="lang" name="lang">
         </div>
-        <div class="form-element">
+        <!-- <div class="form-element">
             <label for="img">Image Icon:</label>
             <input type="file" id="img" name="img">
-        </div>
+        </div> -->
         <div style="text-align: center;">
             <p class="boton" id="submit">Create New Dictionary</p>
         </div>
     </div>
+
+<script src=page_scripts/new_dict.js> </script>
     
 </body>
 </html>

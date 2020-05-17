@@ -1,6 +1,6 @@
 let vocabulario_data = [];
 document.body.style.border = "5px solid red"; // TODO: Delete once code finalized, currently use to make sure things are workign
-
+const HILIGHT_CLASS = 'vocabulario_hilighted';
 // Initialization code for testing memory retreival'
 let storage_counter = 0; // used fore local storage purposes
 function hilight_json_data(json_data) {
@@ -8,7 +8,8 @@ function hilight_json_data(json_data) {
     let surrounding_node = document.createElement('div');
     surrounding_node.setAttribute("id", `word_${storage_counter}`);
     storage_counter += 1;
-    surrounding_node.setAttribute('style', 'background-color: #ffff01; display: inline;')
+    surrounding_node.setAttribute('style', 'background-color: #ffff01; display: inline;');
+    surrounding_node.setAttribute('class', HILIGHT_CLASS);
     range.surroundContents(surrounding_node);
 }
 
@@ -65,8 +66,7 @@ function store_data_to_range(store_data) {
     return range;
 }
 
-function log_selection() {
-    let selected = window.getSelection();
+function log_selection(selected) {
     if (selected.toString() != '') {
         let json_data = selection_to_store_data(selected);
 
@@ -78,6 +78,19 @@ function log_selection() {
         function (failReason) {
             alert('Data Failed to Save: ' + failReason);
             local_vocabulario_data.pop()
+        });
+    }
+}
+
+function lookup_selection(selected) { // TODO: move this to other content script after tab made
+    let word = selected.toString();
+    if (word != '') {
+        console.log(`lookingup: ${word}`);
+        let get_url = browser.runtime.sendMessage({type: 'search_word_url', word: word});
+        get_url.then(function (response) {
+            let urll = response;
+            console.log(urll)
+            window.open(urll, '_blank');
         });
     }
 }
@@ -94,7 +107,14 @@ load_data_for_page.then(function (result) {
         hilight_json_data(vocabulario_data[i]); // TODO: make this a try-catch and test with Diccionario in italix dle.rae.es
     }
 
-    document.onmouseup = log_selection; // add this after promise completion to avoid "race condition" when making new hilights
+    document.onmouseup = function () { // add this after promise completion to avoid "race condition" when making new hilights
+        let selected = window.getSelection();   
+        if (false) { // TODO: Develop this out with tab menu
+            lookup_selection(selected);
+        } else {
+            log_selection(selected);
+        }
+    };
 },
 function (failReason) {
     alert('Data Failed to Load: ' + failReason);

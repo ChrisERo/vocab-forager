@@ -19,7 +19,7 @@
   ],
 
   "background": {
-    "scripts": ["storage.js"]
+    "scripts": ["storage.js", "dict_storage.js", "listener.js"]
   },
 
   "content_scripts": [
@@ -27,6 +27,12 @@
       "matches": ["*://*/*"],
       "js": ["get_hilights.js"]
     }
-  ]
+  ],
+
+  "browser_action": {
+    "default_icon": "icons/icon.png",
+    "default_title": "HootHoot",
+    "default_popup": "popup.html"
+  }
 
 }
