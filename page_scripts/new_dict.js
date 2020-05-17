@@ -1,6 +1,7 @@
 function store_dictionary(dict_object, language) {
     let dictionaries = window.localStorage.getItem('dicts');
     dictionaries = JSON.parse(dictionaries);
+    let is_first_dict = Object.getOwnPropertyNames(dictionaries).length == 0;
     
     // Check if language exists
     if (language in dictionaries) {
@@ -9,7 +10,12 @@ function store_dictionary(dict_object, language) {
         dictionaries[language] = [dict_object];
     }
     //console.log(JSON.stringify(dictionaries));
-    window.localStorage.setItem('dicts', JSON.stringify(dictionaries));  
+    window.localStorage.setItem('dicts', JSON.stringify(dictionaries));
+
+    // set default dict info
+    if (is_first_dict) {
+        window.localStorage.setItem('default_dict', JSON.stringify({language: language, index: 0}));
+    }
 }
 
 document.getElementById('submit').addEventListener("click", function () {

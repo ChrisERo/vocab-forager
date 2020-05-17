@@ -1,15 +1,4 @@
-// Initialize dictionaries data if need be
-// TODO: Consider adding in seperate background script and changing this one's name
-let creating = browser.tabs.create({
-    url:"new_dict.html"
-  });
-
-if (window.localStorage.getItem('dicts') == null) {
-    window.localStorage.setItem('dicts', '{}');
-}
-
 // TODO: Have class use IndexedDB
-
 function store_data(json_data, page) {
     let save_data = JSON.stringify(json_data);
     window.localStorage.setItem(page, save_data);
@@ -42,4 +31,3 @@ function handler(request, sender, sendResponse) {
 }
 
 browser.runtime.onMessage.addListener(handler);
-console.log('DONEEE');
