@@ -19,7 +19,7 @@ function handler(request, sender, sendResponse) {
         sendResponse();
     } else if (request.type == "search_word_url") {
         sendResponse(search_word_url(request.word));
-    } if (request.type == "store_data") {
+    } else if (request.type == "store_data") {
         store_data(request.data, request.page);
         sendResponse({}); // Needed for "synchronus" behavior
 

@@ -1,6 +1,27 @@
 let vocabulario_data = []; // objects representing hilighted sections of current page
 const HILIGHT_CLASS = 'vocabulario_hilighted'; // class of hilighted sections in html page
 
+/**
+ * Imports hilights.css, which contains styleing for elements of class HILIGHT_CLASS
+ */
+async function add_hilight_style_sheet() {
+    // links don't work since href uses browser's current domain
+    let hilight_style_sheet = document.createElement('style')
+    hilight_style_sheet.innerHTML = "\
+    .vocabulario_hilighted { \
+        background-color: #ffff01; \
+        display: inline;\
+    } \
+    .vocabulario_hilighted:hover {\
+        border: 1.5px solid #6afff3;\
+        cursor: pointer;\
+    }";
+    document.head.appendChild(hilight_style_sheet);
+}
+
+add_hilight_style_sheet();
+
+
 let storage_counter = 0; // used fore local storage purposes
 
 /**
@@ -36,6 +57,24 @@ function store_data_to_range(store_data) {
 }
 
 /**
+ * Uses currently-selected (default) dictionary to lookup word(s) in selected
+ * 
+ * @param {String} word - user-selected text in document
+ * (assumed to be valid given current DOM)
+ */
+function lookup_word(word) { // TODO: move this to other content script after tab made
+    if (word != '') {
+        console.log(`lookingup: ${word}`);
+        let get_url = browser.runtime.sendMessage({type: 'search_word_url', word: word});
+        get_url.then(function (response) {
+            let url = response;
+            console.log(url);
+            window.open(url, '_blank');
+        });
+    }
+}
+
+/**
  * Given a representation of user-selected text, wrap selection around
  * div tags with style for hilighting
  * 
@@ -46,8 +85,12 @@ function hilight_json_data(json_data) {
     let surrounding_node = document.createElement('div');
     surrounding_node.setAttribute("id", `word_${storage_counter}`);
     storage_counter += 1;
-    surrounding_node.setAttribute('style', 'background-color: #ffff01; display: inline;');
     surrounding_node.setAttribute('class', HILIGHT_CLASS);
+    surrounding_node.addEventListener('click', function () {
+        let word = this.textContent;
+        lookup_word(word);
+
+    })
     range.surroundContents(surrounding_node);
 }
 
@@ -125,25 +168,6 @@ function log_selection(selected) {
     }
 }
 
-/**
- * Uses currently-selected (default) dictionary to lookup word(s) in selected
- * 
- * @param {Selection} selected - user-selected text in document 
- * (assumed to be valid given current DOM)
- */
-function lookup_selection(selected) { // TODO: move this to other content script after tab made
-    let word = selected.toString();
-    if (word != '') {
-        console.log(`lookingup: ${word}`);
-        let get_url = browser.runtime.sendMessage({type: 'search_word_url', word: word});
-        get_url.then(function (response) {
-            let url = response;
-            console.log(url)
-            window.open(url, '_blank');
-        });
-    }
-}
-
 // Load data from memory and use to hilight things previously selected
 let load_data_for_page = browser.runtime.sendMessage({type: 'get_page_vocab', page: window.location.href });
 load_data_for_page.then(function (result) {
@@ -158,11 +182,7 @@ load_data_for_page.then(function (result) {
     // Add this after promise completion to avoid "race condition" with new hilights
     document.onmouseup = function () {
         let selected = window.getSelection();   
-        if (false) { // TODO: Develop this while making context menu
-            lookup_selection(selected);
-        } else {
-            log_selection(selected);
-        }
+        log_selection(selected);
     };
 },
 function (failReason) {
