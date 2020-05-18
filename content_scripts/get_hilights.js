@@ -1,8 +1,46 @@
-let vocabulario_data = [];
-document.body.style.border = "5px solid red"; // TODO: Delete once code finalized, currently use to make sure things are workign
-const HILIGHT_CLASS = 'vocabulario_hilighted';
-// Initialization code for testing memory retreival'
+let vocabulario_data = []; // objects representing hilighted sections of current page
+const HILIGHT_CLASS = 'vocabulario_hilighted'; // class of hilighted sections in html page
+
 let storage_counter = 0; // used fore local storage purposes
+
+/**
+ * Gets node alluded to by node_path in html document
+ * 
+ * Assumes node_path represents a valid node in the document's DOM
+ * 
+ * @param {Array} node_path  - Array of integers where each element [i] represents the 
+ * index of a node in the parent node [i+1], with the last element being a child node of
+ * the body element.
+ */
+function node_path_to_node(node_path) {
+    let node = document.body;
+    for (i=node_path.length-1; i >= 0; i--) {
+        node = node.childNodes[node_path[i]];
+    }
+    return node;
+}
+
+/**
+ * Takes object representing hilighted section and returns Range of that selection.
+ * 
+ * Assumes store_data represents valid selection (has correct range data) in html page
+ * 
+ * @param {Object} store_data - object representing selection, seeselection_to_store_data
+ * for object specifications
+ */
+function store_data_to_range(store_data) {
+    let range = document.createRange();
+    range.setStart(node_path_to_node(store_data.startNodePath), store_data.startOffset);
+    range.setEnd(node_path_to_node(store_data.endNodePath), store_data.endOffset);
+    return range;
+}
+
+/**
+ * Given a representation of user-selected text, wrap selection around
+ * div tags with style for hilighting
+ * 
+ * @param {Object} json_data - object representing selection
+ */
 function hilight_json_data(json_data) {
     let range = store_data_to_range(json_data); 
     let surrounding_node = document.createElement('div');
@@ -13,14 +51,22 @@ function hilight_json_data(json_data) {
     range.surroundContents(surrounding_node);
 }
 
+
+/**
+ * Given a Node, returns a list of integers representing the path from the Body node
+ * to node, see node_path_to_node() for more details
+ * 
+ * @param {Node} node Node in document's DOM
+ */
 function storeNode(node) {
-    let node_child_indecies = []; // indecies of elements in parents' child array, with last element being child of root
+    let node_child_indecies = []; // indecies of elements in parents' child array, 
+                                  // with last element being child of root
     let current_node = node;
-    let root_node = document.body; // TODO: Fill this in
+    let root_node = document.body;
     while (current_node != root_node) {
         let parent_node = current_node.parentNode;
 
-        // get index of current_node in list of parent
+        // Get index of current_node in list of parent
         let current_node_index = null;
         for (i = 0; i < parent_node.childNodes.length; i++) {
             if (parent_node.childNodes[i] === current_node) {
@@ -33,15 +79,20 @@ function storeNode(node) {
         current_node = parent_node;
     }
 
-   return node_child_indecies; // TODO: return this to store in localStorage
-
+   return node_child_indecies;
 }
 
+/**
+ * Takes selection and converts to a Javascript Object that can be
+ * Easily stored.
+ * 
+ * @param {Selection} selection - user-selected text in document
+ */
 function selection_to_store_data(selection) {
     let word = selection.toString();
     let range = selection.getRangeAt(0);
     let data = {
-        'word': word, // TODO: Useless for now, but maybe try to use for check later
+        'word': word, // Useless for now, but will be good for quiz implementation
         'startOffset': range.startOffset,
         'endOffset': range.endOffset,
         'startNodePath': storeNode(range.startContainer),
@@ -51,21 +102,13 @@ function selection_to_store_data(selection) {
     return data;
 }
 
-function node_path_to_node(node_path) {
-    let node = document.body;
-    for (i=node_path.length-1; i >= 0; i--) {
-        node = node.childNodes[node_path[i]];
-    }
-    return node;
-}
-
-function store_data_to_range(store_data) {
-    let range = document.createRange();
-    range.setStart(node_path_to_node(store_data.startNodePath), store_data.startOffset);
-    range.setEnd(node_path_to_node(store_data.endNodePath), store_data.endOffset);
-    return range;
-}
-
+/**
+ * Given selection, stores hilight in non-volatile storage and hilights text, wrapping
+ * it in a div with css class HILIGHT_CLASS
+ * 
+ * @param {Selection} selected - user-selected text in document 
+ * (assumed to be valid given current DOM)
+ */
 function log_selection(selected) {
     if (selected.toString() != '') {
         let json_data = selection_to_store_data(selected);
@@ -82,34 +125,40 @@ function log_selection(selected) {
     }
 }
 
+/**
+ * Uses currently-selected (default) dictionary to lookup word(s) in selected
+ * 
+ * @param {Selection} selected - user-selected text in document 
+ * (assumed to be valid given current DOM)
+ */
 function lookup_selection(selected) { // TODO: move this to other content script after tab made
     let word = selected.toString();
     if (word != '') {
         console.log(`lookingup: ${word}`);
         let get_url = browser.runtime.sendMessage({type: 'search_word_url', word: word});
         get_url.then(function (response) {
-            let urll = response;
-            console.log(urll)
-            window.open(urll, '_blank');
+            let url = response;
+            console.log(url)
+            window.open(url, '_blank');
         });
     }
 }
 
 // Load data from memory and use to hilight things previously selected
-
 let load_data_for_page = browser.runtime.sendMessage({type: 'get_page_vocab', page: window.location.href });
 load_data_for_page.then(function (result) {
     vocabulario_data = result.data;
-    console.log(`RECEIVED: ${JSON.stringify(vocabulario_data)}`);
-    console.log(result)
     let i;
     for (i = 0; i < vocabulario_data.length; i++) {
-        hilight_json_data(vocabulario_data[i]); // TODO: make this a try-catch and test with Diccionario in italix dle.rae.es
+        hilight_json_data(vocabulario_data[i]); 
+        // TODO: make this a try-catch and test with Diccionario in italix dle.rae.es
     }
 
-    document.onmouseup = function () { // add this after promise completion to avoid "race condition" when making new hilights
+    // On Selection made, either hilight selected or lookup its text
+    // Add this after promise completion to avoid "race condition" with new hilights
+    document.onmouseup = function () {
         let selected = window.getSelection();   
-        if (false) { // TODO: Develop this out with tab menu
+        if (false) { // TODO: Develop this while making context menu
             lookup_selection(selected);
         } else {
             log_selection(selected);
@@ -117,6 +166,5 @@ load_data_for_page.then(function (result) {
     };
 },
 function (failReason) {
-    alert('Data Failed to Load: ' + failReason);
-    document.onmouseup = log_selection;
+    alert('Data Failed to Load: ' + failReason); // Show failiure, for debugging
 });
