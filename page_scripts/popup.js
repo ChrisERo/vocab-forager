@@ -127,4 +127,26 @@ get_current_dict.then(function (result) {
         current_dict_info = {language: my_lang, index: index};
     });
    });
-}); 
+});
+
+// Setup toggle button
+browser.runtime.sendMessage({type: 'get_activation'}).then(function (response) {
+    let activation_toggle = document.getElementById('activate');
+    activation_toggle.checked = response;
+    activation_toggle.addEventListener('change', function () {
+        let is_checked = activation_toggle.checked;
+        browser.runtime.sendMessage({type: 'activation_changed', is_activated: is_checked}); 
+        // Since have value already, no need to act after this change
+        let get_tabs = browser.tabs.query({});
+        get_tabs.then(function (tabs) {
+            // Send message to currently all tabs to update based on
+            for (let tab of tabs) {
+               browser.tabs.sendMessage(tab.id,{type: 'activation_form_pop',
+               checked: is_checked})
+            }
+        });
+    });
+});
+
+// Save effect of toggling button
+
