@@ -26,6 +26,12 @@ function handler(request, sender, sendResponse) {
     } else if (request.type == "get_page_vocab") {
         let vocab = get_page_vocab(request.page);
         sendResponse({data: vocab});
+    } else if (request.type == 'get_activation') {
+        let result = get_current_activation();
+        sendResponse(result);
+    } else if (request.type == 'activation_changed') {
+        set_current_activation(request.is_activated);
+        sendResponse();
     } else {
         console.log('REQUEST NOT SATISIFED');
         console.log(JSON.stringify(request));

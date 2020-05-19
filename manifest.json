@@ -21,7 +21,8 @@
   "background": {
     "scripts": [
 	    "background_scripts/hilight_storage.js ",
-	    "background_scripts/dict_storage.js",
+      "background_scripts/dict_storage.js",
+      "background_scripts/activation.js",
 	    "background_scripts/listener.js"
     ]
   },
