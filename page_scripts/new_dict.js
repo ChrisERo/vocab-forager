@@ -29,7 +29,8 @@ function store_dictionary(dict_object, language) {
 
     // set default dict info
     if (is_first_dict) {
-        window.localStorage.setItem('default_dict', JSON.stringify({language: language, index: 0}));
+        browser.runtime.sendMessage(
+            {type: 'set_current_dictionary', language: language, index: 0});
     }
 }
 
