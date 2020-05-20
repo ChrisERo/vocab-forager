@@ -1,3 +1,33 @@
+browser.contextMenus.create({
+    id: "activation",
+    title: get_current_activation() ? 'Deactivate': 'Activate',
+    contexts: ["all"]
+    // TODO: Add Icon when Ready
+  });
+
+  browser.contextMenus.onClicked.addListener((info, tab) => {
+    if (info.menuItemId === 'activation') {
+        let is_checked = get_current_activation();
+        is_checked = !is_checked;
+        set_current_activation(is_checked);
+
+        browser.contextMenus.update(info.menuItemId, {
+            title: is_checked ? 'Deactivate': 'Activate'
+        });
+        browser.contextMenus.refresh();
+
+        // TODO: make this a utility and use in popul and listener
+        let get_tabs = browser.tabs.query({});
+        get_tabs.then(function (tabs) {
+            // Send message to currently all tabs to update based on
+            for (let tab of tabs) {
+               browser.tabs.sendMessage(tab.id,{type: 'activation_form_pop',
+               checked: is_checked})
+            }
+        });
+    }
+  });
+
 /**
  * Listens for calls to functions from any of the 
  * background scripts and executes them.
