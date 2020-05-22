@@ -5,6 +5,22 @@ browser.contextMenus.create({
     // TODO: Add Icon when Ready
   });
 
+function expose_delete_cm() {
+    browser.contextMenus.create({
+        id: "delete_hilight",
+        title: 'Delete Hilight',
+        contexts: ["all"]
+        // TODO: Add Icon when Ready
+      });
+      browser.contextMenus.refresh();
+}
+
+function remove_delete_cm() {
+    browser.contextMenus.remove('delete_hilight');
+    // Don't Refresh so that menu remains while mouse goes towards it
+}
+
+
   browser.contextMenus.onClicked.addListener((info, tab) => {
     if (info.menuItemId === 'activation') {
         let is_checked = get_current_activation();
@@ -25,6 +41,8 @@ browser.contextMenus.create({
                checked: is_checked})
             }
         });
+    } else if (info.menuItemId === 'delete_hilight') {
+        browser.tabs.sendMessage(tab.id,{type: 'delete_chosen'});
     }
   });
 
@@ -61,6 +79,12 @@ function handler(request, sender, sendResponse) {
         sendResponse(result);
     } else if (request.type == 'activation_changed') {
         set_current_activation(request.is_activated);
+        sendResponse();
+    } else if (request.type === 'expose_delete_hilight') {
+        expose_delete_cm();
+        sendResponse();
+    } else if (request.type === 'remove_delete_hilight') {
+        remove_delete_cm()
         sendResponse();
     } else {
         console.log('REQUEST NOT SATISIFED');

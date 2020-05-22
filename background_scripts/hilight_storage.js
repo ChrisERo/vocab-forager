@@ -22,7 +22,7 @@ function get_page_vocab(site) {
     console.log('Made it in ehre');
     let page_vocab =  window.localStorage.getItem(site);
     if (page_vocab == null) {
-        return [];
+        return {};
     } else {
         return JSON.parse(page_vocab);
     }
