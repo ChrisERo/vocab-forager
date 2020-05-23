@@ -1,16 +1,23 @@
 browser.contextMenus.create({
     id: "activation",
     title: get_current_activation() ? 'Deactivate': 'Activate',
+    contexts: ["all"],
+    icons: get_current_activation() ? {"16": "../icons/deactivation.svg"} : {"16": "../icons/activation.svg"}
+  });
+  browser.contextMenus.create({
+    id: "separator-1",
+    type: "separator",
     contexts: ["all"]
-    // TODO: Add Icon when Ready
   });
 
 function expose_delete_cm() {
     browser.contextMenus.create({
         id: "delete_hilight",
         title: 'Delete Hilight',
-        contexts: ["all"]
-        // TODO: Add Icon when Ready
+        contexts: ["all"],
+        icons: {
+            "16": "../icons/red_x.svg"
+        }
       });
       browser.contextMenus.refresh();
 }
@@ -27,9 +34,17 @@ function remove_delete_cm() {
         is_checked = !is_checked;
         set_current_activation(is_checked);
 
-        browser.contextMenus.update(info.menuItemId, {
-            title: is_checked ? 'Deactivate': 'Activate'
-        });
+        if (is_checked) {
+            browser.contextMenus.update(info.menuItemId, {
+                title: 'Deactivate',
+                icons: {"16": "../icons/deactivation.svg"}
+            });
+        } else {
+            browser.contextMenus.update(info.menuItemId, {
+                title: 'Activate',
+                icons: {"16": "../icons/activation.svg"}
+            });
+        }
         browser.contextMenus.refresh();
 
         // TODO: make this a utility and use in popul and listener

@@ -7,7 +7,8 @@
   "description": "Facilitates Learning of new languages by providing ability to hilight text and lookup words.",
 
   "icons": {
-    "48": "icons/border-48.png"
+    "48": "icons/icon.svg",
+    "96": "icons/icon.svg"
   },
 
   "permissions": [
@@ -36,9 +37,8 @@
   ],
 
   "browser_action": {
-    "default_icon": "icons/icon.png",
+    "default_icon": "icons/icon.svg",
     "default_title": "HootHoot",
     "default_popup": "web_pages/popup.html"
   }
-
 }
