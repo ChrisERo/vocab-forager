@@ -15,7 +15,8 @@
     "activeTab",
     "tabs",
     "storage",
-    "webRequest"
+    "webRequest",
+    "contextMenus"
   ],
 
   "background": {
