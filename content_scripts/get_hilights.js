@@ -22,19 +22,23 @@ function update_hilight_node_paths(parents_children, target_element_index, new_n
         element_index < parents_children.length; element_index++) {
         let element = parents_children[element_index];
         if (element.classList != null && element.classList.contains(HILIGHT_CLASS)) {
+            // No more combinations possible since hit non-text node
             continue_combining = false;
+
             let element_id = extract_id(element);
-            if (element_id > target_id) { // made after, so update needed
-                let element_data = vocabulario_data[element_id];
-                // Use start == end Node assumption {see selection_to_store_data()}
-                element_data['startNodePath'][0] += new_nodes_to_make - 1;
-                element_data['endNodePath'][0] += new_nodes_to_make - 1;
-            }
+            console.assert(element_id > target_id,  // assure hilights reorderred on add
+                {element_id: element_id,
+                target_id: target_id,
+                errMssg: 'target_id >= element_id'
+            });
+            let element_data = vocabulario_data[element_id];
+            // Use start == end Node assumption {see selection_to_store_data()}
+            element_data['startNodePath'][0] += new_nodes_to_make - 1;
+            element_data['endNodePath'][0] += new_nodes_to_make - 1;
         } else if (continue_combining) {
             if (element.nodeName === '#text' &&
                 el.childNodes[el.childNodes.length-1].nodeName === element.nodeName) {
-                    new_nodes_to_make -= 1;
-
+                    new_nodes_to_make -= 1; // Combine text nodes previously seperated
             } else {
                 continue_combining = false;
             }
@@ -56,88 +60,61 @@ function extract_id(element) {
 }
 
 /**
- * Helper for udpate_hilight_offsets. Finds the last index in parents_children to consider
- * when updating offsets.
- *
- * TODO: May not need so complex with update that I do below when adding hilights
+ * Helper for udpate_hilight_offsets. Finds the index of the very next hilight element,
+ * after the one in text_element_index, in parents_child
  *
  * @param {Array} parents_children - list of nodes under terget_element's parent node
  * @param {Number} target_element_index - index of element scheduled to be deleted
  */
-function get_end_index(parents_children, target_element_index) {
-    let el = parents_children[target_element_index];
+function get_next_index(parents_children, target_element_index) {
+    let el = parents_children[target_element_index]; // target element
     let el_id = extract_id(el);
-
-    // Find end of range to consider
-    let new_candidate_id = null;
-    let new_candidate_index = null;
-    let old_candidate_index = null;
     for (element_index = target_element_index + 1;
         element_index < parents_children.length; element_index++) {
             let element = parents_children[element_index];
             if (element.classList != null && element.classList.contains(HILIGHT_CLASS)) {
                 let element_id = extract_id(element);
-                if (element_id < el_id &&
-                   (old_candidate_index == null || old_candidate_index > element_index)) {
-                        old_candidate_index = element_index;
-                } else if (element_id > el_id &&
-                          (new_candidate_id == null || new_candidate_id > element_id)) {
-                    new_candidate_id = element_id;
-                    new_candidate_index = element_index;
-                }
+                console.assert(element_id > el_id,  // assure hilights reorderred on add
+                    {element_id: element_id,
+                    el_id: el_id,
+                    errMssg: 'element_id >= el_id'
+                });
+                return  element_index;
             }
     }
-    if (new_candidate_index == null) {
-        if (old_candidate_index == null) {return null;}
-        else {return old_candidate_index;}
-    } else {
-        if (old_candidate_index == null) {return new_candidate_index;}
-        else {return Math.min(old_candidate_index, new_candidate_index);}
-    }
+    return null;
 }
 
 /**
  * Updates offsets for HILIGHT_CLASS nodes/elements to the right of target_element_index
  * by adding new_offset
  *
+ * Assumption: same as in delete_hilight()
+ *
  * @param {Array} parents_children - list of nodes under terget_element's parent node
  * @param {Number} target_element_index - index of element scheduled to be deleted
  * @param {Number} new_offset - number to add to offsets of future hilights
  */
 function udpate_hilight_offsets(parents_children, target_element_index, new_offset) {
-    let end_index = get_end_index(parents_children, target_element_index);
-    if (end_index == null) {return null;}
+    let next_index = get_next_index(parents_children, target_element_index);
+    if (next_index == null) {return null;} // No hilights need updates
 
-    let el = parents_children[target_element_index];
-    let el_id = extract_id(el);
+    // Only next hilight element needs offset modified per assumptions
+    let next_hilight_element = parents_children[next_index];
+    let next_hilight_element_id = extract_id(next_hilight_element);
+    let json_data = vocabulario_data[next_hilight_element_id];
+    json_data['startOffset'] += new_offset - 1;
+    json_data['endOffset'] += new_offset - 1;
 
-    let min_id_seen = el_id;
-    for (element_index = target_element_index + 1; element_index <= end_index;
-         element_index++) {
-            let element = parents_children[element_index];
-            if (element.classList != null && element.classList.contains(HILIGHT_CLASS)) {
-                let element_id = extract_id(element);
-                if (element_id > el_id && min_id_seen < element_id) {
-                    // penultimate check needed since last element can have an older id
-                    min_id_seen = element_id;
-                    let json_data = vocabulario_data[element_id];
-                    delta_offset = new_offset;
-
-                    let node_b4 = parents_children[element_index - 1];
-                    if (element_index - 1 > 0 &&  node_b4.nodeName == '#text') {
-                        //delta_offset -= node_b4.textContent.length;
-                    }
-                    json_data['startOffset'] += delta_offset - 1; // TODO: Make sure this works
-                    json_data['endOffset'] += delta_offset - 1;
-                }
-            }
-    }
 }
 
 /**
  * Takes element referenced by hilight_id_to_delete and removes from localStorage, memory,
  * and the html page. Also Updates metadata of other HILIGHT_CLASS elements so that they
  * remained hilighted if page refreshed.
+ *
+ * Assumes h1.id > h2.id <--> h1 appears after h2 in a given element's branches,
+ * where h1 and h2 are HILIGHT_CLASS nodes/elements
  */
 function delete_hilight() {
     let id = hilight_id_to_delete;
@@ -176,6 +153,7 @@ function delete_hilight() {
         page:  window.location.href
     });
 
+    // Make sure elements hilighted remain there after removal
     if (element_index === 0) {
         while (el.firstChild) {
             parent.insertBefore(el.firstChild, el);
@@ -183,6 +161,7 @@ function delete_hilight() {
         element_index += 1;
     }
     parent.removeChild(el);
+    // Combine DOM elements formed by hilight el back into what's at left of el
     while (parents_children[element_index].nodeName === '#text') {
        parents_children[element_index - 1].textContent += parents_children[element_index].textContent
         parent.removeChild(parents_children[element_index]);
