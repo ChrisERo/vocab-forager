@@ -1,7 +1,7 @@
 {
 
   "manifest_version": 2,
-  "name": "Vocabulario",
+  "name": "Vocab Explorer",
   "version": "1.0",
 
   "description": "Facilitates Learning of new languages by providing ability to hilight text and lookup words.",
@@ -38,7 +38,7 @@
 
   "browser_action": {
     "default_icon": "icons/icon.svg",
-    "default_title": "HootHoot",
+    "default_title": "Vocab Explorer",
     "default_popup": "web_pages/popup.html"
   }
 }
