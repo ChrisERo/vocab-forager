@@ -61,7 +61,8 @@ function extract_id(element) {
 
 /**
  * Helper for udpate_hilight_offsets. Finds the index of the very next hilight element,
- * after the one in text_element_index, in parents_child
+ * after the one in text_element_index, in parents_child and returns it unless there is a
+ * non-text element between these two nodes
  *
  * @param {Array} parents_children - list of nodes under terget_element's parent node
  * @param {Number} target_element_index - index of element scheduled to be deleted
@@ -80,6 +81,8 @@ function get_next_index(parents_children, target_element_index) {
                     errMssg: 'element_id >= el_id'
                 });
                 return  element_index;
+            } else if (element.nodeName != '#text') {
+                return null;
             }
     }
     return null;
@@ -97,7 +100,7 @@ function get_next_index(parents_children, target_element_index) {
  */
 function udpate_hilight_offsets(parents_children, target_element_index, new_offset) {
     let next_index = get_next_index(parents_children, target_element_index);
-    if (next_index == null) {return null;} // No hilights need updates
+    if (next_index == null) {return null;} // No hilights need offset updates
 
     // Only next hilight element needs offset modified per assumptions
     let next_hilight_element = parents_children[next_index];
@@ -342,7 +345,6 @@ function reorder_hilights(selected, new_element_id) {
     let parent_node = selected_node.parentNode;
     let parents_children = parent_node.childNodes;
     // Get hilight to right of selected hilight
-    let none_seen_to_right = true;
     let selection_index = vocabulario_data[new_element_id]['startNodePath'][0];
     let insertion_id = new_element_id;
 
@@ -360,6 +362,8 @@ function reorder_hilights(selected, new_element_id) {
         }
     }
 
+    let should_modify_future_offsets = true;
+    let none_seen_to_right = true;
     for (i = selection_index + 1; i < parents_children.length; i++) {
         let element = parents_children[i];
         if (element.classList != null && element.classList.contains(HILIGHT_CLASS)) {
@@ -368,12 +372,11 @@ function reorder_hilights(selected, new_element_id) {
             right_data = vocabulario_data[right_neighbor_id];
             right_data['startNodePath'][0] += nodes_to_add;
             right_data['endNodePath'][0] += nodes_to_add;
-            if (none_seen_to_right) {
+            if (should_modify_future_offsets) {
                 right_data['startOffset'] -= offset_to_remove;
                 right_data['endOffset'] -= offset_to_remove;
 
-                // Change none_seen_to_right in last check for this
-                new_element_id = right_neighbor_id; // return id as id of new element
+                should_modify_future_offsets = false;
             }
 
             // Swap ids in both html and vocabulario_data to enforce new ordering
@@ -382,7 +385,8 @@ function reorder_hilights(selected, new_element_id) {
             if (none_seen_to_right) {
                 console.log('Here')
                 right_element.setAttribute('id', `word_${insertion_id}`);
-                none_seen_to_right = false; // Don't change offsets again
+                new_element_id = right_neighbor_id; // return id as id of new element
+                none_seen_to_right = false; // Do action below for future
             } else {
                 console.log('IN HERE')
                 let new_node_element = document.getElementById(`word_${insertion_id}`);
@@ -393,12 +397,15 @@ function reorder_hilights(selected, new_element_id) {
             console.log('out')
 
             let temp = vocabulario_data[insertion_id];
-            vocabulario_data[insertion_id] = vocabulario_data[right_neighbor_id]
+            vocabulario_data[insertion_id] = vocabulario_data[right_neighbor_id];
             vocabulario_data[right_neighbor_id] = temp;
 
+        } else if (element.nodeName != '#text') {
+            // no need to update future offsets since encoutered non-text node
+            should_modify_future_offsets = false;
         }
     }
-    return new_element_id
+    return new_element_id;
 }
 
 /**
