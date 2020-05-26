@@ -4,7 +4,6 @@ let previous_on_mouse_up = document.onmouseup; // action onmouseup before extens
                                                //took effect
 let hilight_id_to_delete = null; // Data last hovered over to be deleted upon request
 
-
 /**
  * Changes the node paths for each hilight element when element at
  * parents_children[target_element_index] is set to be removed
@@ -55,8 +54,20 @@ function update_hilight_node_paths(parents_children, target_element_index, new_n
 function extract_id(element) {
     let element_id = element.id;
     element_id = parseInt(element_id.substr('word_'.length,
-        element_id.length - 'word_'.length));
+        element_id.lastIndexOf('_') - 'word_'.length)); // TODO: Make sure this right, same for index funciton below
     return element_id;
+}
+
+/**
+ * Get index in nodePaths of given element (a HILIGHT_CLASS element)
+ *
+ * @param {Node} element - must be a HILIGHT_CLASS HTML element
+ */
+function extract_index(element) {
+    let index = element.id;
+    index = parseInt(index.substr(index.lastIndexOf('_')+1,
+        index.length - (index.lastIndexOf('_') + 1)));
+    return index;
 }
 
 /**
@@ -182,7 +193,7 @@ async function add_hilight_style_sheet() {
         background-color: #ffff01; \
         display: inline;\
     } \
-    .vocabulario_hilighted:hover {\
+    .vocabulario_hilighted_hover {\
         border: 1.5px solid #6afff3;\
         cursor: pointer;\
     }";
@@ -211,7 +222,7 @@ function node_path_to_node(node_path) {
 }
 
 /**
- * Takes object representing hilighted section and returns Range of that selection.
+ * Takes object representing hilighted section and returns all nodes of that selection.
  * 
  * Assumes store_data represents valid selection (has correct range data) in html page
  * 
@@ -219,10 +230,8 @@ function node_path_to_node(node_path) {
  * for object specifications
  */
 function store_data_to_range(store_data) {
-    let range = document.createRange();
-    range.setStart(node_path_to_node(store_data.startNodePath), store_data.startOffset);
-    range.setEnd(node_path_to_node(store_data.endNodePath), store_data.endOffset);
-    return range;
+    console.log(JSON.stringify(store_data['nodePaths']));
+    return store_data['nodePaths'].map(node_path_to_node);
 }
 
 /**
@@ -250,30 +259,61 @@ function lookup_word(word) { // TODO: move this to other content script after ta
  * @param {Object} json_data - object representing selection
  */
 function hilight_json_data(json_data, id_num) {
-    let range = store_data_to_range(json_data); 
-    let surrounding_node = document.createElement('div');
-    surrounding_node.setAttribute("id", `word_${id_num}`);
-    surrounding_node.setAttribute('class', HILIGHT_CLASS);
+    console.log('Hilight_started');
+    let nodes_to_hilight = store_data_to_range(json_data); 
+    console.log('Got Nodes from paths');
+    for (let index = 0; index < nodes_to_hilight.length; index++) {
+        let node = nodes_to_hilight[index];
+        // Initialize hilight div node with speicfied pertinent listeners
+        let surrounding_node = document.createElement('div');
+        surrounding_node.setAttribute("id", `word_${id_num}_${index}`);
+        surrounding_node.setAttribute('class', HILIGHT_CLASS);
+        console.log('Got Basics');
+        // Lookup hilighted word if hilight clicked on
+        surrounding_node.addEventListener('click', function () {
+            let word = json_data['word'];
+            lookup_word(word);
+        });
+        // Add context menu for deleteing hilight and add css for onhover
+        surrounding_node.addEventListener('mouseover', function () {
+            browser.runtime.sendMessage({type: 'expose_delete_hilight'});
+            // Store (numeric) id of element to delete
+            hilight_id_to_delete = extract_id(surrounding_node);
+            // Add onhover css style to all parts of hilight
+            console.log('starting stuff')
+            let elements = document.querySelectorAll(
+                    `[id^=word_${id_num}]`);
+                for (el of elements) {
+                    el.classList.add("vocabulario_hilighted_hover");
+                }
+        });
+        // Remove delete context menu and onhover, hilighted class
+        surrounding_node.addEventListener('mouseout', function () {
+            browser.runtime.sendMessage({type: 'remove_delete_hilight'});
+            let elements = document.querySelectorAll(
+                `[id^=word_${id_num}]`);
+            for (el of elements) {
+                el.classList.remove("vocabulario_hilighted_hover");
+            }
+        });
+        console.log('Got Listeners');
 
-    // Add Events for when div clicked, hovered over, moved away from
-    surrounding_node.addEventListener('click', function () { // lookup word
-        let word = this.textContent;
-        lookup_word(word);
-
-    });
-    // add context menu for delete
-    surrounding_node.addEventListener('mouseover', function () {
-        browser.runtime.sendMessage({type: 'expose_delete_hilight'});
-        // Store (numeric) id of element to delete
-        hilight_id_to_delete = surrounding_node.id;
-        hilight_id_to_delete = parseInt(hilight_id_to_delete.substr('word_'.length,
-            hilight_id_to_delete.length - 'word_'.length));
-    });
-    // remove delete context menu
-    surrounding_node.addEventListener('mouseout', function () {
-        browser.runtime.sendMessage({type: 'remove_delete_hilight'});
-    })
-    range.surroundContents(surrounding_node);
+        // Surround node of jsondata with surrounding_node
+        let range = new Range();
+        let startOffset = 0;
+        let endOffset = node.textContent.length;
+        if (node === nodes_to_hilight[0]) {
+            startOffset = json_data['startOffset']
+        } 
+        if (node === nodes_to_hilight[nodes_to_hilight.length-1]) {
+            endOffset = json_data['endOffset'];
+        } 
+        console.log(`${node.textContent}, ${startOffset}`);
+        range.setStart(node, startOffset);
+        range.setEnd(node, endOffset);
+        range.surroundContents(surrounding_node);
+    }
+    console.log('Hilight Done');;
 }
 
 
@@ -312,21 +352,120 @@ function storeNode(node) {
  * Easily stored.
  * 
  * @param {Selection} selection - user-selected text in document
+ * @param {Array} nodes - nodes that are all part of selection
  */
-function selection_to_store_data(selection) {
+function selection_to_store_data(selection, nodes) {
     let word = selection.toString();
     let range = selection.getRangeAt(0);
-     // For now, assume all of seleciton is in same node
-     // TODO: allow multi-node selections
     let data = {
         'word': word, // Useless for now, but will be good for quiz implementation
-        'startOffset': range.startOffset,
-        'endOffset': Math.max(range.endOffset, range.startOffset),
-        'startNodePath': storeNode(range.startContainer),
-        'endNodePath': storeNode(range.startContainer) //storeNode(range.endContainer)
+        'startOffset': range.startOffset, // TODO: consider case where startNode != nodes[0], use max-min
+        'endOffset': range.endOffset,
+        'nodePaths': nodes.map(storeNode)
     };
     console.log(`ATTEMPT: ${JSON.stringify(data)}`);
     return data;
+}
+
+/**
+ * TODO: Add comment
+ *
+ * @param {Node} root_node 
+ * @param {Number} depth 
+ * @param {Number} nodes_to_add 
+ * @param {Number} offset_to_remove 
+ * @param {Set} encountered_ids - orderring matters
+ */
+function add_nodes_and_offsets(root_node, depth, nodes_to_add, 
+    offset_to_remove, start_index, should_modify_future_offsets, encountered_ids) {
+        if (!root_node.hasChildNodes()) {
+            return;
+        }
+        let parents_children = root_node.childNodes;
+        for (let n_index = start_index; n_index < parents_children.length; n_index++) {
+            let child = parents_children[n_index];
+            if (is_hilight_node(child)) {
+                let right_neighbor_id = extract_id(child);
+                right_data = vocabulario_data[right_neighbor_id];
+                encountered_ids.add(right_neighbor_id);
+
+                // Update right's data based on new addition
+                let right_node_index = extract_index(child);
+                // Node offset changed because of additional nodes
+                right_data['nodePaths'][right_node_index][depth] += nodes_to_add; 
+                if (should_modify_future_offsets) {
+                    // TODO: assert depth is 0
+                    right_data['startOffset'] -= offset_to_remove;
+                    // modify last offset iff start and end nodes for right_node are the same
+                    if (right_data['nodePaths'].length === 1) {
+                        right_data['endOffset'] -= offset_to_remove;
+                    }
+                    should_modify_future_offsets = false;
+                }
+            } else {
+                should_modify_future_offsets = false;
+                add_nodes_and_offsets(child, depth+1, nodes_to_add, 
+                    0, 0, false, encountered_ids);
+
+            }
+        }
+
+        console.log(`Added Node Offsets ${depth}`);
+    }
+/**
+ * TODO: add comment
+ *
+ * @param {Array} encountered_ids 
+ * @param {Number} new_element_id 
+ */
+function modify_ids_for_hilight(encountered_ids, new_element_id) {
+    console.log(`modifying hilights ${new_element_id} ${JSON.stringify(encountered_ids)}`);
+    let insertion_id = new_element_id;
+    // Swap ids in both HTML to enforce new ordering
+    for (j = 0; j < encountered_ids.length; j++ ) {
+        let right_neighbor_id = encountered_ids[j];
+        let right_elements = document.querySelectorAll(
+            `[id^=word_${right_neighbor_id}_]`);
+        console.log('Looking');
+        if (j === 0) { // insertion_id not in any div, so just substitute
+            console.log('Here');
+            for (n of right_elements) {
+                console.log(n.id);
+                let index = extract_index(n);
+                n.setAttribute('id', `word_${insertion_id}_${index}`);
+            }
+            new_element_id = right_neighbor_id; // return id as id of new element
+            none_seen_to_right = false; // Do action below for future
+        } else {
+            console.assert(right_neighbor_id > encountered_ids[j-1], 'encountered_ids not ordered propperly');
+            console.log('IN HERE');
+            let new_node_elements = document.querySelectorAll(
+                `[id^=word_${insertion_id}_]`);
+            for (n of new_node_elements) {
+                console.log(n.id);
+                let index = extract_index(n); 
+                n.setAttribute('id', `TEMP_HILIGHT_${index}`); 
+                // structure of TEMP id used in other parts of this function
+            }
+            for (n of right_elements) {
+                console.log(n.id);
+                let index = extract_index(n); 
+                n.setAttribute('id', `word_${insertion_id}_${index}`);
+            }
+            for (n of new_node_elements) { // Use TEMP structure to get index here
+                let index = n.id.substr(n.id.lastIndexOf('_')+1, n.id.length - (n.id.lastIndexOf('_')+1));
+                n.setAttribute('id', `word_${right_neighbor_id}_${index}`);
+            }
+        }
+        console.log('out');
+
+        // Swap in vocabulario_data
+        let temp = vocabulario_data[insertion_id];
+        vocabulario_data[insertion_id] = vocabulario_data[right_neighbor_id];
+        vocabulario_data[right_neighbor_id] = temp;
+    }
+    console.log('done modifying hilights in html and localStorage');
+    return new_element_id;
 }
 
 /**
@@ -337,75 +476,82 @@ function selection_to_store_data(selection) {
  * Assumes new_element_id is key in vocabulario_data pointing to data referenced by
  * selected, that it equals selection_to_store_data(selected)
  *
- * @param {Selection} selected - Selection referencing hilight to be made
+ * @param {Array<Node>} selected - Nodes hilighted as part of selection that have same direct parent
  * @param {Number} new_element_id - corresponding id of new hilight
+ * @param {Array<Number>} node_path_indecies
+ * @param {Set} encountered_ids
  */
-function reorder_hilights(selected, new_element_id) {
-    let selected_node = selected.getRangeAt(0).startContainer;
+function reorder_hilights_for_one_parent(selected, new_element_id, 
+            node_path_indecies, encountered_ids) {
+    let selected_node = selected[selected.length - 1]; // very last node of selection
     let parent_node = selected_node.parentNode;
     let parents_children = parent_node.childNodes;
-    // Get hilight to right of selected hilight
-    let selection_index = vocabulario_data[new_element_id]['startNodePath'][0];
-    let insertion_id = new_element_id;
+    // Get hilight at right most of selected hilight
+    let index_of_last_node = node_path_indecies[node_path_indecies.length - 1];
+    let selection_index = vocabulario_data[new_element_id]['nodePaths'][index_of_last_node][0];
+    // Number of nodes to add to proceedeing hilights with same (direct) parent_node
+    // Using assumption that hilights only done on top of a single #text element
+    console.log('Gonna Start')
+    let nodes_to_add =  selected.length*2 // empty #texts added when hilight goes to boundary, so 2 nodes always added 
 
-    let nodes_to_add =  Number(vocabulario_data[new_element_id]['startOffset'] != 0) +
-        Number(vocabulario_data[new_element_id]['endOffset'] != 0);
-    let offset_to_remove = vocabulario_data[new_element_id]['endOffset'];
-    // Because of deleteings
+    // if (node_path_indecies[0] === 0 && 
+    //     vocabulario_data[new_element_id]['startOffset'] !== 0) {
+    //         nodes_to_add += 1;
+    //     }
+    // if (index_of_last_node === vocabulario_data[new_element_id]['nodePaths'].length - 1 &&
+    //     vocabulario_data[new_element_id]['endOffset'] !== 0) {
+    //         nodes_to_add += 1;
+    //     }
+    
+    let offset_to_remove = 
+    vocabulario_data[new_element_id]['nodePaths'].length-1 === index_of_last_node ? 
+        vocabulario_data[new_element_id]['endOffset'] :
+        0;
+    // Add onto offset_to_remove if endNode has #text nodes directly to its left
     for (j = selection_index - 1; j >= 0; j--) {
         let node = parents_children[j];
         if (node.nodeName == '#text') {
             offset_to_remove += node.textContent.length;
-            console.log(offset_to_remove)
+            console.log(offset_to_remove);
         } else {
             break;
         }
     }
+    add_nodes_and_offsets(parent_node, 0, nodes_to_add, offset_to_remove, 
+        selection_index + 1, true, encountered_ids);
+    console.log('Finished For One Parent');
+}
 
-    let should_modify_future_offsets = true;
-    let none_seen_to_right = true;
-    for (i = selection_index + 1; i < parents_children.length; i++) {
-        let element = parents_children[i];
-        if (element.classList != null && element.classList.contains(HILIGHT_CLASS)) {
-            // update right's data based on new addition
-            let right_neighbor_id = extract_id(element);
-            right_data = vocabulario_data[right_neighbor_id];
-            right_data['startNodePath'][0] += nodes_to_add;
-            right_data['endNodePath'][0] += nodes_to_add;
-            if (should_modify_future_offsets) {
-                right_data['startOffset'] -= offset_to_remove;
-                right_data['endOffset'] -= offset_to_remove;
-
-                should_modify_future_offsets = false;
-            }
-
-            // Swap ids in both html and vocabulario_data to enforce new ordering
-            let right_element= document.getElementById(`word_${right_neighbor_id}`);
-            console.log('Looking')
-            if (none_seen_to_right) {
-                console.log('Here')
-                right_element.setAttribute('id', `word_${insertion_id}`);
-                new_element_id = right_neighbor_id; // return id as id of new element
-                none_seen_to_right = false; // Do action below for future
-            } else {
-                console.log('IN HERE')
-                let new_node_element = document.getElementById(`word_${insertion_id}`);
-                new_node_element.setAttribute('id', 'TEMP_HILIGHT');
-                right_element.setAttribute('id', `word_${insertion_id}`);
-                new_node_element.setAttribute('id', `word_${right_neighbor_id}`);
-            }
-            console.log('out')
-
-            let temp = vocabulario_data[insertion_id];
-            vocabulario_data[insertion_id] = vocabulario_data[right_neighbor_id];
-            vocabulario_data[right_neighbor_id] = temp;
-
-        } else if (element.nodeName != '#text') {
-            // no need to update future offsets since encoutered non-text node
-            should_modify_future_offsets = false;
+/**
+ * @param {Array<Node>} selected - Nodes hilighted as part of selection
+ * @param {Number} new_element_id - corresponding id of new hilight
+ */
+function reorder_hilights_main(selected, new_element_id) {
+    console.log('In process of reordering')
+    let parents_to_hilight_nodes = new Map();
+    let parents_to_hilight_paths_indecies = new Map();
+    for (let i = 0; i < selected.length; i++) {
+        let element = selected[i];
+        let parent = element.parentNode;
+        if (!parents_to_hilight_nodes.has(parent)) {
+            parents_to_hilight_nodes.set(parent, []);
+            parents_to_hilight_paths_indecies.set(parent, []);
         }
+        parents_to_hilight_nodes.get(parent).push(element);
+        parents_to_hilight_paths_indecies.get(parent).push(i);
     }
-    return new_element_id;
+
+    console.log('About to change offsets')
+    let encountered_ids = new Set();
+    parents_to_hilight_nodes.forEach(function (value, key, map) {
+        let node_path_indecies = parents_to_hilight_paths_indecies.get(key);
+        console.log('stuff');
+        reorder_hilights_for_one_parent(value, new_element_id, node_path_indecies, encountered_ids);
+    }); 
+    encountered_ids =  Array.from(encountered_ids);
+    encountered_ids.sort();
+    return modify_ids_for_hilight(encountered_ids, new_element_id);
+  
 }
 
 /**
@@ -417,12 +563,20 @@ function reorder_hilights(selected, new_element_id) {
  */
 function log_selection(selected) {
     if (selected.toString() != '') {
-        let json_data = selection_to_store_data(selected);
+        console.log('Started');
+        let nodes_to_hilight = get_nodes_to_hilight(selected);
+        console.log(`Got Nodes ${nodes_to_hilight.length}`);
+        if (nodes_to_hilight == null || nodes_to_hilight.length === 0) {
+            return;
+        }
+        let json_data = selection_to_store_data(selected, nodes_to_hilight);
+        console.log('Got JSON DATA');
         let id_num = storage_counter;
         storage_counter += 1;
         vocabulario_data[id_num] = json_data;
-        id_num = reorder_hilights(selected, id_num);
-        let save_data = browser.runtime.sendMessage({type: 'store_data', data: vocabulario_data, page:  window.location.href});
+        id_num = reorder_hilights_main(nodes_to_hilight, id_num);
+        let save_data = browser.runtime.sendMessage(
+            {type: 'store_data', data: vocabulario_data, page:  window.location.href});
         save_data.then(function (result) {
             hilight_json_data(json_data, id_num);
         },
@@ -444,12 +598,15 @@ function set_up_content() {
         {type: 'get_page_vocab', page: window.location.href });
     load_data_for_page.then(function (result) {
         vocabulario_data = result.data;
-        for (let key in vocabulario_data) {
-            let data = vocabulario_data[key];
-            let id_num = key;
-            storage_counter = Math.max(storage_counter, id_num);
-            hilight_json_data(data, id_num);
-            // TODO: make this a try-catch and test with Diccionario in italix dle.rae.es
+        try {
+            for (let key in vocabulario_data) {
+                let data = vocabulario_data[key];
+                let id_num = key;
+                storage_counter = Math.max(storage_counter, id_num);
+                hilight_json_data(data, id_num);
+            }
+        } catch (err) {
+            alert(`${err}\n${err.stack}`);
         }
         storage_counter += 1;
 
@@ -459,7 +616,11 @@ function set_up_content() {
         previous_on_mouse_up = document.onmouseup;
         document.onmouseup = function () {
             let selected = window.getSelection();
-            log_selection(selected);
+            try {
+                log_selection(selected);
+            } catch (err) {
+                alert(`${err}\n${err.stack}`);
+            }
         };
     },
     function (failReason) {

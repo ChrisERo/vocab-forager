@@ -32,7 +32,8 @@
   "content_scripts": [
     {
       "matches": ["*://*/*"],
-      "js": ["content_scripts/get_hilights.js"]
+      "js": ["content_scripts/hilighting_functions.js",
+        "content_scripts/get_hilights.js"]
     }
   ],
 
