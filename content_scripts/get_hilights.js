@@ -5,48 +5,6 @@ let previous_on_mouse_up = document.onmouseup; // action onmouseup before extens
 let hilight_id_to_delete = null; // Data last hovered over to be deleted upon request
 
 /**
- * Changes the node paths for each hilight element when element at
- * parents_children[target_element_index] is set to be removed
- *
- * @param {Array} parents_children - list of nodes under terget_element's parent node
- * @param {Number} target_element_index - index of element scheduled to be deleted
- * @param {Number} new_nodes_to_make - number of new nodes made by this deletion,
- *                                     usualy negative
- */
-function update_hilight_node_paths(parents_children, target_element_index, new_nodes_to_make) {
-    let el = parents_children[target_element_index];
-    let target_id = extract_id(el);
-    let continue_combining = true;
-    for (element_index = target_element_index + 1;
-        element_index < parents_children.length; element_index++) {
-        let element = parents_children[element_index];
-        if (element.classList != null && element.classList.contains(HILIGHT_CLASS)) {
-            // No more combinations possible since hit non-text node
-            continue_combining = false;
-
-            let element_id = extract_id(element);
-            console.assert(element_id > target_id,  // assure hilights reorderred on add
-                {element_id: element_id,
-                target_id: target_id,
-                errMssg: 'target_id >= element_id'
-            });
-            let element_data = vocabulario_data[element_id];
-            // Use start == end Node assumption {see selection_to_store_data()}
-            element_data['startNodePath'][0] += new_nodes_to_make - 1;
-            element_data['endNodePath'][0] += new_nodes_to_make - 1;
-        } else if (continue_combining) {
-            if (element.nodeName === '#text' &&
-                el.childNodes[el.childNodes.length-1].nodeName === element.nodeName) {
-                    new_nodes_to_make -= 1; // Combine text nodes previously seperated
-            } else {
-                continue_combining = false;
-            }
-        }
-    }
-
-}
-
-/**
  * Get ID (in localStorage) of given element (a HILIGHT_CLASS element)
  *
  * @param {Node} element - must be a HILIGHT_CLASS element
@@ -71,55 +29,142 @@ function extract_index(element) {
 }
 
 /**
- * Helper for udpate_hilight_offsets. Finds the index of the very next hilight element,
- * after the one in text_element_index, in parents_child and returns it unless there is a
- * non-text element between these two nodes
+ * Helper method for delete_hilights()
  *
- * @param {Array} parents_children - list of nodes under terget_element's parent node
- * @param {Number} target_element_index - index of element scheduled to be deleted
+ * Assumes hilight_elemetns ordered in decending order and that its elements have
+ * id as word_{id}_* and that id === hilight_id_to_delete. Also assume that each
+ * HILIGHT_CLASS element has exactly a single #text child element
+ *
+ * @param {Array<Element>} hilight_elements - HILIGHT_CLASS elements beloning to id hilight
+ *                                         with same parent node
+ * @param {Array<Number>} hilight_element_indecies - indecies in localstorage of elements
+ *                                                   in hilight_elements
+ * @param {Number} id - id of hilight entity in localStorage
  */
-function get_next_index(parents_children, target_element_index) {
-    let el = parents_children[target_element_index]; // target element
-    let el_id = extract_id(el);
-    for (element_index = target_element_index + 1;
-        element_index < parents_children.length; element_index++) {
-            let element = parents_children[element_index];
-            if (element.classList != null && element.classList.contains(HILIGHT_CLASS)) {
-                let element_id = extract_id(element);
-                console.assert(element_id > el_id,  // assure hilights reorderred on add
-                    {element_id: element_id,
-                    el_id: el_id,
-                    errMssg: 'element_id >= el_id'
-                });
-                return  element_index;
-            } else if (element.nodeName != '#text') {
-                return null;
-            }
+function remove_hilights(hilight_elements, hilight_element_indecies, hilight_id) {
+    console.assert(hilight_id === hilight_id_to_delete, 'ERROR, Deleteing different id than expected');
+    let el = hilight_elements[hilight_elements.length-1]; // last element in hilight_elements
+    let parent = el.parentNode;
+    let parents_children = parent.childNodes;
+
+    // Find index where last element to delete is at in DOM tree
+    // Don't use data on vocabulario_data since this stores position of nodes before
+    // addition
+    let element_index;  // index of last element in hilight_elements_id
+    for (element_index = 0; element_index < parents_children.length; element_index++) {
+        if (parents_children[element_index] === el) {
+            break;
+        }
     }
-    return null;
+    console.assert(element_index < parents_children.length, 'ERROR, end node not found');
+
+    // Change range for nodes in same element to right of deleted item so that
+    // future hilights work
+    let nodes_to_make = -2 * hilight_elements.length; // removing nodes = making negatives
+
+    // Modify if last element in hilight indecies is last element of vocabulario_data[id]
+    let should_modify_future_offsets = hilight_element_indecies[hilight_element_indecies.length - 1] == vocabulario_data[hilight_id]['nodePaths'].length - 1;
+    console.log(`STUFF ${ hilight_element_indecies[hilight_element_indecies.length - 1]} ${vocabulario_data[hilight_id]['nodePaths'].length - 1}`)
+    let new_offset = 0;
+
+    if (should_modify_future_offsets) {
+        new_offset = el.textContent.length; //vocabulario_data[hilight_id]['endOffset'];
+        console.log(`NEW OFF: ${new_offset}`);
+        // Uses assumption that h1.id < h2.id && h1.parent == h2.parent <-->
+        // h1 is before h2 in DOM traversal relative to parent
+        console.assert(element_index != 0, 'Assumption on how hilights made broken');
+
+        // Calcualte new offset based on #texts before and after el
+        let counter = element_index - 1;
+        while (counter >= 0 && parents_children[counter].nodeName === '#text') {
+            console.log(`NEW: ${new_offset}`);
+            new_offset += parents_children[element_index-1].textContent.length;
+            counter--;
+        }
+    }
+    console.log(`NEW OFFSET: ${new_offset}`);
+    new_offset = -new_offset; // adding this offset requires negative offset
+
+    let temp_set = new Set();  // simply used to get add_nodes_and_offsets to work
+    add_nodes_and_offsets(parent, 0, nodes_to_make, new_offset, element_index + 1, should_modify_future_offsets, temp_set);
+    delete temp_set;
+
+    // Remove hilights of hilight_elements from html while maintaining structure of text
+    // before hilight
+    for (let element of hilight_elements) {
+        console.assert(element.childNodes.length === 1 &&
+            element.childNodes[0].nodeName === '#text',
+            `Error, hilight element has ${element.childNodes.length} nodes and the first is of type ${element.childNodes.length === 0 ? null : element.childNodes[0].nodeName}`);
+
+        for (element_index = 0; element_index < parents_children.length;
+            element_index++) {
+                if (parents_children[element_index] === element) {
+                    break;
+                }
+        }
+
+        console.assert(element_index > 0 && 
+            parents_children[element_index-1].nodeName === '#text', 'Node before not text');
+        console.assert(element_index < parents_children.length - 1 &&
+            parents_children[element_index+1].nodeName === '#text', 'Node after is not text');
+        
+        // Used for deleteing extra nodes on left and right, made by creation of div
+        let node_after = parents_children[element_index+1];
+        let is_node_after_empty = node_after.textContent === '';
+        let index_before = element_index - 1;
+        let node_before = parents_children[index_before];
+
+        node_before.textContent += element.textContent;
+        parent.removeChild(element);
+        if (is_node_after_empty) {
+            parent.removeChild(node_after);
+        }
+
+        // Combine iresulting #text element with #text elements to left and right of it
+        while (index_before > 0 && is_text_node(parents_children[index_before - 1])) {
+            parents_children[index_before - 1].textContent += node_before.textContent;
+            parent.removeChild(node_before);
+            index_before--;
+            node_before = parents_children[index_before];
+        }
+        while (index_before < parents_children.length-1 && is_text_node(parents_children[index_before + 1])) {
+            let node_after = parents_children[index_before + 1];
+            node_before.textContent += node_after.textContent;
+            parent.removeChild(node_after);
+        }
+    }
 }
 
 /**
- * Updates offsets for HILIGHT_CLASS nodes/elements to the right of target_element_index
- * by adding new_offset
+ * Assumes hilight_id is a valid id (word_{id}) of a section hilighted by this addon.
+ * Also assumes that querySelectorAll orders elements in depth-first traversal ascending
+ * order (https://www.w3.org/TR/selectors-api/#queryselectorall)
  *
- * Assumption: same as in delete_hilight()
- *
- * @param {Array} parents_children - list of nodes under terget_element's parent node
- * @param {Number} target_element_index - index of element scheduled to be deleted
- * @param {Number} new_offset - number to add to offsets of future hilights
+ * @param {Number} hilight_id
  */
-function udpate_hilight_offsets(parents_children, target_element_index, new_offset) {
-    let next_index = get_next_index(parents_children, target_element_index);
-    if (next_index == null) {return null;} // No hilights need offset updates
+function dh(hilight_id) {
+    // Get hilights orgainized by their parent node
+    let hilight_elements = document.querySelectorAll(
+        `[id^=word_${hilight_id}_]`);
+    let parents_to_hilights = new Map();
+    let parents_to_hilight_paths_indecies = new Map();  // TODO: make this common function
+    for (let i = 0; i <  hilight_elements.length; i++) {
+        element = hilight_elements[i];
+        let parent = element.parentNode;
+        if (!parents_to_hilights.has(parent)) {
+            parents_to_hilights.set(parent, []);
+            parents_to_hilight_paths_indecies.set(parent, []);
+        }
+        parents_to_hilights.get(parent).push(element);
+        parents_to_hilight_paths_indecies.get(parent).push(i);
+    }
 
-    // Only next hilight element needs offset modified per assumptions
-    let next_hilight_element = parents_children[next_index];
-    let next_hilight_element_id = extract_id(next_hilight_element);
-    let json_data = vocabulario_data[next_hilight_element_id];
-    json_data['startOffset'] += new_offset - 1;
-    json_data['endOffset'] += new_offset - 1;
-
+    // Depth-first assumption used here
+    parents_to_hilights.forEach(function (value, key) {
+        let selected_nodes = value;
+        remove_hilights(selected_nodes, parents_to_hilight_paths_indecies.get(key),
+            hilight_id);
+    });
 }
 
 /**
@@ -130,55 +175,18 @@ function udpate_hilight_offsets(parents_children, target_element_index, new_offs
  * Assumes h1.id > h2.id <--> h1 appears after h2 in a given element's branches,
  * where h1 and h2 are HILIGHT_CLASS nodes/elements
  */
-function delete_hilight() {
-    let id = hilight_id_to_delete;
-    let el = document.getElementById(`word_${id}`);
-    let parent = el.parentNode;
-    parents_children = parent.childNodes;
-    // Find index where element to delete is at in DOM tree
-    let element_index;
-    for (element_index = 0; element_index < parents_children.length; element_index++) {
-        if (parents_children[element_index] == el) {
-            break;
-        }
-    }
-    // Change range for nodes in same element to right of deleted item so that
-    // future hilight works
-    let new_nodes_to_make = el.childNodes.length;
-    let new_offset = el.textContent.length + 1; // Determine new offset
-                                                // for first other hilight to right
-                                                // regardless of id
-    // Look behind to see if node is removed by combining, also modifies offset
-    if (element_index != 0 &&
-        el.childNodes[0].nodeName === parents_children[element_index-1].nodeName &&
-        el.childNodes[0].nodeName === '#text') {
-            new_nodes_to_make -= 1;
-            new_offset += parents_children[element_index-1].textContent.length;
-            parents_children[element_index-1].textContent += el.textContent;
-    }
-
-    update_hilight_node_paths(parents_children, element_index, new_nodes_to_make);
-    udpate_hilight_offsets(parents_children, element_index, new_offset);
-
-    // Save changes and remove hilight from current page
-    delete vocabulario_data[id];
-    browser.runtime.sendMessage({
-        type: 'store_data', data: vocabulario_data,
-        page:  window.location.href
-    });
-
-    // Make sure elements hilighted remain there after removal
-    if (element_index === 0) {
-        while (el.firstChild) {
-            parent.insertBefore(el.firstChild, el);
-        }
-        element_index += 1;
-    }
-    parent.removeChild(el);
-    // Combine DOM elements formed by hilight el back into what's at left of el
-    while (parents_children[element_index].nodeName === '#text') {
-       parents_children[element_index - 1].textContent += parents_children[element_index].textContent
-        parent.removeChild(parents_children[element_index]);
+function delete_hilights() {
+    try {
+        dh(hilight_id_to_delete);
+        // Save changes in volatile and non-volatile state
+        delete vocabulario_data[hilight_id_to_delete];
+        browser.runtime.sendMessage({
+            type: 'store_data', data: vocabulario_data,
+            page:  window.location.href
+        });
+        hilight_id_to_delete = null;
+    } catch(err) {
+        alert(`${err}\n ${err.stack}`);
     }
 }
 
@@ -190,12 +198,12 @@ async function add_hilight_style_sheet() {
     let hilight_style_sheet = document.createElement('style')
     hilight_style_sheet.innerHTML = "\
     .vocabulario_hilighted { \
-        background-color: #ffff01; \
-        display: inline;\
+        background-color: #ffff01 !important; \
+        display: inline !important;\
     } \
     .vocabulario_hilighted_hover {\
-        border: 1.5px solid #6afff3;\
-        cursor: pointer;\
+        border: 1.5px solid #6afff3 !important;\
+        cursor: pointer !important;\
     }";
     document.head.appendChild(hilight_style_sheet);
 }
@@ -271,28 +279,29 @@ function hilight_json_data(json_data, id_num) {
         console.log('Got Basics');
         // Lookup hilighted word if hilight clicked on
         surrounding_node.addEventListener('click', function () {
-            let word = json_data['word'];
+            let word = json_data['word']; // TODO: should be fine since this must remain constant
             lookup_word(word);
         });
         // Add context menu for deleteing hilight and add css for onhover
         surrounding_node.addEventListener('mouseover', function () {
+            let id_num =  extract_id(surrounding_node); // may change because of deletes
             browser.runtime.sendMessage({type: 'expose_delete_hilight'});
             // Store (numeric) id of element to delete
-            hilight_id_to_delete = extract_id(surrounding_node);
+            hilight_id_to_delete = id_num;
             // Add onhover css style to all parts of hilight
-            console.log('starting stuff')
             let elements = document.querySelectorAll(
-                    `[id^=word_${id_num}]`);
-                for (el of elements) {
-                    el.classList.add("vocabulario_hilighted_hover");
-                }
+                    `[id^=word_${id_num}_]`);
+            for (let el of elements) {
+                el.classList.add("vocabulario_hilighted_hover");
+            }
         });
         // Remove delete context menu and onhover, hilighted class
         surrounding_node.addEventListener('mouseout', function () {
             browser.runtime.sendMessage({type: 'remove_delete_hilight'});
+            let id_num =  extract_id(surrounding_node);
             let elements = document.querySelectorAll(
-                `[id^=word_${id_num}]`);
-            for (el of elements) {
+                `[id^=word_${id_num}_]`);
+            for (let el of elements) {
                 el.classList.remove("vocabulario_hilighted_hover");
             }
         });
@@ -384,6 +393,7 @@ function add_nodes_and_offsets(root_node, depth, nodes_to_add,
         let parents_children = root_node.childNodes;
         for (let n_index = start_index; n_index < parents_children.length; n_index++) {
             let child = parents_children[n_index];
+            console.log(`${child.nodeName}, ${should_modify_future_offsets}`)
             if (is_hilight_node(child)) {
                 let right_neighbor_id = extract_id(child);
                 right_data = vocabulario_data[right_neighbor_id];
@@ -403,14 +413,12 @@ function add_nodes_and_offsets(root_node, depth, nodes_to_add,
                     should_modify_future_offsets = false;
                 }
             } else {
-                should_modify_future_offsets = false;
+                // don't do check once should_modify is false or current node is not text
+                should_modify_future_offsets =  should_modify_future_offsets && child.nodeName === '#text';
                 add_nodes_and_offsets(child, depth+1, nodes_to_add, 
                     0, 0, false, encountered_ids);
-
             }
         }
-
-        console.log(`Added Node Offsets ${depth}`);
     }
 /**
  * TODO: add comment
@@ -508,7 +516,7 @@ function reorder_hilights_for_one_parent(selected, new_element_id,
         vocabulario_data[new_element_id]['endOffset'] :
         0;
     // Add onto offset_to_remove if endNode has #text nodes directly to its left
-    for (j = selection_index - 1; j >= 0; j--) {
+    for (let j = selection_index - 1; j >= 0; j--) {
         let node = parents_children[j];
         if (node.nodeName == '#text') {
             offset_to_remove += node.textContent.length;
@@ -565,7 +573,6 @@ function log_selection(selected) {
     if (selected.toString() != '') {
         console.log('Started');
         let nodes_to_hilight = get_nodes_to_hilight(selected);
-        console.log(`Got Nodes ${nodes_to_hilight.length}`);
         if (nodes_to_hilight == null || nodes_to_hilight.length === 0) {
             return;
         }
@@ -614,10 +621,13 @@ function set_up_content() {
         // On Selection made, either hilight selected or lookup its text
         // Add this after promise completion to avoid "race condition" with new hilights
         previous_on_mouse_up = document.onmouseup;
-        document.onmouseup = function () {
+        document.onmouseup = function (e) {
             let selected = window.getSelection();
             try {
-                log_selection(selected);
+                // Check if primary button (left) used
+                if (e.button === 0)  {
+                    log_selection(selected);
+                }
             } catch (err) {
                 alert(`${err}\n${err.stack}`);
             }
@@ -676,8 +686,7 @@ browser.runtime.onMessage.addListener(request => {
             tear_down_content();
         }
     } else if (request.type === 'delete_chosen') {
-        delete_hilight();
-
+        delete_hilights();
     } else {
         console.log('CONTENT_REQUEST UNKNOWN');
         console.log(`CONTENT_REQUEST ${request.type}`);
