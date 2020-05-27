@@ -12,7 +12,7 @@ let hilight_id_to_delete = null; // Data last hovered over to be deleted upon re
 function extract_id(element) {
     let element_id = element.id;
     element_id = parseInt(element_id.substr('word_'.length,
-        element_id.lastIndexOf('_') - 'word_'.length)); // TODO: Make sure this right, same for index funciton below
+        element_id.lastIndexOf('_') - 'word_'.length));
     return element_id;
 }
 
@@ -29,7 +29,11 @@ function extract_index(element) {
 }
 
 /**
- * Helper method for delete_hilights()
+ * Helper method for remove_hilights(), takes an ordered list of of HILIGHT_CLaASS 
+ * elements with the same parent node and belong to hilight with id as word_{id}_* and
+ * uses these elements, in particular the last one, to determine the new nodes and offsets
+ * for other hilights and proceedes to delete all these hilight elements, reverting page
+ * back to as if hilight never made 
  *
  * Assumes hilight_elemetns ordered in decending order and that its elements have
  * id as word_{id}_* and that id === hilight_id_to_delete. Also assume that each
@@ -41,8 +45,10 @@ function extract_index(element) {
  *                                                   in hilight_elements
  * @param {Number} id - id of hilight entity in localStorage
  */
-function remove_hilights(hilight_elements, hilight_element_indecies, hilight_id) {
-    console.assert(hilight_id === hilight_id_to_delete, 'ERROR, Deleteing different id than expected');
+function remove_from_html_and_other_data(hilight_elements, 
+        hilight_element_indecies, hilight_id) {
+    console.assert(hilight_id === hilight_id_to_delete, 
+        'ERROR, Deleteing different id than expected');
     let el = hilight_elements[hilight_elements.length-1]; // last element in hilight_elements
     let parent = el.parentNode;
     let parents_children = parent.childNodes;
@@ -63,10 +69,11 @@ function remove_hilights(hilight_elements, hilight_element_indecies, hilight_id)
     let nodes_to_make = -2 * hilight_elements.length; // removing nodes = making negatives
 
     // Modify if last element in hilight indecies is last element of vocabulario_data[id]
-    let should_modify_future_offsets = hilight_element_indecies[hilight_element_indecies.length - 1] == vocabulario_data[hilight_id]['nodePaths'].length - 1;
-    console.log(`STUFF ${ hilight_element_indecies[hilight_element_indecies.length - 1]} ${vocabulario_data[hilight_id]['nodePaths'].length - 1}`)
-    let new_offset = 0;
+    let should_modify_future_offsets = hilight_element_indecies[
+        hilight_element_indecies.length - 1] == 
+        vocabulario_data[hilight_id]['nodePaths'].length - 1;
 
+    let new_offset = 0;
     if (should_modify_future_offsets) {
         new_offset = el.textContent.length; //vocabulario_data[hilight_id]['endOffset'];
         console.log(`NEW OFF: ${new_offset}`);
@@ -86,7 +93,8 @@ function remove_hilights(hilight_elements, hilight_element_indecies, hilight_id)
     new_offset = -new_offset; // adding this offset requires negative offset
 
     let temp_set = new Set();  // simply used to get add_nodes_and_offsets to work
-    add_nodes_and_offsets(parent, 0, nodes_to_make, new_offset, element_index + 1, should_modify_future_offsets, temp_set);
+    add_nodes_and_offsets(parent, 0, nodes_to_make, new_offset, element_index + 1, 
+        should_modify_future_offsets, temp_set);
     delete temp_set;
 
     // Remove hilights of hilight_elements from html while maintaining structure of text
@@ -94,7 +102,9 @@ function remove_hilights(hilight_elements, hilight_element_indecies, hilight_id)
     for (let element of hilight_elements) {
         console.assert(element.childNodes.length === 1 &&
             element.childNodes[0].nodeName === '#text',
-            `Error, hilight element has ${element.childNodes.length} nodes and the first is of type ${element.childNodes.length === 0 ? null : element.childNodes[0].nodeName}`);
+            `Error, hilight element has ${element.childNodes.length} 
+            nodes and the first is of type 
+            ${element.childNodes.length === 0 ? null : element.childNodes[0].nodeName}`);
 
         for (element_index = 0; element_index < parents_children.length;
             element_index++) {
@@ -104,9 +114,11 @@ function remove_hilights(hilight_elements, hilight_element_indecies, hilight_id)
         }
 
         console.assert(element_index > 0 && 
-            parents_children[element_index-1].nodeName === '#text', 'Node before not text');
+            parents_children[element_index-1].nodeName === '#text', 
+            'Node before not text');
         console.assert(element_index < parents_children.length - 1 &&
-            parents_children[element_index+1].nodeName === '#text', 'Node after is not text');
+            parents_children[element_index+1].nodeName === '#text', 
+            'Node after is not text');
         
         // Used for deleteing extra nodes on left and right, made by creation of div
         let node_after = parents_children[element_index+1];
@@ -127,7 +139,8 @@ function remove_hilights(hilight_elements, hilight_element_indecies, hilight_id)
             index_before--;
             node_before = parents_children[index_before];
         }
-        while (index_before < parents_children.length-1 && is_text_node(parents_children[index_before + 1])) {
+        while (index_before < parents_children.length-1 && is_text_node(
+                parents_children[index_before + 1])) {
             let node_after = parents_children[index_before + 1];
             node_before.textContent += node_after.textContent;
             parent.removeChild(node_after);
@@ -136,18 +149,22 @@ function remove_hilights(hilight_elements, hilight_element_indecies, hilight_id)
 }
 
 /**
+ * Gets all HILIGHT_Class elements with hilight_id as id in (word_{hilight_id}_*), gorups
+ * them by parent node (in depth-traversal order). Then, on per-parent basis, removes 
+ * these nodes from the html page and from other hilights' offsets.
+ *
  * Assumes hilight_id is a valid id (word_{id}) of a section hilighted by this addon.
  * Also assumes that querySelectorAll orders elements in depth-first traversal ascending
  * order (https://www.w3.org/TR/selectors-api/#queryselectorall)
  *
  * @param {Number} hilight_id
  */
-function dh(hilight_id) {
+function remove_hilights(hilight_id) {
     // Get hilights orgainized by their parent node
     let hilight_elements = document.querySelectorAll(
         `[id^=word_${hilight_id}_]`);
-    let parents_to_hilights = new Map();
-    let parents_to_hilight_paths_indecies = new Map();  // TODO: make this common function
+    let parents_to_hilights = new Map(); // TODO: make this common function
+    let parents_to_hilight_paths_indecies = new Map();
     for (let i = 0; i <  hilight_elements.length; i++) {
         element = hilight_elements[i];
         let parent = element.parentNode;
@@ -162,7 +179,8 @@ function dh(hilight_id) {
     // Depth-first assumption used here
     parents_to_hilights.forEach(function (value, key) {
         let selected_nodes = value;
-        remove_hilights(selected_nodes, parents_to_hilight_paths_indecies.get(key),
+        remove_from_html_and_other_data(selected_nodes, 
+            parents_to_hilight_paths_indecies.get(key),
             hilight_id);
     });
 }
@@ -172,12 +190,12 @@ function dh(hilight_id) {
  * and the html page. Also Updates metadata of other HILIGHT_CLASS elements so that they
  * remained hilighted if page refreshed.
  *
- * Assumes h1.id > h2.id <--> h1 appears after h2 in a given element's branches,
- * where h1 and h2 are HILIGHT_CLASS nodes/elements
+ * Assumes h1.id > h2.id && h1.parent == h2.parent <--> h1 appears after h2 in a given 
+ * element's branches, where h1 and h2 are HILIGHT_CLASS nodes/elements
  */
 function delete_hilights() {
     try {
-        dh(hilight_id_to_delete);
+        remove_hilights(hilight_id_to_delete);
         // Save changes in volatile and non-volatile state
         delete vocabulario_data[hilight_id_to_delete];
         browser.runtime.sendMessage({
@@ -377,13 +395,19 @@ function selection_to_store_data(selection, nodes) {
 }
 
 /**
- * TODO: Add comment
+ * Given a parent node and starting point, updates the metadata for all nodes to right of
+ * start_index (inclusiove) that have root_node as ancestor.
  *
- * @param {Node} root_node 
- * @param {Number} depth 
- * @param {Number} nodes_to_add 
- * @param {Number} offset_to_remove 
- * @param {Set} encountered_ids - orderring matters
+ * @param {Node} root_node - parent of all nodes to consider
+ * @param {Number} depth - how deep we are down tree 
+ *                         starting with first call being depth 0
+ * @param {Number} nodes_to_add - number of nodes to add to all future hilights
+ * @param {Number} offset_to_remove - number of offsets to remove by a hilights addtion
+ * @param {Number} start_index - index of child of root_node from which to start algorithm
+ * @param {boolean} should_modify_future_offsets - true whether the startOffset 
+ *                                                 (and maybe endOffset of an encountered
+ *                                                 hilight should be modified)
+ * @param {Set} encountered_ids - Set of ids that have been encountered during traversal
  */
 function add_nodes_and_offsets(root_node, depth, nodes_to_add, 
     offset_to_remove, start_index, should_modify_future_offsets, encountered_ids) {
@@ -406,7 +430,8 @@ function add_nodes_and_offsets(root_node, depth, nodes_to_add,
                 if (should_modify_future_offsets) {
                     // TODO: assert depth is 0
                     right_data['startOffset'] -= offset_to_remove;
-                    // modify last offset iff start and end nodes for right_node are the same
+                    // modify last offset iff start and end nodes for right_node 
+                    // are the same
                     if (right_data['nodePaths'].length === 1) {
                         right_data['endOffset'] -= offset_to_remove;
                     }
@@ -414,20 +439,22 @@ function add_nodes_and_offsets(root_node, depth, nodes_to_add,
                 }
             } else {
                 // don't do check once should_modify is false or current node is not text
-                should_modify_future_offsets =  should_modify_future_offsets && child.nodeName === '#text';
+                should_modify_future_offsets =  should_modify_future_offsets && 
+                    child.nodeName === '#text';
                 add_nodes_and_offsets(child, depth+1, nodes_to_add, 
                     0, 0, false, encountered_ids);
             }
         }
     }
+
 /**
- * TODO: add comment
+ * Given list of encountered_ids, modify ids in html and disk and memory so that future 
+ * hilights work and invariants maintained
  *
- * @param {Array} encountered_ids 
- * @param {Number} new_element_id 
+ * @param {Array} encountered_ids - ordered list of ids of hilights
+ * @param {Number} new_element_id - current id of new hilight that will be added
  */
 function modify_ids_for_hilight(encountered_ids, new_element_id) {
-    console.log(`modifying hilights ${new_element_id} ${JSON.stringify(encountered_ids)}`);
     let insertion_id = new_element_id;
     // Swap ids in both HTML to enforce new ordering
     for (j = 0; j < encountered_ids.length; j++ ) {
@@ -445,7 +472,8 @@ function modify_ids_for_hilight(encountered_ids, new_element_id) {
             new_element_id = right_neighbor_id; // return id as id of new element
             none_seen_to_right = false; // Do action below for future
         } else {
-            console.assert(right_neighbor_id > encountered_ids[j-1], 'encountered_ids not ordered propperly');
+            console.assert(right_neighbor_id > encountered_ids[j-1], 
+                'encountered_ids not ordered propperly');
             console.log('IN HERE');
             let new_node_elements = document.querySelectorAll(
                 `[id^=word_${insertion_id}_]`);
@@ -461,7 +489,8 @@ function modify_ids_for_hilight(encountered_ids, new_element_id) {
                 n.setAttribute('id', `word_${insertion_id}_${index}`);
             }
             for (n of new_node_elements) { // Use TEMP structure to get index here
-                let index = n.id.substr(n.id.lastIndexOf('_')+1, n.id.length - (n.id.lastIndexOf('_')+1));
+                let index = n.id.substr(n.id.lastIndexOf('_')+1, 
+                    n.id.length - (n.id.lastIndexOf('_')+1));
                 n.setAttribute('id', `word_${right_neighbor_id}_${index}`);
             }
         }
@@ -531,8 +560,10 @@ function reorder_hilights_for_one_parent(selected, new_element_id,
 }
 
 /**
+ * Modifies ids of hilights after selected so that assumptoins hold
+ *
  * @param {Array<Node>} selected - Nodes hilighted as part of selection
- * @param {Number} new_element_id - corresponding id of new hilight
+ * @param {Number} new_element_id - current id of new hilight
  */
 function reorder_hilights_main(selected, new_element_id) {
     console.log('In process of reordering')
@@ -554,7 +585,8 @@ function reorder_hilights_main(selected, new_element_id) {
     parents_to_hilight_nodes.forEach(function (value, key, map) {
         let node_path_indecies = parents_to_hilight_paths_indecies.get(key);
         console.log('stuff');
-        reorder_hilights_for_one_parent(value, new_element_id, node_path_indecies, encountered_ids);
+        reorder_hilights_for_one_parent(value, new_element_id, node_path_indecies, 
+            encountered_ids);
     }); 
     encountered_ids =  Array.from(encountered_ids);
     encountered_ids.sort();
@@ -665,7 +697,8 @@ function tear_down_content() {
 }
 
 // Load data from memory and use to hilight things previously selected
-let get_init_setup = browser.runtime.sendMessage({type: 'get_activation', page: window.location.href });
+let get_init_setup = browser.runtime.sendMessage({
+    type: 'get_activation', page: window.location.href });
 get_init_setup.then( function (result) {
     is_activated = result;
     if (is_activated) {
