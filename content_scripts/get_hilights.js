@@ -39,7 +39,7 @@ function extract_index(element) {
  * id as word_{id}_* and that id === hilight_id_to_delete. Also assume that each
  * HILIGHT_CLASS element has exactly a single #text child element
  *
- * @param {Array<Element>} hilight_elements - HILIGHT_CLASS elements beloning to id hilight
+ * @param {Array<Element>} hilight_elements - HILIGHT_CLASS elements of id hilight
  *                                         with same parent node
  * @param {Array<Number>} hilight_element_indecies - indecies in localstorage of elements
  *                                                   in hilight_elements
@@ -49,7 +49,8 @@ function remove_from_html_and_other_data(hilight_elements,
         hilight_element_indecies, hilight_id) {
     console.assert(hilight_id === hilight_id_to_delete, 
         'ERROR, Deleteing different id than expected');
-    let el = hilight_elements[hilight_elements.length-1]; // last element in hilight_elements
+    let el = hilight_elements[hilight_elements.length-1]; // last element in 
+                                                          // hilight_elements
     let parent = el.parentNode;
     let parents_children = parent.childNodes;
 

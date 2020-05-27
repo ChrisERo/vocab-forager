@@ -49,6 +49,7 @@ function get_nodes_to_hilight_buisness_logic(startNode, endNode) {
     let current_node = startNode;
     let nodes_to_hilight = [];
     let explored_nodes = new Set();
+    explored_nodes.add(startNode.parentNode);
     while (current_node !== endNode) {
         if (!is_text_node(current_node)) {
             if (is_hilight_node(current_node)) {
@@ -79,7 +80,7 @@ function get_nodes_to_hilight_buisness_logic(startNode, endNode) {
         if (err === HILIGHT_ENCOUNTERED_ERROR) {
             return null;
         } else {
-            alert(`ERROR MESSAGE:\n ${err.message}`);
+            throw err;
         }
       }
     
@@ -87,6 +88,7 @@ function get_nodes_to_hilight_buisness_logic(startNode, endNode) {
 }
 
 /**
+ * Given a Selection, determines all the #text nodes that will be hilighted
  * 
  * @param {Selection} selected 
  */
@@ -109,4 +111,3 @@ function get_nodes_to_hilight(selected) {
     }
     return nodes_to_hilight;
 }
-
