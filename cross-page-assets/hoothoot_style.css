@@ -11,6 +11,8 @@ body {
     margin-bottom:20px;
     padding-bottom: 25px;
     padding-top: 25px;
+    padding-right: 15px;
+    padding-left: 15px;
     text-align:center;
 }
 
@@ -32,12 +34,64 @@ body {
     border-radius: 5px;
 }
 
-/* From https://www.w3schools.com/howto/tryit.asp?filename=tryhow_css_switch */
+.form-element {
+  display: flex;
+  justify-content: space-between;
+  max-width: 53%;
+  padding: 10px 0;
+  margin-left:25%;
+  margin-bottom: 16px;
+  font-weight: bold;
+}
+
+/* CSS for select boxes
+ * Based on following: https://codepen.io/FrankieDoodie/pen/Pyrqyp
+ */
+
+ select {
+  background-color: rgb(14, 104, 163);
+  color: white;
+  height: 24px;
+  width: 100px;
+  margin-top: 15px;
+  /* To make sure default arrows don't show up */
+  -webkit-appearance: button;
+  border: none;
+  outline: none;
+}
+
+.box {
+  position: relative;
+}
+.box::before {
+  content: '\25BC';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 20%;
+  height: 0px;
+  text-align: center;
+  font-size: 14pt;
+  line-height: 53px;
+  color: rgba(255, 255, 255, 0.5);
+  background-color: rgba(255, 255, 255, 0.1);
+  pointer-events: none;
+}
+.box:hover::before {
+  color: rgba(255, 255, 255, 0.6);
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+
+
+/* CSS for toggle button
+ * Original from https://www.w3schools.com/howto/tryit.asp?filename=tryhow_css_switch
+ */
 .switch {
   position: relative;
   display: inline-block;
-  width: 60px;
-  height: 34px;
+  width: 40px;
+  height: 17px;
 }
 
 .switch input { 
@@ -62,10 +116,10 @@ body {
 .slider:before {
   position: absolute;
   content: "";
-  height: 26px;
-  width: 26px;
-  left: 4px;
-  bottom: 4px;
+  height: 13px;
+  width: 13px;
+  left: 6px;
+  bottom: 2px;
   background-color: white;
   -webkit-transition: .4s;
   transition: .4s;
@@ -82,7 +136,7 @@ input:focus + .slider {
 }
 
 input:checked + .slider:before {
-  -webkit-transform: translateX(26px);
-  -ms-transform: translateX(26px);
-  transform: translateX(26px);
+  -webkit-transform: translateX(13px);
+  -ms-transform: translateX(13px);
+  transform: translateX(13px);
 }
