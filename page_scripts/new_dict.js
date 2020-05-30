@@ -36,7 +36,10 @@ function store_dictionary(dict_object, language) {
 
 // Listener for invoking store_dictionary with propper data
 document.getElementById('submit').addEventListener("click", function () {
-    let dict_object = {name: document.getElementById('name').value, url: document.getElementById('url').value};
+    let uri_plain_text = document.getElementById('url').value;
+    uri_plain_text = decodeURI(uri_plain_text);
+
+    let dict_object = {name: document.getElementById('name').value, url: uri_plain_text};
     let language = document.getElementById('lang').value;
     store_dictionary(dict_object, language);
     alert(`Stored ${dict_object.name}`);
