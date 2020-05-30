@@ -3,24 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>New Dictionary</title>
+    <title>Popup</title>
    
     <link rel="stylesheet" type="text/css" href="../cross-page-assets/hoothoot_style.css">
+    <style>
+        body {
+            font-size: 12pt;
+        }
+        .banner {
+            padding-bottom: 15px;
+            padding-top: 15px;
+        }
+        .boton {
+            text-align: left;
+            padding: 12px 9px;
+        }
+        .form-element {
+            display: flex;
+            justify-content: space-between;
+            max-width: 210px;
+            padding: 2px 0;
+            margin-left: 20px;
+            margin-bottom: 0px;
+            font-weight: bold;
+            text-align: left
+        }
+
+        .switch {
+            margin-top: 20px;
+            margin-right: 27%;
+        }
+    </style>
 </head>
 <body>
-    <div> 
+    <div class="banner">
+        <h1>Vocab Explorer</h1>
+    </div>
+    <div class="form-element">
+        <p>Activation: </p>
         <label class="switch">
             <input id="activate" type="checkbox">
             <span class="slider round"></span>
-          </label>
+        </label>
     </div>
-    <div>
-        <select id="languages" name="Language"></select>
+    <div id="dicitonary_selection_items">
+        <div class="form-element">
+            <p>Language: </p>
+            <div class="box">
+                <select id="languages" name="Language"></select>
+            </div>
+        </div>
+        <div class="form-element">
+            <p>Dictionary: </p>
+            <div class="box">
+                <select id="dictionaries" name="Dictionary"></select>
+            </div>
+        </div>
     </div>
-    <div>
-        <select id="dictionaries" name="Dictionary"></select>
-    </div>
-    <div>
+    <div style="width: 100%; text-align: center;">
         <p class="boton" id="new_dict">New Dictionary</p>
     </div>
 
