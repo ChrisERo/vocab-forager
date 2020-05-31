@@ -344,37 +344,6 @@ function hilight_json_data(json_data, id_num) {
     console.log('Hilight Done');;
 }
 
-
-/**
- * Given a Node, returns a list of integers representing the path from the Body node
- * to node, see node_path_to_node() for more details
- * 
- * @param {Node} node Node in document's DOM
- */
-function storeNode(node) {
-    let node_child_indecies = []; // indecies of elements in parents' child array, 
-                                  // with last element being child of root
-    let current_node = node;
-    let root_node = document.body;
-    while (current_node != root_node) {
-        let parent_node = current_node.parentNode;
-
-        // Get index of current_node in list of parent
-        let current_node_index = null;
-        for (i = 0; i < parent_node.childNodes.length; i++) {
-            if (parent_node.childNodes[i] === current_node) {
-                current_node_index = i;
-                break;
-            }
-        }
-
-        node_child_indecies.push(current_node_index);
-        current_node = parent_node;
-    }
-
-   return node_child_indecies;
-}
-
 /**
  * Takes selection and converts to a Javascript Object that can be
  * Easily stored.
