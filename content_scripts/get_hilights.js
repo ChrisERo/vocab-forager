@@ -679,7 +679,7 @@ get_init_setup.then( function (result) {
 // Listen for whether to activate or deactivate extension hilighting
 browser.runtime.onMessage.addListener(request => {
     console.log('REQUEST MADE TO CONTENT');
-    if (request.type == 'activation_form_pop') {
+    if (request.type == 'activation_from_pop') {
         let mssg = request.checked;
         if (!is_activated && mssg) {
             is_activated = mssg;

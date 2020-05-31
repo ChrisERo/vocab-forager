@@ -141,7 +141,7 @@ browser.runtime.sendMessage({type: 'get_activation'}).then(function (response) {
         get_tabs.then(function (tabs) {
             // Send message to currently all tabs to update based on
             for (let tab of tabs) {
-               browser.tabs.sendMessage(tab.id,{type: 'activation_form_pop',
+               browser.tabs.sendMessage(tab.id,{type: 'activation_from_pop',
                checked: is_checked});
             }
         });
