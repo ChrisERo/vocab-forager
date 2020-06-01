@@ -73,6 +73,8 @@ function get_first_text_node(node) {
  * and whose values are the index of either node itself, or another one of its
  * ancestors in key's childNodes array
  *
+ * Returns null if any ancestor of node is a HILIGHT_CLASS node
+ *
  * @param {Node} node - Node that is a decendant of document.body element
  */
 function initialize_explored_nodes(node) {
@@ -80,8 +82,12 @@ function initialize_explored_nodes(node) {
     let node_path = storeNode(node);
     let current_node = node.parentNode;
     for (let i = 0; i < node_path.length; i++) {
+        if (is_hilight_node(current_node)) {
+            return null;
+        }
         let index_in_parent = node_path[i];
         result.set(current_node, index_in_parent);
+        current_node = current_node.parentNode;
     }
     return result;
 }
@@ -99,6 +105,9 @@ function get_nodes_to_hilight_buisness_logic(startNode, endNode) {
     let current_node = startNode;
     let nodes_to_hilight = [];
     let explored_nodes = initialize_explored_nodes(startNode);
+    if (explored_nodes == null) {
+        return null;
+    }
 
     while (current_node !== endNode) {
         // If already "seen" current_node, go to next node or parent node if all seen
@@ -141,7 +150,6 @@ function get_nodes_to_hilight_buisness_logic(startNode, endNode) {
  * @param {Selection} selected 
  */
 function get_nodes_to_hilight(selected) {
-    console.log('made it in here');
     let range = selected.getRangeAt(0);
     let startNode = range.startContainer;
     let endNode = range.endContainer;

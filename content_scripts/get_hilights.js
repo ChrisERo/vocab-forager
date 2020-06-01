@@ -349,15 +349,17 @@ function hilight_json_data(json_data, id_num) {
  * Easily stored.
  * 
  * @param {Selection} selection - user-selected text in document
- * @param {Array} nodes - nodes that are all part of selection
+ * @param {Array<Node>} nodes - nodes that are all part of selection
  */
 function selection_to_store_data(selection, nodes) {
     let word = selection.toString();
     let range = selection.getRangeAt(0);
     let data = {
         'word': word, // Useless for now, but will be good for quiz implementation
-        'startOffset': range.startOffset, // TODO: consider case where startNode != nodes[0], use max-min
-        'endOffset': range.endOffset,
+        'startOffset': range.startOffset,
+        // Handle potentiall trimming of last node
+        'endOffset': range.endContainer == nodes[nodes.length-1] ? range.endOffset :
+                                                            nodes[nodes.length-1].length,
         'nodePaths': nodes.map(storeNode)
     };
     console.log(`ATTEMPT: ${JSON.stringify(data)}`);
