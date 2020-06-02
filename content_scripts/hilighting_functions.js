@@ -139,8 +139,9 @@ function get_nodes_to_hilight_buisness_logic(startNode, endNode) {
     }
 
     nodes_to_hilight.push(get_first_text_node(endNode, explored_nodes));
-    // Remove possible null values in nodes_to_hilight
-    nodes_to_hilight = nodes_to_hilight.filter(n => n != null);
+    if (nodes_to_hilight[nodes_to_hilight.length-1] == null) {
+        return null;
+    }
     return nodes_to_hilight;
 }
 
@@ -165,4 +166,17 @@ function get_nodes_to_hilight(selected) {
     }
 
     return nodes_to_hilight;
+}
+
+/**
+ * CompareTo function for numbers. Returns value > 0 if a > b, < 0 if a < b and 0 if
+ * a == b. Both a and b must be numbers.
+ *
+ * @param {Number} a
+ * @param {Number} b
+ */
+function numeric_compare_function(a, b) {
+    let sanity_check = typeof a === 'number' && typeof b === 'number'
+    console.assert(sanity_check, `${a} or ${b} is not a number`);
+    return a - b;
 }
