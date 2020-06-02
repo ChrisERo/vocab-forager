@@ -344,50 +344,20 @@ function hilight_json_data(json_data, id_num) {
     console.log('Hilight Done');;
 }
 
-
-/**
- * Given a Node, returns a list of integers representing the path from the Body node
- * to node, see node_path_to_node() for more details
- * 
- * @param {Node} node Node in document's DOM
- */
-function storeNode(node) {
-    let node_child_indecies = []; // indecies of elements in parents' child array, 
-                                  // with last element being child of root
-    let current_node = node;
-    let root_node = document.body;
-    while (current_node != root_node) {
-        let parent_node = current_node.parentNode;
-
-        // Get index of current_node in list of parent
-        let current_node_index = null;
-        for (i = 0; i < parent_node.childNodes.length; i++) {
-            if (parent_node.childNodes[i] === current_node) {
-                current_node_index = i;
-                break;
-            }
-        }
-
-        node_child_indecies.push(current_node_index);
-        current_node = parent_node;
-    }
-
-   return node_child_indecies;
-}
-
 /**
  * Takes selection and converts to a Javascript Object that can be
  * Easily stored.
  * 
  * @param {Selection} selection - user-selected text in document
- * @param {Array} nodes - nodes that are all part of selection
+ * @param {Array<Node>} nodes - nodes that are all part of selection
  */
 function selection_to_store_data(selection, nodes) {
     let word = selection.toString();
     let range = selection.getRangeAt(0);
     let data = {
         'word': word, // Useless for now, but will be good for quiz implementation
-        'startOffset': range.startOffset, // TODO: consider case where startNode != nodes[0], use max-min
+        'startOffset': range.startOffset,
+        // Handle potentiall trimming of last node
         'endOffset': range.endOffset,
         'nodePaths': nodes.map(storeNode)
     };
@@ -458,6 +428,7 @@ function add_nodes_and_offsets(root_node, depth, nodes_to_add,
 function modify_ids_for_hilight(encountered_ids, new_element_id) {
     let insertion_id = new_element_id;
     // Swap ids in both HTML to enforce new ordering
+    console.log(`ENCOUNTERED_IDS: ${encountered_ids}`)
     for (j = 0; j < encountered_ids.length; j++ ) {
         let right_neighbor_id = encountered_ids[j];
         let right_elements = document.querySelectorAll(
@@ -529,18 +500,8 @@ function reorder_hilights_for_one_parent(selected, new_element_id,
     let selection_index = vocabulario_data[new_element_id]['nodePaths'][index_of_last_node][0];
     // Number of nodes to add to proceedeing hilights with same (direct) parent_node
     // Using assumption that hilights only done on top of a single #text element
-    console.log('Gonna Start')
     let nodes_to_add =  selected.length*2 // empty #texts added when hilight goes to boundary, so 2 nodes always added 
 
-    // if (node_path_indecies[0] === 0 && 
-    //     vocabulario_data[new_element_id]['startOffset'] !== 0) {
-    //         nodes_to_add += 1;
-    //     }
-    // if (index_of_last_node === vocabulario_data[new_element_id]['nodePaths'].length - 1 &&
-    //     vocabulario_data[new_element_id]['endOffset'] !== 0) {
-    //         nodes_to_add += 1;
-    //     }
-    
     let offset_to_remove = 
     vocabulario_data[new_element_id]['nodePaths'].length-1 === index_of_last_node ? 
         vocabulario_data[new_element_id]['endOffset'] :
@@ -567,7 +528,6 @@ function reorder_hilights_for_one_parent(selected, new_element_id,
  * @param {Number} new_element_id - current id of new hilight
  */
 function reorder_hilights_main(selected, new_element_id) {
-    console.log('In process of reordering')
     let parents_to_hilight_nodes = new Map();
     let parents_to_hilight_paths_indecies = new Map();
     for (let i = 0; i < selected.length; i++) {
@@ -590,7 +550,7 @@ function reorder_hilights_main(selected, new_element_id) {
             encountered_ids);
     }); 
     encountered_ids =  Array.from(encountered_ids);
-    encountered_ids.sort();
+    encountered_ids.sort(numeric_compare_function);
     return modify_ids_for_hilight(encountered_ids, new_element_id);
   
 }
@@ -604,13 +564,11 @@ function reorder_hilights_main(selected, new_element_id) {
  */
 function log_selection(selected) {
     if (selected.toString() != '') {
-        console.log('Started');
         let nodes_to_hilight = get_nodes_to_hilight(selected);
         if (nodes_to_hilight == null || nodes_to_hilight.length === 0) {
             return;
         }
         let json_data = selection_to_store_data(selected, nodes_to_hilight);
-        console.log('Got JSON DATA');
         let id_num = storage_counter;
         storage_counter += 1;
         vocabulario_data[id_num] = json_data;
@@ -710,7 +668,7 @@ get_init_setup.then( function (result) {
 // Listen for whether to activate or deactivate extension hilighting
 browser.runtime.onMessage.addListener(request => {
     console.log('REQUEST MADE TO CONTENT');
-    if (request.type == 'activation_form_pop') {
+    if (request.type == 'activation_from_pop') {
         let mssg = request.checked;
         if (!is_activated && mssg) {
             is_activated = mssg;
