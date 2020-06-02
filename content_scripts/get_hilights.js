@@ -221,7 +221,8 @@ async function add_hilight_style_sheet() {
         display: inline !important;\
     } \
     .vocabulario_hilighted_hover {\
-        border: 1.5px solid #6afff3 !important;\
+        border-top: 2px solid #6afff3 !important;\
+        border-bottom: 2px solid #6afff3 !important;\
         cursor: pointer !important;\
     }";
     document.head.appendChild(hilight_style_sheet);
