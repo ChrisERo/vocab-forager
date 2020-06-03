@@ -34,6 +34,19 @@ function store_dictionary(dict_object, language) {
     }
 }
 
+/**
+ * Modifies show_status element of new_dict.html page so that it communicates that
+ * dictionary dict_name has been saved successfully
+ *
+ * @param {String} dict_name - name of dictionary that has just been created
+ */
+function display_done(dict_name) {
+    let content = `Saved Dictionary ${dict_name}`;
+    let show_status_div = document.getElementById('show_status');
+    show_status_div.innerHTML = content;
+    show_status_div.style.display = 'inherit';
+}
+
 // Listener for invoking store_dictionary with propper data
 document.getElementById('submit').addEventListener("click", function () {
     let uri_plain_text = document.getElementById('url').value;
@@ -42,5 +55,5 @@ document.getElementById('submit').addEventListener("click", function () {
     let dict_object = {name: document.getElementById('name').value, url: uri_plain_text};
     let language = document.getElementById('lang').value;
     store_dictionary(dict_object, language);
-    alert(`Stored ${dict_object.name}`);
+    display_done(dict_object.name);
 });

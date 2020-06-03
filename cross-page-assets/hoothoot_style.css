@@ -33,6 +33,9 @@ body {
     cursor: pointer;
     border-radius: 5px;
 }
+.boton:hover {
+  border: 1.5px solid #6afff3;
+}
 
 .form-element {
   display: flex;
