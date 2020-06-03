@@ -29,26 +29,31 @@ function extract_index(element) {
 }
 
 /**
- * Helper method for remove_hilights(), takes an ordered list of of HILIGHT_CLaASS 
- * elements with the same parent node and belong to hilight with id as word_{id}_* and
- * uses these elements, in particular the last one, to determine the new nodes and offsets
- * for other hilights and proceedes to delete all these hilight elements, reverting page
- * back to as if hilight never made 
+ * Takes an ordered list of of HILIGHT_CLASS elements with the same parent node and
+ * belonging to element with id as word_{hilight_id}_* and uses these elements,
+ * in particular the last one, to determine the new nodes and offsets for other hilights
+ * and proceedes to delete all the hilight elements in hilight_elements, making HTML
+ * page as if hilight never mande.
+ *
+ * Offsts and nodes of other hilights in volatile memory are modified if and only if
+ * update_local_storage is true.
  *
  * Assumes hilight_elemetns ordered in decending order and that its elements have
- * id as word_{id}_* and that id === hilight_id_to_delete. Also assume that each
- * HILIGHT_CLASS element has exactly a single #text child element
+ * id as word_{id}_* and that hilight_id === hilight_id_to_delete. Also assumes that all
+ * HILIGHT_CLASS elements have exactly one #text child element, and that's it.
  *
  * @param {Array<Element>} hilight_elements - HILIGHT_CLASS elements of id hilight
  *                                         with same parent node
  * @param {Array<Number>} hilight_element_indecies - indecies in localstorage of elements
  *                                                   in hilight_elements
- * @param {Number} id - id of hilight entity in localStorage
+ * @param {Number} hilight_id - id of hilight entity in localStorage
+ * @param {boolean} update_local_storage - if true, updates offsets of affected hilights
  */
-function remove_from_html_and_other_data(hilight_elements, 
-        hilight_element_indecies, hilight_id) {
-    console.assert(hilight_id === hilight_id_to_delete, 
+function remove_from_html_and_other_data(hilight_elements, hilight_element_indecies,
+    hilight_id, update_local_storage) {
+    console.assert(hilight_id === hilight_id_to_delete,
         'ERROR, Deleteing different id than expected');
+
     let el = hilight_elements[hilight_elements.length-1]; // last element in 
                                                           // hilight_elements
     let parent = el.parentNode;
@@ -93,10 +98,12 @@ function remove_from_html_and_other_data(hilight_elements,
     console.log(`NEW OFFSET: ${new_offset}`);
     new_offset = -new_offset; // adding this offset requires negative offset
 
-    let temp_set = new Set();  // simply used to get add_nodes_and_offsets to work
-    add_nodes_and_offsets(parent, 0, nodes_to_make, new_offset, element_index + 1, 
-        should_modify_future_offsets, temp_set);
-    delete temp_set;
+    if (update_local_storage) {
+        let temp_set = new Set();  // simply used to get add_nodes_and_offsets to work
+        add_nodes_and_offsets(parent, 0, nodes_to_make, new_offset, element_index + 1,
+            should_modify_future_offsets, temp_set);
+        delete temp_set;
+    }
 
     // Remove hilights of hilight_elements from html while maintaining structure of text
     // before hilight
@@ -132,8 +139,7 @@ function remove_from_html_and_other_data(hilight_elements,
         if (is_node_after_empty) {
             parent.removeChild(node_after);
         }
-
-        // Combine iresulting #text element with #text elements to left and right of it
+        // Combine resulting #text element with #text elements to left and right of it
         while (index_before > 0 && is_text_node(parents_children[index_before - 1])) {
             parents_children[index_before - 1].textContent += node_before.textContent;
             parent.removeChild(node_before);
@@ -150,17 +156,19 @@ function remove_from_html_and_other_data(hilight_elements,
 }
 
 /**
- * Gets all HILIGHT_Class elements with hilight_id as id in (word_{hilight_id}_*), gorups
+ * Gets all HILIGHT_CLASS elements with hilight_id as id in (word_{hilight_id}_*), groups
  * them by parent node (in depth-traversal order). Then, on per-parent basis, removes 
- * these nodes from the html page and from other hilights' offsets.
+ * these nodes from the html page and from other hilights' offsets (in volatile-memory)
+ * if and only if update_local_storage is true.
  *
  * Assumes hilight_id is a valid id (word_{id}) of a section hilighted by this addon.
  * Also assumes that querySelectorAll orders elements in depth-first traversal ascending
  * order (https://www.w3.org/TR/selectors-api/#queryselectorall)
  *
  * @param {Number} hilight_id
+ * @param {boolean} update_local_storage
  */
-function remove_hilights(hilight_id) {
+function remove_hilights(hilight_id, update_local_storage) {
     // Get hilights orgainized by their parent node
     let hilight_elements = document.querySelectorAll(
         `[id^=word_${hilight_id}_]`);
@@ -177,12 +185,12 @@ function remove_hilights(hilight_id) {
         parents_to_hilight_paths_indecies.get(parent).push(i);
     }
 
-    // Depth-first assumption used here
+    // Depth-first assumption used in performing removal on per-parent node basis
     parents_to_hilights.forEach(function (value, key) {
         let selected_nodes = value;
         remove_from_html_and_other_data(selected_nodes, 
             parents_to_hilight_paths_indecies.get(key),
-            hilight_id);
+            hilight_id, update_local_storage);
     });
 }
 
@@ -196,7 +204,7 @@ function remove_hilights(hilight_id) {
  */
 function delete_hilights() {
     try {
-        remove_hilights(hilight_id_to_delete);
+        remove_hilights(hilight_id_to_delete, true);
         // Save changes in volatile and non-volatile state
         delete vocabulario_data[hilight_id_to_delete];
         browser.runtime.sendMessage({
@@ -607,7 +615,7 @@ function set_up_content() {
         } catch (err) {
             alert(`${err}\n${err.stack}`);
         }
-        storage_counter += 1;
+        storage_counter += 1; // Needed for creating new hilights
 
 
         // On Selection made, either hilight selected or lookup its text
@@ -632,28 +640,22 @@ function set_up_content() {
 
 /**
  * Removes hilights and their functinoality from page
- * NOTE that the css originally introduced is kept, but it should not do anything
- * ALSO: This does not revert the page back to its original DOM structure.
+ * NOTE that the css styling introduced by add_hilight_style_sheet is kept, though inert
  * TODO: Consider removing css here also
  */
 function tear_down_content() {
-        let hilights = document.getElementsByClassName(HILIGHT_CLASS);
-        // Move children (original) nodes to element's position
-        while (hilights.length > 0) { // for loos don't work since elements removed
-            // inspired heavily by
-            // https://plainjs.com/javascript/manipulation/unwrap-a-dom-element-35/
-            let element = hilights[0];
-            let parent = element.parentNode;
-            while (element.firstChild) {
-                parent.insertBefore(element.firstChild, element);
-            }
-            parent.removeChild(element);
-        }
+    let ids = Object.getOwnPropertyNames(vocabulario_data);
+    for (let i = ids.length-1; i >= 0; i--) { // Backwards to avoid id changes
+        let id = ids[i];
+        remove_hilights(id, false);
+    }
+    // Undo onmouseup setup
+    let temp = previous_on_mouse_up
+    document.onmouseup = previous_on_mouse_up;
+    previous_on_mouse_up = temp;
 
-        // Undo onmouseup setup
-        let temp = previous_on_mouse_up
-        document.onmouseup = previous_on_mouse_up;
-        previous_on_mouse_up = temp;
+    // Reset metadata
+    vocabulario_data = {};
 }
 
 // Load data from memory and use to hilight things previously selected
@@ -672,12 +674,11 @@ browser.runtime.onMessage.addListener(request => {
     if (request.type == 'activation_from_pop') {
         let mssg = request.checked;
         if (!is_activated && mssg) {
-            is_activated = mssg;
-            location.reload(); // Can't call set_up_content: tear_down_content notes
+            set_up_content();
         } else if (is_activated && !mssg) {
-            is_activated = mssg;
             tear_down_content();
         }
+        is_activated = mssg; // May need to move above if logic changes
     } else if (request.type === 'delete_chosen') {
         delete_hilights();
     } else {
