@@ -664,14 +664,16 @@ function tear_down_content() {
 }
 
 // Load data from memory and use to hilight things previously selected
-let get_init_setup = browser.runtime.sendMessage({
-    type: 'get_activation', page: window.location.href });
-get_init_setup.then( function (result) {
-    is_activated = result;
-    if (is_activated) {
-        set_up_content();
-    }
-});
+setTimeout(function () {
+    let get_init_setup = browser.runtime.sendMessage({
+        type: 'get_activation', page: window.location.href });
+    get_init_setup.then( function (result) {
+        is_activated = result;
+        if (is_activated) {
+            set_up_content();
+        }
+    });
+}, 800);
 
 // Listen for whether to activate or deactivate extension hilighting
 browser.runtime.onMessage.addListener(request => {

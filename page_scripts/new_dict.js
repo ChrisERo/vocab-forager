@@ -43,7 +43,7 @@ function store_dictionary(dict_object, language) {
 function display_done(dict_name) {
     let content = `Saved Dictionary ${dict_name}`;
     let show_status_div = document.getElementById('show_status');
-    show_status_div.innerHTML = content;
+    show_status_div.textContent = content;
     show_status_div.style.display = 'inherit';
 }
 
