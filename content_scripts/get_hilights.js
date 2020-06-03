@@ -310,13 +310,18 @@ function hilight_json_data(json_data, id_num) {
             let word = json_data['word']; // TODO: should be fine since this must remain constant
             lookup_word(word);
         });
+
+        // Store (numeric) id of element to delete
+        surrounding_node.addEventListener('contextmenu', function () {
+            let id_num =  extract_id(surrounding_node); // may change because of deletes
+            hilight_id_to_delete = id_num;
+        });
+
         // Add context menu for deleteing hilight and add css for onhover
         surrounding_node.addEventListener('mouseover', function () {
-            let id_num =  extract_id(surrounding_node); // may change because of deletes
             browser.runtime.sendMessage({type: 'expose_delete_hilight'});
-            // Store (numeric) id of element to delete
-            hilight_id_to_delete = id_num;
             // Add onhover css style to all parts of hilight
+            let id_num =  extract_id(surrounding_node);
             let elements = document.querySelectorAll(
                     `[id^=word_${id_num}_]`);
             for (let el of elements) {
