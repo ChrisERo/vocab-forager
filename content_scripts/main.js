@@ -7,6 +7,72 @@ let hilight_id_to_delete = null; // Data last hovered over to be deleted upon re
 let storage_counter = -1; // used fore local storage purposes
 
 /**
+ * Given a representation of user-selected text, wrap selection around
+ * div tags with style for hilighting
+ *
+ * Also modifies hilight_id_to_delete
+ *
+ * @param {Object} json_data - object representing selection
+ */
+function hilight_json_data(json_data, id_num) {
+    let nodes_to_hilight = store_data_to_range(json_data);
+    for (let index = 0; index < nodes_to_hilight.length; index++) {
+        let node = nodes_to_hilight[index];
+        // Initialize hilight div node with speicfied pertinent listeners
+        let surrounding_node = document.createElement('div');
+        surrounding_node.setAttribute("id", `word_${id_num}_${index}`);
+        surrounding_node.setAttribute('class', HILIGHT_CLASS);
+        // Lookup hilighted word if hilight clicked on
+        surrounding_node.addEventListener('click', function () {
+            let word = json_data['word']; // TODO: should be fine since this must remain constant
+            lookup_word(word);
+        });
+
+        // Store (numeric) id of element to delete
+        surrounding_node.addEventListener('contextmenu', function () {
+            let id_num =  extract_id(surrounding_node); // may change because of deletes
+            hilight_id_to_delete = id_num;
+        });
+
+        // Add context menu for deleteing hilight and add css for onhover
+        surrounding_node.addEventListener('mouseover', function () {
+            browser.runtime.sendMessage({type: 'expose_delete_hilight'});
+            // Add onhover css style to all parts of hilight
+            let id_num =  extract_id(surrounding_node);
+            let elements = document.querySelectorAll(
+                    `[id^=word_${id_num}_]`);
+            for (let el of elements) {
+                el.classList.add("vocabulario_hilighted_hover");
+            }
+        });
+        // Remove delete context menu and onhover, hilighted class
+        surrounding_node.addEventListener('mouseout', function () {
+            browser.runtime.sendMessage({type: 'remove_delete_hilight'});
+            let id_num =  extract_id(surrounding_node);
+            let elements = document.querySelectorAll(
+                `[id^=word_${id_num}_]`);
+            for (let el of elements) {
+                el.classList.remove("vocabulario_hilighted_hover");
+            }
+        });
+
+        // Surround node of jsondata with surrounding_node
+        let range = new Range();
+        let startOffset = 0;
+        let endOffset = node.textContent.length;
+        if (node === nodes_to_hilight[0]) {
+            startOffset = json_data['startOffset']
+        }
+        if (node === nodes_to_hilight[nodes_to_hilight.length-1]) {
+            endOffset = json_data['endOffset'];
+        }
+        range.setStart(node, startOffset);
+        range.setEnd(node, endOffset);
+        range.surroundContents(surrounding_node);
+    }
+}
+
+/**
  * Takes element referenced by hilight_id_to_delete and removes from localStorage, memory,
  * and the html page. Also Updates metadata of other HILIGHT_CLASS elements so that they
  * remained hilighted if page refreshed.
@@ -133,7 +199,7 @@ function tear_down_content() {
     let ids = Object.getOwnPropertyNames(vocabulario_data);
     for (let i = ids.length-1; i >= 0; i--) { // Backwards to avoid id changes
         let id = ids[i];
-        remove_hilights(id, false);
+        remove_hilights(id, false, vocabulario_data);
     }
     // Undo onmouseup setup
     let temp = previous_on_mouse_up
@@ -160,13 +226,18 @@ setTimeout(function () {
 browser.runtime.onMessage.addListener(request => {
     console.log(`REQUEST MADE TO CONTENT SCRIPT: ${request.type}`);
     if (request.type == 'activation_from_pop') {
-        let mssg = request.checked;
-        if (!is_activated && mssg) {
-            set_up_content();
-        } else if (is_activated && !mssg) {
-            tear_down_content();
+        try {
+            let mssg = request.checked;
+            if (!is_activated && mssg) {
+                set_up_content();
+            } else if (is_activated && !mssg) {
+                tear_down_content();
+            }
+            is_activated = mssg; // May need to move above if logic changes
         }
-        is_activated = mssg; // May need to move above if logic changes
+        catch (err) {
+            alert(`${err}\n${err.stack}`);
+        }
     } else if (request.type === 'delete_chosen') {
         delete_hilights();
     } else {

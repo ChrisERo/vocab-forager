@@ -220,70 +220,6 @@ function get_nodes_to_hilight(selected) {
 }
 
 /**
- * Given a representation of user-selected text, wrap selection around
- * div tags with style for hilighting
- * 
- * @param {Object} json_data - object representing selection
- */
-function hilight_json_data(json_data, id_num) {
-    let nodes_to_hilight = store_data_to_range(json_data); 
-    for (let index = 0; index < nodes_to_hilight.length; index++) {
-        let node = nodes_to_hilight[index];
-        // Initialize hilight div node with speicfied pertinent listeners
-        let surrounding_node = document.createElement('div');
-        surrounding_node.setAttribute("id", `word_${id_num}_${index}`);
-        surrounding_node.setAttribute('class', HILIGHT_CLASS);
-        // Lookup hilighted word if hilight clicked on
-        surrounding_node.addEventListener('click', function () {
-            let word = json_data['word']; // TODO: should be fine since this must remain constant
-            lookup_word(word);
-        });
-
-        // Store (numeric) id of element to delete
-        surrounding_node.addEventListener('contextmenu', function () {
-            let id_num =  extract_id(surrounding_node); // may change because of deletes
-            hilight_id_to_delete = id_num;
-        });
-
-        // Add context menu for deleteing hilight and add css for onhover
-        surrounding_node.addEventListener('mouseover', function () {
-            browser.runtime.sendMessage({type: 'expose_delete_hilight'});
-            // Add onhover css style to all parts of hilight
-            let id_num =  extract_id(surrounding_node);
-            let elements = document.querySelectorAll(
-                    `[id^=word_${id_num}_]`);
-            for (let el of elements) {
-                el.classList.add("vocabulario_hilighted_hover");
-            }
-        });
-        // Remove delete context menu and onhover, hilighted class
-        surrounding_node.addEventListener('mouseout', function () {
-            browser.runtime.sendMessage({type: 'remove_delete_hilight'});
-            let id_num =  extract_id(surrounding_node);
-            let elements = document.querySelectorAll(
-                `[id^=word_${id_num}_]`);
-            for (let el of elements) {
-                el.classList.remove("vocabulario_hilighted_hover");
-            }
-        });
-
-        // Surround node of jsondata with surrounding_node
-        let range = new Range();
-        let startOffset = 0;
-        let endOffset = node.textContent.length;
-        if (node === nodes_to_hilight[0]) {
-            startOffset = json_data['startOffset']
-        } 
-        if (node === nodes_to_hilight[nodes_to_hilight.length-1]) {
-            endOffset = json_data['endOffset'];
-        } 
-        range.setStart(node, startOffset);
-        range.setEnd(node, endOffset);
-        range.surroundContents(surrounding_node);
-    }
-}
-
-/**
  * Given list of encountered_ids, modify ids in html and disk and memory so that future 
  * hilights work and invariants maintained
  *
@@ -373,7 +309,7 @@ function reorder_hilights_for_one_parent(selected, new_element_id,
         }
     }
     add_nodes_and_offsets(parent_node, 0, nodes_to_add, offset_to_remove, 
-    selection_index + 1, true, encountered_ids, vocabulario_data);
+        selection_index + 1, true, encountered_ids, vocabulario_data);
 }
 
 /**

@@ -24,8 +24,6 @@
  */
 function remove_from_html_and_other_data(hilight_elements, hilight_element_indecies,
     hilight_id, update_local_storage, vocabulario_data) {
-    console.assert(hilight_id === hilight_id_to_delete,
-        'ERROR, Deleting different id than expected');
 
     let el = hilight_elements[hilight_elements.length-1]; // last element in 
                                                           // hilight_elements

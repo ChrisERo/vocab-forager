@@ -164,7 +164,7 @@ function add_nodes_and_offsets(root_node, depth, nodes_to_add,
                 should_modify_future_offsets =  should_modify_future_offsets && 
                     is_text_node(child);
                 add_nodes_and_offsets(child, depth+1, nodes_to_add, 
-                    0, 0, false, encountered_ids. vocabulario_data);
+                    0, 0, false, encountered_ids, vocabulario_data);
             }
         }
     }
