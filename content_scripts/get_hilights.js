@@ -52,7 +52,7 @@ function extract_index(element) {
 function remove_from_html_and_other_data(hilight_elements, hilight_element_indecies,
     hilight_id, update_local_storage) {
     console.assert(hilight_id === hilight_id_to_delete,
-        'ERROR, Deleteing different id than expected');
+        'ERROR, Deleting different id than expected');
 
     let el = hilight_elements[hilight_elements.length-1]; // last element in 
                                                           // hilight_elements
@@ -82,7 +82,6 @@ function remove_from_html_and_other_data(hilight_elements, hilight_element_indec
     let new_offset = 0;
     if (should_modify_future_offsets) {
         new_offset = el.textContent.length; //vocabulario_data[hilight_id]['endOffset'];
-        console.log(`NEW OFF: ${new_offset}`);
         // Uses assumption that h1.id < h2.id && h1.parent == h2.parent <-->
         // h1 is before h2 in DOM traversal relative to parent
         console.assert(element_index != 0, 'Assumption on how hilights made broken');
@@ -90,12 +89,10 @@ function remove_from_html_and_other_data(hilight_elements, hilight_element_indec
         // Calcualte new offset based on #texts before and after el
         let counter = element_index - 1;
         while (counter >= 0 && is_text_node(parents_children[counter])) {
-            console.log(`NEW: ${new_offset}`);
             new_offset += parents_children[element_index-1].textContent.length;
             counter--;
         }
     }
-    console.log(`NEW OFFSET: ${new_offset}`);
     new_offset = -new_offset; // adding this offset requires negative offset
 
     if (update_local_storage) {
@@ -128,7 +125,7 @@ function remove_from_html_and_other_data(hilight_elements, hilight_element_indec
             is_text_node(parents_children[element_index+1]),
             'Node after is not text');
         
-        // Used for deleteing extra nodes on left and right, made by creation of div
+        // Used for deleting extra nodes on left and right, made by creation of div
         let node_after = parents_children[element_index+1];
         let is_node_after_empty = node_after.textContent === '';
         let index_before = element_index - 1;
@@ -204,6 +201,7 @@ function remove_hilights(hilight_id, update_local_storage) {
  */
 function delete_hilights() {
     try {
+        console.log(`Deleting hilight: ${hilight_id_to_delete}`);
         remove_hilights(hilight_id_to_delete, true);
         // Save changes in volatile and non-volatile state
         delete vocabulario_data[hilight_id_to_delete];
@@ -266,7 +264,6 @@ function node_path_to_node(node_path) {
  * for object specifications
  */
 function store_data_to_range(store_data) {
-    console.log(JSON.stringify(store_data['nodePaths']));
     return store_data['nodePaths'].map(node_path_to_node);
 }
 
@@ -278,11 +275,10 @@ function store_data_to_range(store_data) {
  */
 function lookup_word(word) { // TODO: move this to other content script after tab made
     if (word != '') {
-        console.log(`lookingup: ${word}`);
+        console.log(`Looking up: ${word}`);
         let get_url = browser.runtime.sendMessage({type: 'search_word_url', word: word});
         get_url.then(function (response) {
             let url = response;
-            console.log(url);
             window.open(url, '_blank');
         });
     }
@@ -295,16 +291,13 @@ function lookup_word(word) { // TODO: move this to other content script after ta
  * @param {Object} json_data - object representing selection
  */
 function hilight_json_data(json_data, id_num) {
-    console.log('Hilight_started');
     let nodes_to_hilight = store_data_to_range(json_data); 
-    console.log('Got Nodes from paths');
     for (let index = 0; index < nodes_to_hilight.length; index++) {
         let node = nodes_to_hilight[index];
         // Initialize hilight div node with speicfied pertinent listeners
         let surrounding_node = document.createElement('div');
         surrounding_node.setAttribute("id", `word_${id_num}_${index}`);
         surrounding_node.setAttribute('class', HILIGHT_CLASS);
-        console.log('Got Basics');
         // Lookup hilighted word if hilight clicked on
         surrounding_node.addEventListener('click', function () {
             let word = json_data['word']; // TODO: should be fine since this must remain constant
@@ -338,7 +331,6 @@ function hilight_json_data(json_data, id_num) {
                 el.classList.remove("vocabulario_hilighted_hover");
             }
         });
-        console.log('Got Listeners');
 
         // Surround node of jsondata with surrounding_node
         let range = new Range();
@@ -350,12 +342,10 @@ function hilight_json_data(json_data, id_num) {
         if (node === nodes_to_hilight[nodes_to_hilight.length-1]) {
             endOffset = json_data['endOffset'];
         } 
-        console.log(`${node.textContent}, ${startOffset}`);
         range.setStart(node, startOffset);
         range.setEnd(node, endOffset);
         range.surroundContents(surrounding_node);
     }
-    console.log('Hilight Done');;
 }
 
 /**
@@ -375,7 +365,6 @@ function selection_to_store_data(selection, nodes) {
         'endOffset': range.endOffset,
         'nodePaths': nodes.map(storeNode)
     };
-    console.log(`ATTEMPT: ${JSON.stringify(data)}`);
     return data;
 }
 
@@ -402,7 +391,6 @@ function add_nodes_and_offsets(root_node, depth, nodes_to_add,
         let parents_children = root_node.childNodes;
         for (let n_index = start_index; n_index < parents_children.length; n_index++) {
             let child = parents_children[n_index];
-            console.log(`${child.nodeName}, ${should_modify_future_offsets}`)
             if (is_hilight_node(child)) {
                 let right_neighbor_id = extract_id(child);
                 right_data = vocabulario_data[right_neighbor_id];
@@ -442,16 +430,12 @@ function add_nodes_and_offsets(root_node, depth, nodes_to_add,
 function modify_ids_for_hilight(encountered_ids, new_element_id) {
     let insertion_id = new_element_id;
     // Swap ids in both HTML to enforce new ordering
-    console.log(`ENCOUNTERED_IDS: ${encountered_ids}`)
     for (j = 0; j < encountered_ids.length; j++ ) {
         let right_neighbor_id = encountered_ids[j];
         let right_elements = document.querySelectorAll(
             `[id^=word_${right_neighbor_id}_]`);
-        console.log('Looking');
         if (j === 0) { // insertion_id not in any div, so just substitute
-            console.log('Here');
             for (n of right_elements) {
-                console.log(n.id);
                 let index = extract_index(n);
                 n.setAttribute('id', `word_${insertion_id}_${index}`);
             }
@@ -460,17 +444,14 @@ function modify_ids_for_hilight(encountered_ids, new_element_id) {
         } else {
             console.assert(right_neighbor_id > encountered_ids[j-1], 
                 'encountered_ids not ordered propperly');
-            console.log('IN HERE');
             let new_node_elements = document.querySelectorAll(
                 `[id^=word_${insertion_id}_]`);
             for (n of new_node_elements) {
-                console.log(n.id);
                 let index = extract_index(n); 
                 n.setAttribute('id', `TEMP_HILIGHT_${index}`); 
                 // structure of TEMP id used in other parts of this function
             }
             for (n of right_elements) {
-                console.log(n.id);
                 let index = extract_index(n); 
                 n.setAttribute('id', `word_${insertion_id}_${index}`);
             }
@@ -480,14 +461,12 @@ function modify_ids_for_hilight(encountered_ids, new_element_id) {
                 n.setAttribute('id', `word_${right_neighbor_id}_${index}`);
             }
         }
-        console.log('out');
 
         // Swap in vocabulario_data
         let temp = vocabulario_data[insertion_id];
         vocabulario_data[insertion_id] = vocabulario_data[right_neighbor_id];
         vocabulario_data[right_neighbor_id] = temp;
     }
-    console.log('done modifying hilights in html and localStorage');
     return new_element_id;
 }
 
@@ -525,14 +504,12 @@ function reorder_hilights_for_one_parent(selected, new_element_id,
         let node = parents_children[j];
         if (is_text_node(node)) {
             offset_to_remove += node.textContent.length;
-            console.log(offset_to_remove);
         } else {
             break;
         }
     }
     add_nodes_and_offsets(parent_node, 0, nodes_to_add, offset_to_remove, 
         selection_index + 1, true, encountered_ids);
-    console.log('Finished For One Parent');
 }
 
 /**
@@ -555,11 +532,9 @@ function reorder_hilights_main(selected, new_element_id) {
         parents_to_hilight_paths_indecies.get(parent).push(i);
     }
 
-    console.log('About to change offsets')
     let encountered_ids = new Set();
     parents_to_hilight_nodes.forEach(function (value, key, map) {
         let node_path_indecies = parents_to_hilight_paths_indecies.get(key);
-        console.log('stuff');
         reorder_hilights_for_one_parent(value, new_element_id, node_path_indecies, 
             encountered_ids);
     }); 
@@ -580,6 +555,7 @@ function reorder_hilights_main(selected, new_element_id) {
  */
 function log_selection(selected) {
     if (selected.toString() != '') {
+        console.log(`Highlighting ${selected.toString()}`);
         let nodes_to_hilight = get_nodes_to_hilight(selected);
         if (nodes_to_hilight == null || nodes_to_hilight.length === 0) {
             return;
@@ -679,7 +655,7 @@ setTimeout(function () {
 
 // Listen for whether to activate or deactivate extension hilighting
 browser.runtime.onMessage.addListener(request => {
-    console.log('REQUEST MADE TO CONTENT');
+    console.log(`REQUEST MADE TO CONTENT SCRIPT: ${request.type}`);
     if (request.type == 'activation_from_pop') {
         let mssg = request.checked;
         if (!is_activated && mssg) {
@@ -691,7 +667,6 @@ browser.runtime.onMessage.addListener(request => {
     } else if (request.type === 'delete_chosen') {
         delete_hilights();
     } else {
-        console.log('CONTENT_REQUEST UNKNOWN');
-        console.log(`CONTENT_REQUEST ${request.type}`);
+        console.log(`CONTENT_REQUEST UNKNOWN: ${request.type}`);
     }
   });

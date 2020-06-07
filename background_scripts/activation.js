@@ -22,7 +22,6 @@ get_current_activation(); // Perform initial setup
  * @param {boolean} is_activated - whether extension should be activated on pages or not
  */
 function set_current_activation(is_activated) {
-    console.log(is_activated);
     let my_activation = Number(is_activated);
     window.localStorage.setItem('is_activated', my_activation.toString());
 }

@@ -62,7 +62,6 @@ function get_dictionary_from_info(dict_info) {
     if (dict_info == null) {
         return null;
     }
-    console.log(dict_info);
     let dicts = window.localStorage.getItem('dicts');
     dicts = JSON.parse(dicts);
     return dicts[dict_info.language][dict_info.index];

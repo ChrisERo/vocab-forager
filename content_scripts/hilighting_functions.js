@@ -234,10 +234,6 @@ function get_nodes_to_hilight(selected) {
     let startNode = range.startContainer;
     let endNode = range.endContainer;
 
-    console.log(`myRange: ${storeNode(startNode)} ${storeNode(endNode)}`);
-    console.log(`MR: ${startNode} ${storeNode(endNode)}`);
-    console.log(`OFFSETS: ${range.startOffset} ${range.endOffset}`);
-
     let nodes_to_hilight = get_nodes_to_hilight_buisness_logic(startNode, endNode);
     // Check to make sure that some element was selected and a hilight wasn't chosen
     if (nodes_to_hilight == null) {
