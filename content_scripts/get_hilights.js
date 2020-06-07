@@ -89,7 +89,7 @@ function remove_from_html_and_other_data(hilight_elements, hilight_element_indec
 
         // Calcualte new offset based on #texts before and after el
         let counter = element_index - 1;
-        while (counter >= 0 && parents_children[counter].nodeName === '#text') {
+        while (counter >= 0 && is_text_node(parents_children[counter])) {
             console.log(`NEW: ${new_offset}`);
             new_offset += parents_children[element_index-1].textContent.length;
             counter--;
@@ -109,7 +109,7 @@ function remove_from_html_and_other_data(hilight_elements, hilight_element_indec
     // before hilight
     for (let element of hilight_elements) {
         console.assert(element.childNodes.length === 1 &&
-            element.childNodes[0].nodeName === '#text',
+            is_text_node(element.childNodes[0]),
             `Error, hilight element has ${element.childNodes.length} 
             nodes and the first is of type 
             ${element.childNodes.length === 0 ? null : element.childNodes[0].nodeName}`);
@@ -122,10 +122,10 @@ function remove_from_html_and_other_data(hilight_elements, hilight_element_indec
         }
 
         console.assert(element_index > 0 && 
-            parents_children[element_index-1].nodeName === '#text', 
+            is_text_node(parents_children[element_index-1]),
             'Node before not text');
         console.assert(element_index < parents_children.length - 1 &&
-            parents_children[element_index+1].nodeName === '#text', 
+            is_text_node(parents_children[element_index+1]),
             'Node after is not text');
         
         // Used for deleteing extra nodes on left and right, made by creation of div
@@ -425,7 +425,7 @@ function add_nodes_and_offsets(root_node, depth, nodes_to_add,
             } else {
                 // don't do check once should_modify is false or current node is not text
                 should_modify_future_offsets =  should_modify_future_offsets && 
-                    child.nodeName === '#text';
+                    is_text_node(child);
                 add_nodes_and_offsets(child, depth+1, nodes_to_add, 
                     0, 0, false, encountered_ids);
             }
@@ -523,7 +523,7 @@ function reorder_hilights_for_one_parent(selected, new_element_id,
     // Add onto offset_to_remove if endNode has #text nodes directly to its left
     for (let j = selection_index - 1; j >= 0; j--) {
         let node = parents_children[j];
-        if (node.nodeName == '#text') {
+        if (is_text_node(node)) {
             offset_to_remove += node.textContent.length;
             console.log(offset_to_remove);
         } else {
@@ -571,7 +571,9 @@ function reorder_hilights_main(selected, new_element_id) {
 
 /**
  * Given selection, stores hilight in non-volatile storage and hilights text, wrapping
- * it in a div with css class HILIGHT_CLASS
+ * it in a div with css class HILIGHT_CLASS.
+ *
+ * Also modifies start and end offsets for selected if need be
  * 
  * @param {Selection} selected - user-selected text in document 
  * (assumed to be valid given current DOM)
