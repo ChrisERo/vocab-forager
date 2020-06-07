@@ -81,7 +81,7 @@ browser.contextMenus.onClicked.addListener((info, tab) => {
  */
 
 function handler(request, sender, sendResponse) {
-    console.log('REQUEST MADE');
+    console.log(`REQUEST TO BACKGROUND MADE: ${request.type}`);
     if (request.type == "get_dictionaries_from_langauge") {
         sendResponse(get_dictionaries_from_langauge(request.language));
     } else if (request.type == "get_current_dictionary_info") {
@@ -114,8 +114,7 @@ function handler(request, sender, sendResponse) {
         remove_delete_cm()
         sendResponse();
     } else {
-        console.log('REQUEST NOT SATISIFED');
-        console.log(JSON.stringify(request));
+        console.log(`CONTENT_REQUEST UNKNOWN: ${request.type}`);
     }
 }
 

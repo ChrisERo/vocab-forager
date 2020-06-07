@@ -41,7 +41,6 @@ function make_dictionary_selection(dictionary_selection, current_dict_info) {
  * @param {Object} current_dict_info - data used to find languates initial selection
  */
 function make_language_selection(languages, current_dict_info) {
-    console.log(JSON.stringify(languages))
     let select = document.getElementById('languages');
     select.innerHTML = "";
     let valueToSelect = null; // default value per current_dict_info
@@ -82,7 +81,6 @@ get_current_dict.then(function (result) {
     if (current_dict_info != null) { 
         // Get dictionaries from current_dict_info info and initialize 
         // dictinoary comboboxes
-        console.log(current_dict_info.language);
         let gdfl = browser.runtime.sendMessage({type: 'get_dictionaries_from_langauge', language: current_dict_info.language});
         gdfl.then(function (result) {
             dictionary_selection = result;
@@ -147,6 +145,3 @@ browser.runtime.sendMessage({type: 'get_activation'}).then(function (response) {
         });
     });
 });
-
-// Save effect of toggling button
-

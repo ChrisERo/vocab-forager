@@ -24,7 +24,7 @@ function store_dictionary(dict_object, language) {
     } else {
         dictionaries[language] = [dict_object];
     }
-    //console.log(JSON.stringify(dictionaries));
+
     window.localStorage.setItem('dicts', JSON.stringify(dictionaries));
 
     // set default dict info
