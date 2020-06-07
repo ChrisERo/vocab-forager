@@ -31,28 +31,6 @@ function delete_hilights() {
 }
 
 /**
- * TODO: Remove this
- * Imports hilights.css, which contains styleing for elements of class HILIGHT_CLASS
- */
-async function add_hilight_style_sheet() {
-    // links don't work since href uses browser's current domain
-    let hilight_style_sheet = document.createElement('style')
-    hilight_style_sheet.innerHTML = "\
-    .vocabulario_hilighted { \
-        background-color: #ffff01 !important; \
-        display: inline !important;\
-    } \
-    .vocabulario_hilighted_hover {\
-        border-top: 2px solid #6afff3 !important;\
-        border-bottom: 2px solid #6afff3 !important;\
-        cursor: pointer !important;\
-    }";
-    document.head.appendChild(hilight_style_sheet);
-}
-
-add_hilight_style_sheet(); // import style sheet TODO: Remove this
-
-/**
  * Uses currently-selected (default) dictionary to lookup word(s) in selected
  * 
  * @param {String} word - user-selected text in document
