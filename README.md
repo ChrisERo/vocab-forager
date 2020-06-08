@@ -27,8 +27,7 @@ Users can add dictionaries by clicking the _New Dictionary_ button in the add-on
 popup and filling in the required data in the New Dictionary page. Note what the tooltip
 for the _URL Regex_ states; users must provide the URL for searching the text "{word}", 
 e.g.  
->[https://www.spanishdict.com/translate/%7Bword%7D]
-(https://www.spanishdict.com/translate/%7Bword%7D)
+>[https://www.spanishdict.com/translate/%7Bword%7D](https://www.spanishdict.com/translate/%7Bword%7D)
 
 To select a dictionary, enter the add-on's popup and choose the appropriate language and
 dictionary. This will apply to all webpages opened by the user
