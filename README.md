@@ -34,4 +34,4 @@ To select a dictionary, enter the add-on's popup and choose the appropriate lang
 dictionary. This will apply to all webpages opened by the user
 
 ### Download
-The add-on will soon be available on Mozilla's add-on page.
+Vocab Explorer is available in Mozila's Add-on website. Click this [link](https://addons.mozilla.org/en-US/firefox/addon/vocab-explorer/) to access it.
