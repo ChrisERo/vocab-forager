@@ -71,6 +71,13 @@ document.getElementById('new_dict').addEventListener("click", function () {
     });
 });
 
+// Navigate to "home page" of add-on
+document.getElementById('index').addEventListener("click", function () {
+    browser.tabs.create({
+        url:"index.html"
+    });
+});
+
 let get_current_dict = browser.runtime.sendMessage({type: 'get_current_dictionary_info'});
 let get_langs = browser.runtime.sendMessage({type: 'get_languages'});
 

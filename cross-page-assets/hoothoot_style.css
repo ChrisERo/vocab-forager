@@ -29,7 +29,7 @@ body {
     text-align: center;
     display: inline-block;
     text-decoration: none;
-
+    max-width: 220px;
     cursor: pointer;
     border-radius: 5px;
 }
