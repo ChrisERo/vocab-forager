@@ -3,5 +3,5 @@ document.getElementById('new_dict').addEventListener("click", function () {
 });
 
 document.getElementById('edit_dict').addEventListener("click", function () {
-    alert('To be Done');
+    window.location.href = 'edit_dict.html';
 });

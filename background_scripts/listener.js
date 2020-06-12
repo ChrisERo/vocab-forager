@@ -96,7 +96,6 @@ function handler(request, sender, sendResponse) {
     } else if (request.type == "store_data") {
         store_data(request.data, request.page);
         sendResponse({}); // Needed for "synchronus" behavior
-
     } else if (request.type == "get_page_vocab") {
         let vocab = get_page_vocab(request.page);
         sendResponse({data: vocab});
@@ -113,6 +112,15 @@ function handler(request, sender, sendResponse) {
     } else if (request.type === 'remove_delete_hilight') {
         remove_delete_cm()
         sendResponse();
+    } else if (request.type === 'get_dictionary_from_info') {
+        let data = get_dictionary_from_info(request.dict_info);
+        sendResponse(data);
+    } else if (request.type === 'edit_dict') {
+        modify_existing_dictinoary(request.dict_info, request.dict);
+        sendResponse();
+    } else if (request.type === 'delete_dict') {
+        let result = delete_dict(request.dict_ref);
+        sendResponse(result);
     } else {
         console.log(`CONTENT_REQUEST UNKNOWN: ${request.type}`);
     }
