@@ -97,10 +97,19 @@ function delete_dict(dict_ref) {
         dictionaries = JSON.parse(dictionaries);
 
         dictionaries[language].splice(dict_index, 1);
-        if (window.localStorage.getItem('default_dict') === JSON.stringify(dict_ref)) {
-            window.localStorage.removeItem('default_dict');
+
+        let default_dict = JSON.parse(window.localStorage.getItem('default_dict'));
+        if (default_dict['language'] === dict_ref['language']) {
+            if (default_dict['index'] == dict_ref['index']) {
+                // Remove default_dict
+                window.localStorage.removeItem('default_dict');
+            } else if (default_dict['index'] > dict_ref['index']) {
+                // Update default_dict index so still reference same dictionary
+                default_dict['index'] -= 1;
+                window.localStorage.setItem('default_dict', JSON.stringify(default_dict));
+            }
         }
-        console.log(dictionaries[language].length);
+
         if (dictionaries[language].length === 0) {
             delete dictionaries[language];
         }
@@ -127,7 +136,6 @@ function modify_existing_dictinoary(dict_info, dict_stats) {
         window.localStorage.setItem('dicts', JSON.stringify(dicts));
     } else {
         // Move dictionary from old language to new language (with edits)
-        console.log(dict_info)
         let successful_delete = delete_dict(dict_info); // must get dicts after doing this
         if (successful_delete) {
             let dicts = window.localStorage.getItem('dicts');

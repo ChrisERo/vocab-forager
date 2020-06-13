@@ -13,6 +13,16 @@ function get_selected_dict() {
     return {language: language, index: dictionary_index};
 }
 
+/**
+ * Outputs name of dictionary selected in dictionaries select element
+ * Assumes textContent of option in dictionaries select element represents name of
+ * dictinoary with correspoding index
+ */
+function get_selected_dict_name() {
+    let index = document.getElementById('dictionaries').selectedIndex;
+    return document.getElementById('dictionaries').options[index].text;
+}
+
 // Set up selection items
 /**
  * Sets up content of select items under chose_dictionary div
@@ -68,12 +78,16 @@ set_up_items(); // Set up select items for first time
 // Setup link buttons
 document.getElementById('delete_dict').addEventListener("click", function () {
     let dict = get_selected_dict();
+    let dict_name = get_selected_dict_name();
     if (dict != null) {
         browser.runtime.sendMessage({type: 'delete_dict',
             dict_ref: dict}).then(function (deleted) {
             if (deleted) {
-                // show result
                 set_up_items(); // Reset select items
+                // Confirm Deletion
+                let status = document.getElementById('show_status');
+                status.textContent = `${dict_name} Deleted`;
+                status.style.display = 'inherit';
             }
         });
     }
@@ -91,6 +105,7 @@ document.getElementById('edit_dict').addEventListener("click", function () {
             document.getElementById('url').value = dict['url'];
 
             document.getElementById('choose_dictionary').style.display = 'none';
+            document.getElementById('show_status').style.display = 'none';
             document.getElementById('mod_dict_items').style.display = 'inline';
         });
     }
@@ -108,10 +123,15 @@ document.getElementById('save_dict').addEventListener("click", function () {
     browser.runtime.sendMessage({type: 'edit_dict',
         dict_info: dict_info, dict: dict_stats},
         function (result) {
-            // show result
             set_up_items()
             document.getElementById('mod_dict_items').style.display = 'none';
             document.getElementById('choose_dictionary').style.display = 'inline';
+            document.getElementById('show_status').style.display = 'inherit';
+
+            // Confirm result
+            let status = document.getElementById('show_status');
+            status.textContent = `${dict_stats['name']} Modified`;
+            status.style.display = 'inherit';
     });
 });
 
