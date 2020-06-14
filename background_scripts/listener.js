@@ -116,7 +116,7 @@ function handler(request, sender, sendResponse) {
         let data = get_dictionary_from_info(request.dict_info);
         sendResponse(data);
     } else if (request.type === 'edit_dict') {
-        modify_existing_dictinoary(request.dict_info, request.dict);
+        modify_existing_dictionary(request.dict_info, request.dict);
         sendResponse();
     } else if (request.type === 'delete_dict') {
         let result = delete_dict(request.dict_ref);

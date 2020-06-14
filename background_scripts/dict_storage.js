@@ -99,7 +99,7 @@ function delete_dict(dict_ref) {
         dictionaries[language].splice(dict_index, 1);
 
         let default_dict = JSON.parse(window.localStorage.getItem('default_dict'));
-        if (default_dict['language'] === dict_ref['language']) {
+        if (default_dict != null && default_dict['language'] === dict_ref['language']) {
             if (default_dict['index'] == dict_ref['index']) {
                 // Remove default_dict
                 window.localStorage.removeItem('default_dict');
@@ -128,7 +128,7 @@ function delete_dict(dict_ref) {
  * @param {Object} dict_info - reference to dict modified
  * @param {Object} dict_stats - contains new url and name info of dictionary
  */
-function modify_existing_dictinoary(dict_info, dict_stats) {
+function modify_existing_dictionary(dict_info, dict_stats) {
     if (dict_info.language === dict_info.new_language) { // Just update dict's data
         let dicts = window.localStorage.getItem('dicts');
         dicts = JSON.parse(dicts);
