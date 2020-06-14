@@ -84,6 +84,84 @@ function set_current_dictionary(language, index){
 }
 
 /**
+ * Deletes dictionary represented by dict_ref from non-volatile storage
+ *
+ * @param {Object} dict_ref - object with string representing language on dictionary and
+ *                            Number representing index of dictionary to delete
+ */
+function delete_dict(dict_ref) {
+    try {
+        let language = dict_ref['language'];
+        let dict_index = dict_ref['index'];
+        let dictionaries = window.localStorage.getItem('dicts');
+        dictionaries = JSON.parse(dictionaries);
+
+        dictionaries[language].splice(dict_index, 1);
+
+        let default_dict = JSON.parse(window.localStorage.getItem('default_dict'));
+        if (default_dict != null && default_dict['language'] === dict_ref['language']) {
+            if (default_dict['index'] == dict_ref['index']) {
+                // Remove default_dict
+                window.localStorage.removeItem('default_dict');
+            } else if (default_dict['index'] > dict_ref['index']) {
+                // Update default_dict index so still reference same dictionary
+                default_dict['index'] -= 1;
+                window.localStorage.setItem('default_dict', JSON.stringify(default_dict));
+            }
+        }
+
+        if (dictionaries[language].length === 0) {
+            delete dictionaries[language];
+        }
+        window.localStorage.setItem('dicts', JSON.stringify(dictionaries));
+
+        return true;
+    } catch(err) {
+        return false;
+    }
+}
+
+/**
+ * Given dict_info and dict_stats, updates the dicts and current dicitonary in
+ * localStorage based on this info
+ *
+ * @param {Object} dict_info - reference to dict modified
+ * @param {Object} dict_stats - contains new url and name info of dictionary
+ */
+function modify_existing_dictionary(dict_info, dict_stats) {
+    if (dict_info.language === dict_info.new_language) { // Just update dict's data
+        let dicts = window.localStorage.getItem('dicts');
+        dicts = JSON.parse(dicts);
+        dicts[dict_info.language][dict_info.index] = dict_stats;
+        window.localStorage.setItem('dicts', JSON.stringify(dicts));
+    } else {
+        // Move dictionary from old language to new language (with edits)
+        let successful_delete = delete_dict(dict_info); // must get dicts after doing this
+        if (successful_delete) {
+            let dicts = window.localStorage.getItem('dicts');
+            dicts = JSON.parse(dicts);
+
+            // Determine whether to move dictionary to new or existing language
+            if (dicts.hasOwnProperty(dict_info.new_language)) {
+                dicts[dict_info.new_language].push(dict_stats);
+            } else {
+                dicts[dict_info.new_language] = [dict_stats];
+            }
+            window.localStorage.setItem('dicts', JSON.stringify(dicts));
+
+            // See if default dictionary needs updating based on edit
+            let current_dict_info = get_current_dictionary_info();
+            if (current_dict_info.language === dict_info.language &&
+                dict_info.index === current_dict_info.index) {
+                    let language = dict_info.new_language;
+                    let index =  dicts[dict_info.new_language].length - 1;
+                    set_current_dictionary(language, index);
+            }
+        }
+    }
+}
+
+/**
  * Returns url for current dictionary for looking up word.
  * 
  * @param {String} word - word we wish to look up 

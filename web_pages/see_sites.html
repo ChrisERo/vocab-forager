@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>See Sites</title>
+
+    <link rel="icon" type="image/svg" href="../icons/icon.svg">
+    <link rel="stylesheet" type="text/css" href="../cross-page-assets/hoothoot_style.css">
+    <link rel="stylesheet" type="text/css" href="../cross-page-assets/dicts.css">
+    <style>
+        .form {
+            text-align: left;
+        }
+        input {
+            width: 30px;
+            margin-right: 0px;
+        }
+        .alt_form_element {
+            margin-bottom: 10px;
+            font-size: 10pt;
+            width: 100%;
+        }
+        .alt_form_element div{
+            overflow-inline:hidden;
+            display: inline-block;
+            width: 93%;
+            height: 10pt;
+        }
+        .alt_form_element div:hover{
+            cursor: pointer;
+        }
+
+        #list_of_urls {
+            margin-left: 5%;
+        }
+        #delete_sites {
+            background-color: rgb(145, 30, 9);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="banner">
+        <h1>Vocab Explorer</h1>
+    </div>
+
+    <div class="form">
+        <div style="text-align: center;">
+            <h2>See or Delete Websites</h2>
+        </div>
+        <div id=list_of_urls></div>
+        <div style="text-align: center;">
+            <p class="boton" id="delete_sites">Delete Selected Sites</p>
+        </div>
+    </div>
+
+    <script src=../page_scripts/see_sites.js> </script>
+</body>
+</html>

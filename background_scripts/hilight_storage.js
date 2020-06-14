@@ -2,13 +2,17 @@
  * Takes list of objects representing all hilighted text in page
  * and saves them in extension's localStorage.
  * 
- * @param {Array} json_data - list of JSON objects representing all
+ * @param {Object} json_data - list of JSON objects representing all
  *  hilighted sections of a webpage
  * @param {String} page - page corresponding to data from json_data
  */
 function store_data(json_data, page) {
     let save_data = JSON.stringify(json_data);
-    window.localStorage.setItem(page, save_data);
+    if (save_data === '{}') {
+        window.localStorage.removeItem(page);
+    } else {
+        window.localStorage.setItem(page, save_data);
+    }
 }
 
 /**

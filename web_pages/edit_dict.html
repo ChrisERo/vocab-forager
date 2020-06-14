@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Dictionaries</title>
+
+    <link rel="icon" type="image/svg" href="../icons/icon.svg">
+    <link rel="stylesheet" type="text/css" href="../cross-page-assets/hoothoot_style.css">
+    <link rel="stylesheet" type="text/css" href="../cross-page-assets/dicts.css">
+    <style>
+        #delete_dict {
+            background-color: rgb(145, 30, 9);
+            color: white;
+        }
+        .bs {
+            display: inline-flex;
+            justify-content: center;
+            width: 100%;
+        }
+
+        #dicitonary_selection_items .form-element {
+            margin-bottom: 0px;
+        }
+
+        #choose_dictionary {
+            display: inline;
+        }
+        #mod_dict_items {
+            display: none;
+        }
+        .form-element p {
+            margin-bottom: 0px;
+            margin-top: 0px;
+        }
+
+        .box::before {
+            top: 0px;
+            line-height: 33px;
+        }
+        .box select {
+            margin-top: 0px;
+        }
+
+        .form-element p {
+            margin-top: 0px;
+        }
+    </style>
+</head>
+<body>
+    <div class="banner">
+        <h1>Vocab Explorer</h1>
+    </div>
+    <div class="form">
+        <div style="text-align: center;">
+            <h2>Edit or Delete Dictionary</h2>
+        </div>
+        <div id="mod_dict_items">
+            <div class="form-element">
+                <div class="tooltip">
+                    <img src="../icons/tooltip-icon.svg" alt="tool tip for name" class="tooltipicon">
+                    <div class="tooltiptext">Name of new dictionary</div>
+                </div>
+                <label for="name" style="margin-left: -100px;">Name:</label>
+                <input type="text" id="name" name="name">
+            </div>
+            <div class="form-element">
+                <div class="tooltip">
+                    <img src="../icons/tooltip-icon.svg" alt="tool tip for url" class="tooltipicon">
+                    <span class="tooltiptext">
+                        Search the text {word} in the dictionary of your choice.
+                        Copy resulting url in here.
+                    </span>
+                </div>
+                <label for="name">URL Regex:</label>
+                <input type="url" id="url" name="url">
+            </div>
+            <div class="form-element">
+                <div class="tooltip">
+                    <img src="../icons/tooltip-icon.svg" alt="tool tip for language" class="tooltipicon">
+                    <span class="tooltiptext">Language for new dictionary</span>
+                </div>
+                <label for="lang">Language:</label>
+                <input type="text" id="lang" name="lang">
+            </div>
+            <div class="bs" style="text-align: center;">
+                <p class="boton" id="save_dict">Save</p>
+            </div>
+        </div>
+
+        <div id="choose_dictionary">
+            <div id="dicitonary_selection_items">
+                <div class="form-element">
+                    <p>Language: </p>
+                    <div class="box">
+                        <select id="languages" name="Language"></select>
+                    </div>
+                </div>
+                <div class="form-element">
+                    <p>Dictionary: </p>
+                    <div class="box">
+                        <select id="dictionaries" name="Dictionary"></select>
+                    </div>
+                </div>
+            </div>
+            <div class="bs" style="text-align: center; margin-top: 15px;">
+                <p class="boton" style="margin-right:15%" id="delete_dict">Delete</p>
+                <p class="boton" id="edit_dict">Edit</p>
+            </div>
+        </div>
+    </div>
+    <div class="show_status" id="show_status"></div>
+
+<script src=../page_scripts/selection_dict.js> </script>
+<script src=../page_scripts/edit_dict.js> </script>
+
+</body>
+</html>

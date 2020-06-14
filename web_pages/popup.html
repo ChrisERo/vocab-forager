@@ -14,10 +14,14 @@
             padding-bottom: 15px;
             padding-top: 15px;
         }
-        .boton {
-            text-align: left;
+
+        .buttons .boton {
+            width: 130px;
+            margin-bottom: 6px;
+            margin-top: 6px;
             padding: 12px 9px;
         }
+
         .form-element {
             display: flex;
             justify-content: space-between;
@@ -33,6 +37,7 @@
             margin-top: 20px;
             margin-right: 27%;
         }
+
     </style>
 </head>
 <body>
@@ -60,10 +65,17 @@
             </div>
         </div>
     </div>
-    <div style="width: 100%; text-align: center;">
-        <p class="boton" id="new_dict">New Dictionary</p>
+
+    <div class='buttons'>
+        <div style="width: 100%; text-align: center;">
+            <p class="boton" id="new_dict">New Dictionary</p>
+        </div>
+        <div style="width: 100%; text-align: center;">
+            <p class="boton" id="index">More Options</p>
+        </div>
     </div>
 
+    <script src=../page_scripts/selection_dict.js> </script>
     <script src=../page_scripts/popup.js> </script>
 </body>
 </html>
