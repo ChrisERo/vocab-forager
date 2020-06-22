@@ -2,6 +2,23 @@
 const HILIGHT_CLASS = 'vocabulario_hilighted'; // class of hilighted sections in html page
 
 /**
+ * Uses currently-selected (default) dictionary to lookup word(s) in selected
+ *
+ * @param {String} word - user-selected text in document
+ * (assumed to be valid given current DOM)
+ */
+function lookup_word(word) {
+    if (word != '') {
+        console.log(`Looking up: ${word}`);
+        let get_url = browser.runtime.sendMessage({type: 'search_word_url', word: word});
+        get_url.then(function (response) {
+            let url = response;
+            window.open(url, '_blank');
+        });
+    }
+}
+
+/**
  * CompareTo function for numbers. Returns value > 0 if a > b, < 0 if a < b and 0 if
  * a == b. Both a and b must be numbers.
  *

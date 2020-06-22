@@ -97,23 +97,6 @@ function delete_hilights() {
 }
 
 /**
- * Uses currently-selected (default) dictionary to lookup word(s) in selected
- * 
- * @param {String} word - user-selected text in document
- * (assumed to be valid given current DOM)
- */
-function lookup_word(word) { // TODO: move this to other content script after tab made
-    if (word != '') {
-        console.log(`Looking up: ${word}`);
-        let get_url = browser.runtime.sendMessage({type: 'search_word_url', word: word});
-        get_url.then(function (response) {
-            let url = response;
-            window.open(url, '_blank');
-        });
-    }
-}
-
-/**
  * Given selection, stores hilight in non-volatile storage and hilights text, wrapping
  * it in a div with css class HILIGHT_CLASS.
  *
@@ -240,6 +223,11 @@ browser.runtime.onMessage.addListener(request => {
         }
     } else if (request.type === 'delete_chosen') {
         delete_hilights();
+    } else if (request.type === 'quiz_context_menu') {
+        if (!quiz_set) {
+            quiz_set = true;
+            load_quiz_html(vocabulario_data);
+        }
     } else {
         console.log(`CONTENT_REQUEST UNKNOWN: ${request.type}`);
     }

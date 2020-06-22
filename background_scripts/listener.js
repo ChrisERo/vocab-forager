@@ -9,6 +9,11 @@ browser.contextMenus.create({
     type: "separator",
     contexts: ["all"]
   });
+  browser.contextMenus.create({
+    id: "quiz",
+    title: "Quiz",
+    contexts: ["all"],
+  });
 
 function expose_delete_cm() {
     browser.contextMenus.create({
@@ -69,6 +74,8 @@ browser.contextMenus.onClicked.addListener((info, tab) => {
         });
     } else if (info.menuItemId === 'delete_hilight') {
         browser.tabs.sendMessage(tab.id,{type: 'delete_chosen'});
+    } else if (info.menuItemId === "quiz") {
+        browser.tabs.sendMessage(tab.id,{type: 'quiz_context_menu'});
     }
   });
 
