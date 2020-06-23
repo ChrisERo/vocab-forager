@@ -2,6 +2,39 @@
 const HILIGHT_CLASS = 'vocabulario_hilighted'; // class of hilighted sections in html page
 
 /**
+ * Uses currently-selected (default) dictionary to lookup word(s) in selected
+ *
+ * @param {String} word - user-selected text in document
+ * (assumed to be valid given current DOM)
+ */
+function lookup_word(word) {
+    if (word != '') {
+        console.log(`Looking up: ${word}`);
+        let get_url = browser.runtime.sendMessage({type: 'search_word_url', word: word});
+        get_url.then(function (response) {
+            let url = response;
+            window.open(url, '_blank');
+        });
+    }
+}
+
+/**
+ * Returns true if vocabulario_data is empty, else false
+ * Assumes vocabulario_data is not (!=) null
+ *
+ * @param {Object} vocabulario_data contains data on vocab words corresponding to single
+ *                                  web page
+ */
+function is_vocab_empty(vocabulario_data) {
+    for (let prop in vocabulario_data) {
+        if (Object.prototype.hasOwnProperty.call(vocabulario_data, prop)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
  * CompareTo function for numbers. Returns value > 0 if a > b, < 0 if a < b and 0 if
  * a == b. Both a and b must be numbers.
  *

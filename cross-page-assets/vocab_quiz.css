@@ -1,0 +1,80 @@
+.banner {
+    background-color: rgb(14, 104, 163);
+    margin-bottom: 10px;
+    padding-bottom: 13px;
+    padding-top: 8px;
+    padding-right: 5px;
+    padding-left: 5px;
+    text-align:center;
+    font-size: 25pt;
+}
+
+.dark_screen {
+    background-color: #000000d9;
+    transition: opacity 0.15s linear;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: block;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 16pt;
+    color: #FFF;
+    z-index: 10000;
+    user-select:none;
+}
+
+.quiz_content {
+    position: relative;
+    width: 400px;
+    text-align: center;
+    background-color: rgb(9, 154, 250);
+    margin: 40px auto;
+    animation-name: animatetop;
+    animation-duration: 1.0s;
+}
+
+@keyframes animatetop {
+    from {top:-200px; opacity:0}
+    to {top:0; opacity:1}
+}
+
+.word {
+    font-size: 30pt;
+    font-weight: bold;
+    margin-bottom: 25px;
+    color: #000000;
+}
+.word:hover {
+    border: 5px solid #6afff3;
+    cursor: pointer !important;
+}
+
+.boton {
+    background-color: rgb(14, 104, 163);
+    color: white;
+    padding: 8px 16px;
+    text-align: center;
+    display: inline-block;
+    text-decoration: none;
+    max-width: 180px;
+    cursor: pointer;
+    border-radius: 5px;
+    margin-top: 15px;
+}
+.boton:hover {
+    border: 1.5px solid #6afff3;
+}
+
+.close {
+    color: #ffffff;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+  }
+  .close:hover, .close:focus {
+    color: rgb(161, 5, 5);
+    text-decoration: none;
+    cursor: pointer;
+  }
