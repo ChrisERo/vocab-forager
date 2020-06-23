@@ -2,6 +2,20 @@ let quiz_set = false; // true if quiz displayed in current page, else false
 let quiz_word_list = null; // words not yet been tested in current quiz
 
 /**
+ * Converts html data (as string) into elements
+ *
+ * Code obtained from
+ * https://gomakethings.com/converting-a-string-into-markup-with-vanilla-js/
+ *
+ * @param {String} str - html text to be converted to objects
+ */
+function stringToHTML(str) {
+	var parser = new DOMParser();
+	var doc = parser.parseFromString(str, 'text/html');
+	return doc.body.childNodes[0]; // Just get content of body (one main element)
+}
+
+/**
  * Creates empty div for page's vocab quiz and places it at end of body
  */
 function add_quiz_div() {
@@ -94,7 +108,7 @@ function load_quiz_html(vocabulario_data) {
         })
         .then(function(html) {
             let quiz_container = add_quiz_div();
-            quiz_container.innerHTML += html;
+            quiz_container.appendChild(stringToHTML(html));
             set_up_actions(vocabulario_data);
     });
 }

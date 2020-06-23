@@ -1,4 +1,18 @@
 /**
+ * Converts html data (as string) into elements
+ *
+ * Code obtained from
+ * https://gomakethings.com/converting-a-string-into-markup-with-vanilla-js/
+ *
+ * @param {String} str - html text to be converted to objects
+ */
+function stringToHTML(str) {
+	var parser = new DOMParser();
+	var doc = parser.parseFromString(str, 'text/html');
+	return doc.body.childNodes[0]; // Just get content of body (one main element)
+}
+
+/**
  * Fetches html for banner and inserts them into current web page, inside
  * banner_anchor div.
  * 
@@ -13,7 +27,7 @@ function load_banner_html() {
         .then(function(html) {
             // Add banner to right html element
             let banner_anchor = document.getElementById('banner_anchor');
-            banner_anchor.innerHTML += html;
+            banner_anchor.appendChild(stringToHTML(html));
             let banner_text = document.getElementById('banner_text');
 
             // In all pages except popup, on click of banner, navigate to home page
