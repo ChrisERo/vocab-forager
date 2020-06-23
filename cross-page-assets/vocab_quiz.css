@@ -22,6 +22,7 @@
     font-size: 16pt;
     color: #FFF;
     z-index: 10000;
+    user-select:none;
 }
 
 .quiz_content {

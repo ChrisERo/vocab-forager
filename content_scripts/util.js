@@ -19,6 +19,22 @@ function lookup_word(word) {
 }
 
 /**
+ * Returns true if vocabulario_data is empty, else false
+ * Assumes vocabulario_data is not (!=) null
+ *
+ * @param {Object} vocabulario_data contains data on vocab words corresponding to single
+ *                                  web page
+ */
+function is_vocab_empty(vocabulario_data) {
+    for (let prop in vocabulario_data) {
+        if (Object.prototype.hasOwnProperty.call(vocabulario_data, prop)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
  * CompareTo function for numbers. Returns value > 0 if a > b, < 0 if a < b and 0 if
  * a == b. Both a and b must be numbers.
  *

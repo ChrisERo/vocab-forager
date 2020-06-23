@@ -13,6 +13,14 @@ browser.contextMenus.create({
     id: "quiz",
     title: "Quiz",
     contexts: ["all"],
+    icons: {
+        "16": "../icons/pen.svg"
+    }
+  });
+  browser.contextMenus.create({
+    id: "separator-2",
+    type: "separator",
+    contexts: ["all"]
   });
 
 function expose_delete_cm() {

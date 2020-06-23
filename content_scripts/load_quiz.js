@@ -1,5 +1,6 @@
 let quiz_set = false; // true if quiz displayed in current page, else false
 let quiz_word_list = null; // words not yet been tested in current quiz
+
 /**
  * Creates empty div for page's vocab quiz and places it at end of body
  */

@@ -224,7 +224,7 @@ browser.runtime.onMessage.addListener(request => {
     } else if (request.type === 'delete_chosen') {
         delete_hilights();
     } else if (request.type === 'quiz_context_menu') {
-        if (!quiz_set) {
+        if (!quiz_set && vocabulario_data != null && !is_vocab_empty(vocabulario_data)) {
             quiz_set = true;
             load_quiz_html(vocabulario_data);
         }
