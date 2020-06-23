@@ -10,6 +10,10 @@
         body {
             font-size: 12pt;
         }
+
+        .banner h1:hover {
+            cursor: default;
+        }
         .banner {
             padding-bottom: 15px;
             padding-top: 15px;
@@ -41,9 +45,7 @@
     </style>
 </head>
 <body>
-    <div class="banner">
-        <h1>Vocab Explorer</h1>
-    </div>
+    <div id="banner_anchor"></div>
     <div class="form-element">
         <p>Activation: </p>
         <label class="switch">
@@ -75,6 +77,7 @@
         </div>
     </div>
 
+    <script src=../page_scripts/fetch_banner.js> </script>
     <script src=../page_scripts/selection_dict.js> </script>
     <script src=../page_scripts/popup.js> </script>
 </body>

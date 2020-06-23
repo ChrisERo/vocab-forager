@@ -15,12 +15,15 @@ body {
     padding-left: 15px;
     text-align:center;
 }
-
 .banner h1 {
     /* Remove margins impued to banner by h1 tags on default*/
     margin-top: 0px;
     margin-bottom: 0px;
 }
+.banner h1:hover {
+  cursor: pointer;
+}
+
 
 .boton {
     background-color: rgb(14, 104, 163);
