@@ -30,7 +30,14 @@ e.g.
 >[https://www.spanishdict.com/translate/%7Bword%7D](https://www.spanishdict.com/translate/%7Bword%7D)
 
 To select a dictionary, enter the add-on's popup and choose the appropriate language and
-dictionary. This will apply to all webpages opened by the user
+dictionary. This will apply to all webpages opened by the user.
+
+### Quiz
+
+Once a user has some text highlighted on a web page, they can quiz themselves on the highlighted vocabulary. To do this, simply select the 
+Quiz option in the context menu; a blue modal with a highlighted word in the middle should appear. In the quiz, users can search the definition of the 
+current text by simply clicking on it (like highlighted text in a web page). Make sure that Vocab Explorer is activated before selecting the Quiz option, otherwise 
+nothing will happen.
 
 ### Download
 Vocab Explorer is available in Mozila's Add-on website. Click this [link](https://addons.mozilla.org/en-US/firefox/addon/vocab-explorer/) to access it.
