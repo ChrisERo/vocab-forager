@@ -42,5 +42,7 @@ nothing will happen.
 ### Download
 Vocab Explorer is available in Mozila's Add-on website. Click this [link](https://addons.mozilla.org/en-US/firefox/addon/vocab-explorer/) to access it.
 
-### Important Technical Details
+### Important Notes
 This add-on was built under the assumption that a website becomes static (doesn't load any more elements) after 1 second and that a website'd DOM tree never changes; no elements are ever added, destroyed, or modified between visits. Using this add-on on websites that break this assumption will cause buggy behavior.
+
+I have also observed that at times the the add-on displays a stack trace error message when opening a website while the add-on is activated and highlights have been made. To get around this, try deactivating the add-on, waiting a few seconds/minutes, closing popups, and reactivating it.
