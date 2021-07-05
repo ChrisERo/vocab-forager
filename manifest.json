@@ -1,5 +1,4 @@
 {
-
   "manifest_version": 2,
   "name": "Vocab Explorer",
   "version": "0.0.6",
@@ -37,6 +36,7 @@
         "content_scripts/delete_highlights.js",
         "content_scripts/do_highlights.js",
         "content_scripts/load_quiz.js",
+        "content_scripts/recover_highlights.js",
         "content_scripts/main.js"
       ],
       "css": [
