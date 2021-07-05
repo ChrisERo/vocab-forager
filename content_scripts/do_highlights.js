@@ -70,7 +70,7 @@
         textCoveredByHighlightNodes += surrounding_node.textContent;
     }
     if (textCoveredByHighlightNodes !== json_data['word']) {
-        console.error(`${json_data['word']} does not match ${textCoveredByHighlightNodes}`);
+        throw `${json_data['word']} does not match ${textCoveredByHighlightNodes}`;
     }
 }
 
