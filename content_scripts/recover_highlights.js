@@ -259,7 +259,7 @@ class DomCharCursor {
             this.currentNodeIndex++;
             if (this.currentNodeIndex === this._textNodesDfsOrder.length) {
                 this.currentNodeIndex--;
-                this.currentIndex = currentNode[this.currentNodeIndex].textContent.length;
+                this.currentIndex = this._textNodesDfsOrder[this.currentNodeIndex].textContent.length;
                 this.currentIndex--;
                 return false;
             }
@@ -397,13 +397,44 @@ class Highlighter {
 
 /**
  * 
+ * @param {Trie} trie 
+ * @param {string} wordSoFar
+ * @param {Array<string>} wordAccumulator 
+ */
+function traverseTrieForWords(trie, wordSoFar, wordsAccumulator) {
+    wordSoFar += trie.value;
+    if (trie.isEnd) {
+        wordsAccumulator.push(wordSoFar);
+    }
+
+    let lettesToExpand = Object.keys(trie.children);
+    for (let i = 0; i < lettesToExpand.length; i++) {
+        let character = lettesToExpand[i];
+        traverseTrieForWords(trie.children[character], wordSoFar, wordsAccumulator);
+    }
+}
+
+/**
+ * 
  * @param {Object} vocabulario_data 
  */
 function recover_highlights(vocabulario_data) {
-    let words_to_find = convert_vocab_to_trie(vocabulario_data);
-    let highlighter = new Highlighter(words_to_find);
-    let charCursor = new DomCharCursor()
+    let wordsToFind = convert_vocab_to_trie(vocabulario_data);
+    let highlighter = new Highlighter(wordsToFind);
+    let charCursor = new DomCharCursor();
+    let new_vocab_data = highlighter.highlightMissingWords(charCursor);
+
+    // Get words not found and show them to user
+    let missingWordsArray = [];
+    traverseTrieForWords(wordsToFind, '', missingWordsArray);
+    missingWordsArray = missingWordsArray.filter(x => x.trim().length > 0);
+    if (missingWordsArray.length != 0) {
+        let missingWordsText = 'Failed to following words, ' +
+            'which will be removed from long-termstorage:\n' + 
+            missingWordsArray.toString();
+        console.log(missingWordsText);
+        alert(missingWordsText);
+    }
     
-    let new_vocab_data = highlighter.highlightMissingWords(charCursor)
-    return new_vocab_data
+    return new_vocab_data;
 }

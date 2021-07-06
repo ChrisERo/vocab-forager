@@ -67,9 +67,9 @@
         range.setStart(node, startOffset);
         range.setEnd(node, endOffset);
         range.surroundContents(surrounding_node);
-        textCoveredByHighlightNodes += surrounding_node.textContent;
+        textCoveredByHighlightNodes += range.toString();
     }
-    if (textCoveredByHighlightNodes !== json_data['word']) {
+    if (textCoveredByHighlightNodes.replace(/\s/g, '') !== json_data['word'].replace(/\s/g, '')) {
         throw `${json_data['word']} does not match ${textCoveredByHighlightNodes}`;
     }
 }

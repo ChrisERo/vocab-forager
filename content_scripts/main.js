@@ -103,10 +103,15 @@ function set_up_content() {
                 hilight_json_data(data, id_num);
             }
         } catch (err) {
-            alert(`${err}\n${err.stack}`);
+            console.log(`${err}\n${err.stack}`);
+            alert('Error Occurred While Attempting to highlight words.\n' + 
+                'Attempt to search site for highlights.');
             let og_vocab_data = { ...vocabulario_data}
             tear_down_content();
             vocabulario_data = recover_highlights(og_vocab_data);
+            storage_counter = Object.keys(vocabulario_data).length;
+            browser.runtime.sendMessage(
+                {type: 'store_data', data: vocabulario_data, page: window.location.href});
         }
         storage_counter += 1; // Needed for creating new hilights
 
