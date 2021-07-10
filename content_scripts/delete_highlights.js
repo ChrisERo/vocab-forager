@@ -76,12 +76,6 @@ function remove_from_html_and_other_data(hilight_elements, hilight_element_indec
     // Remove hilights of hilight_elements from html while maintaining structure of text
     // before hilight
     for (let element of hilight_elements) {
-        console.assert(element.childNodes.length === 1 &&
-            is_text_node(element.childNodes[0]),
-            `Error, hilight element has ${element.childNodes.length} 
-            nodes and the first is of type 
-            ${element.childNodes.length === 0 ? null : element.childNodes[0].nodeName}`);
-
         for (element_index = 0; element_index < parents_children.length;
             element_index++) {
                 if (parents_children[element_index] === element) {
