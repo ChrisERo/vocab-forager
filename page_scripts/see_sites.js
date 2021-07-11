@@ -46,7 +46,7 @@ function get_sites() {
         let key = non_volatile_memory.key(i);
         console.log(key)
         if (is_not_metadata(key)) {  // not_metadata <-> key is url
-            array_of_urls.push(key)
+            array_of_urls.push(key);
         }
     }
 

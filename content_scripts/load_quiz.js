@@ -97,7 +97,7 @@ function set_up_actions(vocabulario_data) {
         if (quiz_word_list.length === 0) {
             set_up_word_list(vocabulario_data);
         } else {
-            wordsReadFromQuiz += 1
+            wordsReadFromQuiz += 1;
             document.getElementById('quiz_counter').textContent =
                 `${wordsReadFromQuiz}/${totalWordsInQuiz}`;
         }
