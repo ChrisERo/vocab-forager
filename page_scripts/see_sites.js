@@ -41,12 +41,19 @@ function add_url_option(url) {
  */
 function get_sites() {
     let non_volatile_memory = window.localStorage;
+    let array_of_urls = [];
     for (let i = 0; i < non_volatile_memory.length; i++) {
         let key = non_volatile_memory.key(i);
         console.log(key)
         if (is_not_metadata(key)) {  // not_metadata <-> key is url
-            add_url_option(key);
+            array_of_urls.push(key);
         }
+    }
+
+    array_of_urls.sort();
+    for (let i = 0; i < array_of_urls.length; i++) {
+        let key = array_of_urls[i];
+        add_url_option(key);
     }
 }
 

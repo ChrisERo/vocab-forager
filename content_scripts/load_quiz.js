@@ -1,6 +1,9 @@
 let quiz_set = false; // true if quiz displayed in current page, else false
 let quiz_word_list = null; // words not yet been tested in current quiz
 
+let wordsEncountered = 0;
+let totalWordsInQuiz = 0;
+
 /**
  * Converts html data (as string) into elements
  *
@@ -59,6 +62,10 @@ function set_up_word_list(vocabulario_data) {
     }
     shuffle(quiz_word_list);
 
+    totalWordsInQuiz = quiz_word_list.length;
+    wordsReadFromQuiz = 1;
+    document.getElementById('quiz_counter').textContent =
+        `${wordsReadFromQuiz}/${totalWordsInQuiz}`;
 }
 
 /**
@@ -89,6 +96,10 @@ function set_up_actions(vocabulario_data) {
         quiz_word_list.pop();
         if (quiz_word_list.length === 0) {
             set_up_word_list(vocabulario_data);
+        } else {
+            wordsReadFromQuiz += 1;
+            document.getElementById('quiz_counter').textContent =
+                `${wordsReadFromQuiz}/${totalWordsInQuiz}`;
         }
         word.textContent = quiz_word_list[quiz_word_list.length - 1];
     });

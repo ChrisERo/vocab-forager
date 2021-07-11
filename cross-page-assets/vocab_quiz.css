@@ -78,3 +78,7 @@
     text-decoration: none;
     cursor: pointer;
   }
+
+  .quiz_counter_css {
+      font-size: 20pt;
+  }
