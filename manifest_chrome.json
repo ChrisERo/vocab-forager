@@ -1,8 +1,8 @@
 {
   "name": "Vocab Explorer",
   "description": "Build an Extension!",
-  "version": "2.0",
-  "manifest_version": 3
+  "version": "2.0.0",
+  "manifest_version": 3,
   "permissions": [
     "activeTab",
     "scriptiong",
