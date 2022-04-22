@@ -1,7 +1,7 @@
 import { DictionaryManager } from "./dictionary";
 import { getNonVolatileStorage, NonVolatileBrowserStorage } from "./non-volatile-browser-storage";
 import {ContextMenuManager} from "./contextmenu"
-import { BSMessage, BSMessageType, DictsOfLangRequest, isBsMessage, isDictsOfLangRequest, isGetDataForPageRequest, isPageDataPair, isSearchRequest, isSetActivationRequest, isUpdateDictionaryRequest } from "../utils/background-script-communication";
+import { BSMessageType, isBsMessage, isDictsOfLangRequest, isGetDataForPageRequest, isPageDataPair, isSearchRequest, isSetActivationRequest, isUpdateDictionaryRequest } from "../utils/background-script-communication";
 import { Dictionary, DictionaryIdentifier, isDictionaryID, SiteData } from "../utils/models";
 
 const browserStorage: NonVolatileBrowserStorage = getNonVolatileStorage();
@@ -48,7 +48,7 @@ function logUnexpected(key: string, value: any) {
             sendResponse(response);
             break;
         }
-        case BSMessageType.GetCurrentDictionary : {
+        case BSMessageType.GetLanguages : {
             let response = dictionaryManager.getLanguages();
             sendResponse(response);
             break;
@@ -144,7 +144,7 @@ function logUnexpected(key: string, value: any) {
             sendResponse();
             break;
         }
-        default {
+        default: {
             logUnexpected('messageType', request.messageType);
         }
     }
