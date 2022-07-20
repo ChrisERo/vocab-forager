@@ -114,8 +114,9 @@ export interface DictsOfLangRequest {
 }
 
 
+
 export type BSMessagePayload = DictsOfLangRequest|SearchRequest|DictionaryIdentifier|
-    PageDataPair|SetActivationRequest|UpdateDictionaryRequest|null;
+    PageDataPair|SetActivationRequest|GetDataForPage|UpdateDictionaryRequest|null;
 
 /**
  * Message that can be sent to background script listener

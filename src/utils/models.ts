@@ -4,7 +4,7 @@
 export interface Word {
     // text enclosed within word object
     word: string;
-    // 
+    // offsets of first and last character in their respective DOM Node
     startOffset: number;
     endOffset: number;
     // in-order list of nodes that contain word parameter in its entirity. Each node is 

@@ -15,6 +15,14 @@ export interface NewActivatedState {
     newActivatedState: boolean
 }
 
+/**
+ * Returns true if and only if object provided is a NewActivatedState
+ */
+ export function isNewActivatedState(mssg: any): mssg is NewActivatedState {
+    let temp = mssg as NewActivatedState;
+    return temp.newActivatedState !== undefined;
+}
+
 type CSMessagePayload = NewActivatedState|null;
 
 /**
@@ -23,5 +31,12 @@ type CSMessagePayload = NewActivatedState|null;
 export interface CSMessage {
     messageType: CSMessageType;
     payload?: CSMessagePayload;
+}
 
+/**
+ * Returns true if and only if object provided is a CSMessage
+ */
+ export function isCsMessage(mssg: any): mssg is CSMessage {
+    let temp = mssg as CSMessage;
+    return temp.messageType !== undefined && temp.payload !== undefined;
 }

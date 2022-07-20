@@ -28,7 +28,7 @@ function logUnexpected(key: string, value: any) {
     
     if (!isBsMessage(request)) {
        logUnexpected("request structure", request);
-        return;
+       return;
     }
 
     switch (request.messageType) {

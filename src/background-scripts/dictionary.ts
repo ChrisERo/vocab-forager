@@ -95,7 +95,7 @@ export class DictionaryManager {
      * @param word - word we wish to look up 
      */
     getWordSearchURL(word: string) {
-        let currentDict: Dictionary = this.getCurrentDictionary();  // TODO: optimize function
+        let currentDict: Dictionary = this.getCurrentDictionary();
         let template = currentDict.url;
         return template.replace(DictionaryManager.wordURLPlaceHolder, word);
     }
