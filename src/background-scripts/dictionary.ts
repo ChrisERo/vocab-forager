@@ -70,23 +70,20 @@ export class DictionaryManager {
      * 
      * @param dictID
      */
-    getDictionaryFromIdentifier(dictID: DictionaryIdentifier) {
+    getDictionaryFromIdentifier(dictID: DictionaryIdentifier): Dictionary {
         let dc: GlobalDictionaryData = this.source.getDictionaryData();
         return this.getDictionaryFromIdentifierHelper(dc, dictID);
     }
 
     /**
-     * Equivilant to this.getDictinoaryFromIdentifier whene executed on the 
-     * current dictionary's identifier
+     * Returns current dictionary's identifier
      * 
      * @returns dictionary to be used for searching currently, or a Dictionary with null
      * values if either current dicitonary is not set or if it references a non-existant
      * Dictionary.
      */
-    getCurrentDictionary(): Dictionary {
-        let dc: GlobalDictionaryData = this.source.getDictionaryData();
-        let currentDictInfo: DictionaryIdentifier = dc.currentDictionary;
-        return this.getDictionaryFromIdentifierHelper(dc, currentDictInfo);
+    getCurrentDictionaryId(): DictionaryIdentifier {
+        return this.source.getDictionaryData().currentDictionary;
     }
 
     /**
@@ -95,8 +92,9 @@ export class DictionaryManager {
      * @param word - word we wish to look up 
      */
     getWordSearchURL(word: string) {
-        let currentDict: Dictionary = this.getCurrentDictionary();
-        let template = currentDict.url;
+        let dc: GlobalDictionaryData = this.source.getDictionaryData();
+        let currentDic = this.getDictionaryFromIdentifierHelper(dc, dc.currentDictionary);
+        let template = currentDic.url;
         return template.replace(DictionaryManager.wordURLPlaceHolder, word);
     }
 

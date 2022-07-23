@@ -71,6 +71,14 @@ export function isDictionaryID(obj: any): obj is DictionaryIdentifier {
     return dict.language !== undefined && dict.index !== undefined;
 }
 
+/**
+ * @param di dictionary identifier to check
+ * @returns true if di represents a null value and false otherwise
+ */
+export function isNullDictionaryID(di: DictionaryIdentifier): boolean {
+    return di.index === -1 && di.language.length === 0;
+}
+
 
 /**
  * Object representing all the dictionary data common for all websites

@@ -105,7 +105,7 @@ class LocalStorage implements NonVolatileBrowserStorage {
 
     getDictionaryData(): GlobalDictionaryData {
         let dictsRaw: string|null = window.localStorage.getItem(this.dictionaryKey);
-        if (dictsRaw == null) {
+        if (dictsRaw === null) {
             return {
                 languagesToResources: {},
                 currentDictionary: {language: '', index: -1}

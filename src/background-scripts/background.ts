@@ -22,7 +22,6 @@ function logUnexpected(key: string, value: any) {
  * Using a listener per background script caused errors, in particular
  * when loading popup menu for the first time.
  */
-
  function handler(request: any, _: chrome.runtime.MessageSender, sendResponse: sendResponseFunction): void {
     console.log(`REQUEST TO BACKGROUND MADE: ${request.type}`);
     
@@ -44,7 +43,7 @@ function logUnexpected(key: string, value: any) {
             break;
         }
         case BSMessageType.GetCurrentDictionary : {
-            let response = dictionaryManager.getCurrentDictionary();
+            let response = dictionaryManager.getCurrentDictionaryId();
             sendResponse(response);
             break;
         }
