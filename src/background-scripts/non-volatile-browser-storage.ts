@@ -3,7 +3,7 @@ import {GlobalDictionaryData, SiteData} from "../utils/models"
 /**
  * Interfacce for retrieving and writing data needed for functionality of content scripts
  */
-export interface NonVolatileBrowserStorage {    
+export interface NonVolatileBrowserStorage {
     /**
      * Querries whether extension should be activated or not from from extension's 
      * non-volatile storage. If value is not set, initializes value to false.
@@ -26,13 +26,24 @@ export interface NonVolatileBrowserStorage {
      */
     getPageData(site: string): SiteData;
 
-     /**
-     * Saves page-specific metadata in non-volatile storage.
-     * 
-     * @param siteData - metadata for particular web url
-     * @param page - url corresponding to data from siteData
+    /**
+     * Returns array of all URLs stored in non-volatiel storage
      */
-      storePageData(siteData: SiteData, page: string): void;
+    getAllPageUrls(): string[];
+
+    /**
+    * Saves page-specific metadata in non-volatile storage.
+    * 
+    * @param siteData - metadata for particular web url
+    * @param page - url corresponding to data from siteData
+    */
+    storePageData(siteData: SiteData, page: string): void;
+
+    /**
+     * Removes data for a partucluar webpage url from non-volatile storage
+     * @param url - url corresponding to data from siteData
+     */
+    removePageData(url: string): void;    
 
     /**
      * Gets all dictionary-related data stored in non-volatile source
@@ -61,7 +72,7 @@ class LocalStorage implements NonVolatileBrowserStorage {
         this.isActivatedKey = isActivatedKey;
         this.dictionaryKey = dictionaryKey;
     }
-
+    
     getCurrentActivation(): boolean {
         const notActivatedStringRep = '0';  // value of isActivatedKey if not activated
 
@@ -91,6 +102,23 @@ class LocalStorage implements NonVolatileBrowserStorage {
         }
     }
 
+    removePageData(url: string): void {
+        window.localStorage.remove(url);
+    }
+
+    getAllPageUrls(): string[] {
+        let nonVolatileMemory: Storage = window.localStorage;
+        const response: string[] = [];
+        for (let i = 0; i < nonVolatileMemory.length; i++) {
+            let key = nonVolatileMemory.key(i) as string;
+            if (this.isURL(key)) { 
+                response.push(key);
+            }
+        }
+
+        return response;
+    }
+
     getPageData(site: string): SiteData {
         let page_vocab: string|null =  window.localStorage.getItem(site);
         if (page_vocab == null) {
@@ -117,6 +145,14 @@ class LocalStorage implements NonVolatileBrowserStorage {
 
     setDictionaryData(gdd: GlobalDictionaryData): void {
         window.localStorage.setItem(this.dictionaryKey, JSON.stringify(gdd));
+    }
+
+    /**
+     * @param key entry inside LocalStorage
+     * @returns true if key corresponds to an entry for a URL and false otherwise
+     */
+    private isURL(key: string): boolean {
+        return key !== this.dictionaryKey && key !== this.isActivatedKey;
     }
 }
 

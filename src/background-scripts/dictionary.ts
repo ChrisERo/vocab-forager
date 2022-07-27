@@ -163,6 +163,25 @@ export class DictionaryManager {
     }
 
     /**
+     * Adds dictionary to non-volatile storage
+     *
+     * @param dict Dictionary to add
+     * @param lang language that dict is for
+     */
+    addDictionary(dict: Dictionary, lang: string): void {
+        const dc: GlobalDictionaryData = this.source.getDictionaryData();
+        if (Object.keys(dc.languagesToResources).length === 0) {
+            dc.languagesToResources[lang] = [];
+            dc.currentDictionary = {language: lang, index: 0};
+        }
+        const dictsForLang: Dictionary[] = dc.languagesToResources[lang];
+        dictsForLang.push(dict);  
+
+        this.source.setDictionaryData(dc);
+
+    }
+
+    /**
      * Updates an existing dictionary entry.
      *
      * @param dictID - reference to the modified dictionary

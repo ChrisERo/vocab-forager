@@ -1,8 +1,9 @@
 import { DictionaryManager } from "./dictionary";
 import { getNonVolatileStorage, NonVolatileBrowserStorage } from "./non-volatile-browser-storage";
 import {ContextMenuManager} from "./contextmenu"
-import { BSMessageType, isBsMessage, isDictsOfLangRequest, isGetDataForPageRequest, isPageDataPair, isSearchRequest, isSetActivationRequest, isUpdateDictionaryRequest } from "../utils/background-script-communication";
+import { BSMessageType, isAddNewDictRequest, isBsMessage, isDictsOfLangRequest, isGetDataForPageRequest, isPageDataPair, isSearchRequest, isSetActivationRequest, isUpdateDictionaryRequest } from "../utils/background-script-communication";
 import { Dictionary, DictionaryIdentifier, isDictionaryID, SiteData } from "../utils/models";
+import { isNewActivatedState } from "../utils/content-script-communication";
 
 const browserStorage: NonVolatileBrowserStorage = getNonVolatileStorage();
 const dictionaryManager: DictionaryManager = new DictionaryManager(browserStorage);
@@ -42,7 +43,7 @@ function logUnexpected(key: string, value: any) {
             }
             break;
         }
-        case BSMessageType.GetCurrentDictionary : {
+        case BSMessageType.GetCurrentDictionary: {
             let response = dictionaryManager.getCurrentDictionaryId();
             sendResponse(response);
             break;
@@ -52,7 +53,7 @@ function logUnexpected(key: string, value: any) {
             sendResponse(response);
             break;
         }
-        case BSMessageType.SetCurrentDictionary : {
+        case BSMessageType.SetCurrentDictionary: {
             if (isDictionaryID(request.payload)) {
                 let result = dictionaryManager.setcurrentDictinoary(request.payload);
                 sendResponse(result);
@@ -81,7 +82,15 @@ function logUnexpected(key: string, value: any) {
                 logUnexpected('payload', request.payload);
             }
         }
-        case BSMessageType.DeleteExitingDictionary : {
+        case BSMessageType.AddNewDictionary: {
+            if (isAddNewDictRequest(request.payload)) {
+                const dict: Dictionary = request.payload.dict;
+                const langauge: string = request.payload.lang;
+                dictionaryManager.addDictionary(dict, langauge);
+                sendResponse();
+            }
+        }
+        case BSMessageType.DeleteExitingDictionary: {
             if (isDictionaryID(request.payload)) {
                 let result = dictionaryManager.removeDictionary(request.payload);
                 sendResponse(result);
@@ -90,7 +99,7 @@ function logUnexpected(key: string, value: any) {
             }
             break;
         }
-        case BSMessageType.SearchWordURL : {
+        case BSMessageType.SearchWordURL: {
             if (isSearchRequest(request.payload)) {
                 let result = dictionaryManager.getWordSearchURL(request.payload.word);
                 sendResponse(result);
@@ -99,7 +108,7 @@ function logUnexpected(key: string, value: any) {
             }
             break;
         }
-        case BSMessageType.StorePageData : {
+        case BSMessageType.StorePageData: {
             if (isPageDataPair(request.payload)) {
                 let data: SiteData = request.payload.data;
                 let url: string = request.payload.url;
@@ -110,7 +119,7 @@ function logUnexpected(key: string, value: any) {
             }
             break;
         }
-        case BSMessageType.GetDataForPage: {
+        case BSMessageType.GetPageData: {
             if (isGetDataForPageRequest(request.payload)) {
                 let data: SiteData = browserStorage.getPageData(request.payload.url);
                 sendResponse(data);
@@ -119,7 +128,16 @@ function logUnexpected(key: string, value: any) {
             }
             break;
         }
-        case BSMessageType.GetCurrentActivation : {
+        case BSMessageType.DeletePageData: {
+            if (isGetDataForPageRequest(request.payload)) {
+                browserStorage.removePageData(request.payload.url);
+                sendResponse();
+            } else {
+                logUnexpected('payload', request.payload);
+            }
+            break;
+        }
+        case BSMessageType.GetCurrentActivation: {
             let result = browserStorage.getCurrentActivation();
             sendResponse(result);
             break;
@@ -133,14 +151,19 @@ function logUnexpected(key: string, value: any) {
             }
             break;
         }
-        case BSMessageType.ShowDeleteHighlightsCM : {
+        case BSMessageType.ShowDeleteHighlightsCM: {
             contextMenuManager.exposeDeleteContextMenu();
             sendResponse();
             break;
         }
-        case BSMessageType.HideDeleteHighlightsCM : {
+        case BSMessageType.HideDeleteHighlightsCM: {
             contextMenuManager.hideDeleteContextMenu();
             sendResponse();
+            break;
+        }
+        case BSMessageType.GetAllURLs: {
+            const response: string[] = browserStorage.getAllPageUrls();
+            sendResponse(response);
             break;
         }
         default: {

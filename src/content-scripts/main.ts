@@ -203,7 +203,7 @@ const previousOnMouseUp = document.onmouseup; // on mouse up value before extens
  */
  function setUp() {
     let getSDRequest: BSMessage = {
-        messageType: BSMessageType.GetDataForPage,
+        messageType: BSMessageType.GetPageData,
         payload: {
             url: window.location.href
         }

@@ -7,17 +7,20 @@ import { Dictionary, DictionaryIdentifier, SiteData } from "./models";
     DictsOfLang,
     GetCurrentDictionary,
     SetCurrentDictionary,
+    AddNewDictionary,
     GetExistingDictionary,
     UpdateExistingDictionary,
     DeleteExitingDictionary,
     GetLanguages,
     SearchWordURL,
     StorePageData,
-    GetDataForPage,
+    DeletePageData,
+    GetPageData,
     GetCurrentActivation,
     SetCurrentActivation,
     ShowDeleteHighlightsCM,
     HideDeleteHighlightsCM,
+    GetAllURLs,
 }
 
 /**
@@ -33,6 +36,22 @@ import { Dictionary, DictionaryIdentifier, SiteData } from "./models";
  export function isSetActivationRequest(mssg: any): mssg is SetActivationRequest {
     let temp = mssg as SetActivationRequest;
     return temp.isActivated !== undefined;
+}
+
+/**
+ * Request to add new dictionary to non-volatile db
+ */
+ export interface AddNewDictRequest {
+    dict: Dictionary;
+    lang: string;
+}
+
+/**
+ * Returns true if and only if object provided is a SetActivationRequest
+ */
+ export function isAddNewDictRequest(mssg: any): mssg is AddNewDictRequest {
+    let temp = mssg as AddNewDictRequest;
+    return temp.dict !== undefined && temp.lang !== undefined;
 }
 
 /**
@@ -116,7 +135,8 @@ export interface DictsOfLangRequest {
 
 
 export type BSMessagePayload = DictsOfLangRequest|SearchRequest|DictionaryIdentifier|
-    PageDataPair|SetActivationRequest|GetDataForPage|UpdateDictionaryRequest|null;
+    PageDataPair|SetActivationRequest|GetDataForPage|UpdateDictionaryRequest|
+    AddNewDictRequest|null;
 
 /**
  * Message that can be sent to background script listener

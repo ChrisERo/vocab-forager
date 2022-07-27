@@ -3,25 +3,15 @@ import { CSMessage, CSMessageType } from "../utils/content-script-communication"
 import { Dictionary, DictionaryIdentifier, isNullDictionaryID } from "../utils/models";
 import { loadBannerHtml } from "./fetch-banner";
 import { makeDictionarySelection, makeLanguageSelection } from "./selection-dict";
+import { addNavToButton } from "./utils";
 
 /**
  * Adds action listeners for all button elements in popup page
  */
 function initButtons(): void {
     // Navigate to page for making new dictionary
-    const newDictElem = document.getElementById('new_dict') as HTMLElement;
-    newDictElem.addEventListener('click', () => {
-        chrome.tabs.create({
-            url:'new_dict.html'
-        });
-    });
-
-    const indexElem = document.getElementById('index') as HTMLElement;
-    indexElem.addEventListener('click', () => {
-        chrome.tabs.create({
-            url:'index.html'
-        });
-    });
+    addNavToButton('new-dict');
+    addNavToButton('index');
 
     // Setup toggle button to what non-volatile state dictates
     const getActive: BSMessage = {
