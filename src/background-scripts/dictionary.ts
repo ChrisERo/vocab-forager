@@ -192,7 +192,7 @@ export class DictionaryManager {
             let dc: GlobalDictionaryData = this.source.getDictionaryData();
             let dictionaries: SubjectToDictsMapping = dc.languagesToResources;
             let dictList: Dictionary[] = dictionaries[dictID.language];
-            if (dictList == null || 
+            if (dictList === null || 
                 dictID.index < 0 || 
                 dictID.index >= dictList.length) {  // TODO: make private invalid locaiton function for code reuse
                 console.error(`Bad data for ${dictionaries}: ${dictID.language}, ${dictID.index}`)

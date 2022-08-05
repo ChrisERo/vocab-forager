@@ -10,3 +10,14 @@
         window.location.href = `${pageName}.html`;
     });
 }
+
+/**
+ * Sets input HTML element with id as elemID with
+ *  value.
+ * @param elemID id of input element to modify
+ * @param value value to place in element with id as elemID
+ */
+ export function setInputElementDefaultValue(elemID: string, value: string): void {
+    const elem = document.getElementById(elemID) as HTMLInputElement;
+    elem.value = value;
+}

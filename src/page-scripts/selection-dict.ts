@@ -1,4 +1,5 @@
-import { Dictionary, DictionaryIdentifier } from "../utils/models";
+import { BSMessage, BSMessageType } from "../utils/background-script-communication";
+import { Dictionary, DictionaryIdentifier, isNullDictionaryID } from "../utils/models";
 
 function createSelection<Type>(selectionId: string, arr: Type[], 
     arrElemToString: (x: Type) => string,
@@ -67,4 +68,48 @@ export function makeLanguageSelection(languages: string[], currentDictInfo: Dict
     const extraCondition = (x: string) => currentDictInfo !== null && x === currentDictInfo.language
     const identityF = (x: string) => x;
     createSelection('languages', languages, identityF, currentDictInfo, extraCondition);
+}
+
+/**
+ * Populates dictionary selection in website with all dictionaries in non-volatile storage
+ * belonging to particular langauge. If dictInfo.language === langauge, then dictInfo's
+ * index is selected as the current value of select element
+ * 
+ * @param dictInfo - information on where some dictionary is located
+ * @param language - langauge for which to query dictionaries
+ */
+ function updateDictionarySelection(dictInfo: DictionaryIdentifier, language: string) {
+    let getDictsRequest: BSMessage = {
+        messageType: BSMessageType.DictsOfLang,
+        payload: {
+            language: language
+        }
+    };
+    chrome.runtime.sendMessage(getDictsRequest, 
+        (result: Dictionary[]) => makeDictionarySelection(result, dictInfo));
+}
+
+/**
+ * Function for initialising and setting up select elements for ids of langauges and 
+ * dictionaries
+ * 
+ * @param langs collection of all languages currently supported in Dictionary 
+ * @param dictInfo specific dictInfo to set as initial selection
+ */
+export function setUpDictsAndLangsElements(langs: string[], dictInfo: DictionaryIdentifier): void {
+    // Get dictionaries from dictInfo info and initialize
+        // dictinoary comboboxes if current_dict exists
+        if (langs.length > 0) {
+            let langToSearch = isNullDictionaryID(dictInfo) ? langs[0] : dictInfo.language;
+            updateDictionarySelection(dictInfo, langToSearch);
+        }
+
+        // Get new dictionaries associated with new selected langauge and populate 
+        // selection of dictionaries with result
+        document.getElementById('languages')?.addEventListener('change', 
+            function(this: HTMLSelectElement) {
+                const myLang = langs[parseInt(this.value)];
+                updateDictionarySelection(dictInfo, myLang);
+            }
+        );
 }
