@@ -4,15 +4,14 @@
   "description": "Vocab Explorer is a browser extension built for people trying to build up their vocabulary for one, or several, languages. Users can highlight both words and phrases on a webpage and search for them in an online dictionary of their choice.",
   "main": "index.js",
   "scripts": {
-    "build": "webpack --config webpack.config.js"
+    "build": "webpack --config webpack/webpack.config.js"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ChrisERo/Hoot-Hoot.git"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "Christian Edward Rodriguez",
   "bugs": {
     "url": "https://github.com/ChrisERo/Hoot-Hoot/issues"
   },

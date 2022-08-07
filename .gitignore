@@ -3,3 +3,5 @@ package-lock.json
 *.swp
 node_modules/*
 notepads/*
+extension/*
+

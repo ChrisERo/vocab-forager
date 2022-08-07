@@ -1,0 +1,31 @@
+{
+  "name": "Vocab Explorer",
+  "description": "Vocab Explorer is a browser extension built for people trying to build up their vocabulary for one, or several, languages. Users can highlight both words and phrases on a webpage and search for them in an online dictionary of their choice.!",
+  "version": "2.0.0",
+  "manifest_version": 3,
+  "permissions": [
+    "activeTab",
+    "scripting",
+
+    "<all_urls>",
+    "tabs",
+    "storage",
+    "webRequest",
+    "contextMenus"
+  ],
+  "background": {
+    "service_worker": "background.js" 
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*/*"],
+      "js": [
+        "content.js"
+      ],
+      "css": [
+        "cross-page-assets/highlight_style.css",
+        "cross-page-assets/vocab_quiz.css"
+      ]
+    }
+  ]
+}

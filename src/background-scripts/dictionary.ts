@@ -1,4 +1,4 @@
-import { DictionaryIdentifier as DictionaryIdentifier, Dictionary, getLanguages, GlobalDictionaryData, SubjectToDictsMapping } from '../utils/models';
+import { DictionaryIdentifier, Dictionary, getLanguages, GlobalDictionaryData, SubjectToDictsMapping } from '../utils/models';
 import {NonVolatileBrowserStorage} from './non-volatile-browser-storage'
 
 /**
