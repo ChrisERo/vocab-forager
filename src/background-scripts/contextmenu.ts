@@ -31,11 +31,11 @@ export class ContextMenuManager {
             return;
         }
 
-        let isActivated: boolean = this.storage.getCurrentActivation();
-        this.setUpContextMenuGraphicalComponents(isActivated);
-        this.setUpContextMenuListeners();
-       
         this.setUpCMsCalled = true;
+        this.storage.getCurrentActivation().then((isActivated: boolean) => {
+            this.setUpContextMenuGraphicalComponents(isActivated);
+            this.setUpContextMenuListeners();
+        });
     }
 
     /**
@@ -84,20 +84,22 @@ export class ContextMenuManager {
             switch(info.menuItemId) {
                 case ContextMenuManager.activationID: {
                     // flip activated state and notify all tabs (content script instances)
-                    let newIsActivatedState = !this.storage.getCurrentActivation();
-                    this.storage.setCurrentActivation(newIsActivatedState);
-                    this.updateContextMenuBasedOnActivation(newIsActivatedState);            
-                    let get_tabs = chrome.tabs.query({});
-                    get_tabs.then(function (tabs: chrome.tabs.Tab[]) {
-                        let message: CSMessage = {
-                            messageType: CSMessageType.ActivationStateChange,
-                            payload: {newActivatedState: newIsActivatedState},
-                        }
-                        for (let tabElements of tabs) {
-                            if (tabElements.id !== undefined) {
-                                chrome.tabs.sendMessage(tabElements.id, message)
+                    this.storage.getCurrentActivation().then((isActivatedNow: boolean) => {
+                        let newIsActivatedState = !isActivatedNow;
+                        this.storage.setCurrentActivation(newIsActivatedState);
+                        this.updateContextMenuBasedOnActivation(newIsActivatedState);            
+                        let get_tabs = chrome.tabs.query({});
+                        get_tabs.then(function (tabs: chrome.tabs.Tab[]) {
+                            let message: CSMessage = {
+                                messageType: CSMessageType.ActivationStateChange,
+                                payload: {newActivatedState: newIsActivatedState},
                             }
-                        }
+                            for (let tabElements of tabs) {
+                                if (tabElements.id !== undefined) {
+                                    chrome.tabs.sendMessage(tabElements.id, message)
+                                }
+                            }
+                        });
                     });
                     break;
                 }

@@ -4,4 +4,4 @@ package-lock.json
 node_modules/*
 notepads/*
 extension/*
-
+.vscode/*

@@ -18,8 +18,8 @@ export class DictionaryManager {
     /**
      * Returns array of all languages for which a dictionary exists.
      */
-    getLanguages(): string[] {
-        let dc: GlobalDictionaryData = this.source.getDictionaryData();
+    async getLanguages(): Promise<string[]> {
+        let dc = await this.source.getDictionaryData();
         return getLanguages(dc);
     }
 
@@ -28,10 +28,10 @@ export class DictionaryManager {
      * 
      * @param language - language or subject for which to get Dictionaries for
      */
-    getDictionariesOfLanguage(language: string): Dictionary[] {
-        let dc: GlobalDictionaryData = this.source.getDictionaryData();
+    async getDictionariesOfLanguage(language: string): Promise<Dictionary[]> {
+        let dc: GlobalDictionaryData = await this.source.getDictionaryData();
         let availableDicts: SubjectToDictsMapping = dc.languagesToResources
-        if (availableDicts[language] == null) {
+        if (availableDicts[language] === undefined) {
             return [];
         }
         
@@ -56,7 +56,7 @@ export class DictionaryManager {
         }
 
         let dicts: Dictionary[] = dictionaries[dictID.language];
-        if (dictID.index < dicts.length || dictID.index >= dicts.length) {
+        if (dictID.index < 0 || dictID.index >= dicts.length) {
             return {name: '', url: ''};
         }
        
@@ -70,8 +70,8 @@ export class DictionaryManager {
      * 
      * @param dictID
      */
-    getDictionaryFromIdentifier(dictID: DictionaryIdentifier): Dictionary {
-        let dc: GlobalDictionaryData = this.source.getDictionaryData();
+    async getDictionaryFromIdentifier(dictID: DictionaryIdentifier): Promise<Dictionary> {
+        let dc: GlobalDictionaryData = await this.source.getDictionaryData();
         return this.getDictionaryFromIdentifierHelper(dc, dictID);
     }
 
@@ -82,8 +82,8 @@ export class DictionaryManager {
      * values if either current dicitonary is not set or if it references a non-existant
      * Dictionary.
      */
-    getCurrentDictionaryId(): DictionaryIdentifier {
-        return this.source.getDictionaryData().currentDictionary;
+    async getCurrentDictionaryId(): Promise<DictionaryIdentifier> {
+        return (await this.source.getDictionaryData()).currentDictionary;
     }
 
     /**
@@ -91,8 +91,8 @@ export class DictionaryManager {
      * 
      * @param word - word we wish to look up 
      */
-    getWordSearchURL(word: string) {
-        let dc: GlobalDictionaryData = this.source.getDictionaryData();
+    async getWordSearchURL(word: string): Promise<String> {
+        let dc: GlobalDictionaryData = await this.source.getDictionaryData();
         let currentDic = this.getDictionaryFromIdentifierHelper(dc, dc.currentDictionary);
         let template = currentDic.url;
         return template.replace(DictionaryManager.wordURLPlaceHolder, word);
@@ -104,8 +104,8 @@ export class DictionaryManager {
      * 
      * @param chosenDictInfo - data identifying current dicitonary to set
      */
-     setcurrentDictinoary(chosenDictInfo: DictionaryIdentifier) {
-        let dc: GlobalDictionaryData = this.source.getDictionaryData();
+     async setcurrentDictinoary(chosenDictInfo: DictionaryIdentifier): Promise<void> {
+        let dc: GlobalDictionaryData = await this.source.getDictionaryData();
         dc.currentDictionary = chosenDictInfo;
         this.source.setDictionaryData(dc);
     }
@@ -120,14 +120,14 @@ export class DictionaryManager {
      *                 Number representing index of dictionary to delete
      * @returns false if terminated exceptionally and true otherwise
      */
-    removeDictionary(dictID: DictionaryIdentifier): boolean {
+    async removeDictionary(dictID: DictionaryIdentifier): Promise<boolean> {
         try {
             // Extract identifying components
             let language: string = dictID.language;
             let dict_index: number = dictID.index;
             
             // Remove dictionary referenced by dictID if possible
-            let dc: GlobalDictionaryData = this.source.getDictionaryData();
+            let dc: GlobalDictionaryData = await this.source.getDictionaryData();
             let dictionaries: SubjectToDictsMapping = dc.languagesToResources;
             let relevantDictionaries: Dictionary[] = dictionaries[language];
             if (relevantDictionaries == null || 
@@ -168,11 +168,14 @@ export class DictionaryManager {
      * @param dict Dictionary to add
      * @param lang language that dict is for
      */
-    addDictionary(dict: Dictionary, lang: string): void {
-        const dc: GlobalDictionaryData = this.source.getDictionaryData();
+    async addDictionary(dict: Dictionary, lang: string): Promise<void> {
+        const dc: GlobalDictionaryData = await this.source.getDictionaryData();
         if (Object.keys(dc.languagesToResources).length === 0) {
-            dc.languagesToResources[lang] = [];
             dc.currentDictionary = {language: lang, index: 0};
+        }
+
+        if (dc.languagesToResources[lang] === undefined) {
+            dc.languagesToResources[lang] = [];
         }
         const dictsForLang: Dictionary[] = dc.languagesToResources[lang];
         dictsForLang.push(dict);  
@@ -187,9 +190,9 @@ export class DictionaryManager {
      * @param dictID - reference to the modified dictionary
      * @param newDict - new url and name info of dictionary
      */
-    modifyExistingDictionary(dictID: DictionaryIdentifier, newLanguage: string, newDict: Dictionary) {
+    async modifyExistingDictionary(dictID: DictionaryIdentifier, newLanguage: string, newDict: Dictionary): Promise<void> {
         if (dictID.language === newLanguage) { // Just update dict's data
-            let dc: GlobalDictionaryData = this.source.getDictionaryData();
+            let dc: GlobalDictionaryData = await this.source.getDictionaryData();
             let dictionaries: SubjectToDictsMapping = dc.languagesToResources;
             let dictList: Dictionary[] = dictionaries[dictID.language];
             if (dictList === null || 
@@ -203,9 +206,9 @@ export class DictionaryManager {
             this.source.setDictionaryData(dc);
         } else {
             // Move dictionary from old language to new language (with edits)
-            let successful_delete = this.removeDictionary(dictID); // must get dicts after doing this
+            let successful_delete = await this.removeDictionary(dictID); // must get dicts after doing this
             if (successful_delete) {
-                let dc: GlobalDictionaryData = this.source.getDictionaryData();
+                let dc: GlobalDictionaryData = await this.source.getDictionaryData();
                 let dictionaries: SubjectToDictsMapping = dc.languagesToResources;
 
                 // Determine whether to move dictionary to brand new or existing language

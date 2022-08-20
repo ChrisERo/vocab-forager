@@ -1,5 +1,6 @@
 import {GlobalDictionaryData, SiteData} from "../utils/models"
 
+
 /**
  * Interfacce for retrieving and writing data needed for functionality of content scripts
  */
@@ -10,7 +11,7 @@ export interface NonVolatileBrowserStorage {
      * 
      * @returns true if extension is currently activated, and false otherwise
      */
-    getCurrentActivation(): boolean;
+    getCurrentActivation(): Promise<boolean>;
     
     /**
      * Sets in non-volatile storage whether the extension should be activated
@@ -24,12 +25,12 @@ export interface NonVolatileBrowserStorage {
      * 
      * @param site - url of a website
      */
-    getPageData(site: string): SiteData;
+    getPageData(site: string): Promise<SiteData>;
 
     /**
      * Returns array of all URLs stored in non-volatiel storage
      */
-    getAllPageUrls(): string[];
+    getAllPageUrls(): Promise<string[]>;
 
     /**
     * Saves page-specific metadata in non-volatile storage.
@@ -48,7 +49,7 @@ export interface NonVolatileBrowserStorage {
     /**
      * Gets all dictionary-related data stored in non-volatile source
      */
-    getDictionaryData(): GlobalDictionaryData;
+    getDictionaryData(): Promise<GlobalDictionaryData>;
 
     /**
      * Sets data pertaining to global dictionary to GlobalDictionaryData
@@ -72,45 +73,67 @@ class LocalStorage implements NonVolatileBrowserStorage {
         this.isActivatedKey = isActivatedKey;
         this.dictionaryKey = dictionaryKey;
     }
-    
-    getCurrentActivation(): boolean {
-        const notActivatedStringRep = '0';  // value of isActivatedKey if not activated
 
-        let my_activation: string|null = window.localStorage.getItem(this.isActivatedKey);
-        let activationStatus: boolean;
-        if (my_activation === null) {
-            activationStatus = false;
-            window.localStorage.setItem(this.isActivatedKey, notActivatedStringRep);
-        } else {
-            activationStatus = Boolean(parseInt(my_activation));
+    private async getFromLS(key: string): Promise<any|null> {
+        const fetchedResults = await chrome.storage.local.get(key);
+    
+        if (!fetchedResults.hasOwnProperty(key)) {
+            return null;
         }
 
-        return activationStatus;
+        return fetchedResults[key];
     }
 
-     setCurrentActivation(is_activated: boolean): void {
-        let my_activation: StoredActivatedState = Number(is_activated) as StoredActivatedState;
-        window.localStorage.setItem(this.isActivatedKey, my_activation.toString());
+    private setInLS(key: string, value: any): void {
+        let payload = {
+            [key]: value
+        }
+        chrome.storage.local.set(payload);
+    }
+
+    private removeFromLS(key: string): void {
+        chrome.storage.local.remove(key);
+    }
+
+    private async getAllEntireLS(): Promise<{[key: string]: any}> {
+        return chrome.storage.local.get(null);
+    }
+    
+    async getCurrentActivation(): Promise<boolean> {
+        let myActivation: boolean = false;
+        let isActivated: boolean|null = await this.getFromLS(this.isActivatedKey);
+        
+        if (isActivated === null) {
+            this.setCurrentActivation(myActivation);
+        } else {
+            myActivation = isActivated;
+        }
+    
+    
+        return myActivation;
+    }
+
+     setCurrentActivation(isActivated: boolean): void {
+        this.setInLS(this.isActivatedKey, isActivated);
     }
 
     storePageData(siteData: SiteData, page: string): void {
         let saveData: string = JSON.stringify(siteData);
         if (saveData === '{}') {
-            window.localStorage.removeItem(page);
+           this.removeFromLS(page);
         } else {
-            window.localStorage.setItem(page, saveData);
+            this.setInLS(page, saveData);
         }
     }
 
     removePageData(url: string): void {
-        window.localStorage.remove(url);
+        this.removeFromLS(url);
     }
 
-    getAllPageUrls(): string[] {
-        let nonVolatileMemory: Storage = window.localStorage;
+    async getAllPageUrls(): Promise<string[]> {
+        let nonVolatileMemory = this.getAllEntireLS();
         const response: string[] = [];
-        for (let i = 0; i < nonVolatileMemory.length; i++) {
-            let key = nonVolatileMemory.key(i) as string;
+        for (let key in nonVolatileMemory) {
             if (this.isURL(key)) { 
                 response.push(key);
             }
@@ -119,20 +142,19 @@ class LocalStorage implements NonVolatileBrowserStorage {
         return response;
     }
 
-    getPageData(site: string): SiteData {
-        let page_vocab: string|null =  window.localStorage.getItem(site);
-        if (page_vocab == null) {
+    async getPageData(site: string): Promise<SiteData> {
+        let siteData: SiteData|null = await this.getFromLS(site);
+        if (siteData === null) {
             return {
                 wordEntries: [],
                 missingWords: [],
-            };
-        } else {
-            return JSON.parse(page_vocab) as SiteData;
+            };;
         }
+        return siteData;
     }
 
-    getDictionaryData(): GlobalDictionaryData {
-        let dictsRaw: string|null = window.localStorage.getItem(this.dictionaryKey);
+    async getDictionaryData(): Promise<GlobalDictionaryData> {
+        let dictsRaw: GlobalDictionaryData|null = await this.getFromLS(this.dictionaryKey);
         if (dictsRaw === null) {
             return {
                 languagesToResources: {},
@@ -140,11 +162,11 @@ class LocalStorage implements NonVolatileBrowserStorage {
             };
         }
 
-        return JSON.parse(dictsRaw) as GlobalDictionaryData;
+        return dictsRaw;
     }
 
     setDictionaryData(gdd: GlobalDictionaryData): void {
-        window.localStorage.setItem(this.dictionaryKey, JSON.stringify(gdd));
+        this.setInLS(this.dictionaryKey, gdd);
     }
 
     /**

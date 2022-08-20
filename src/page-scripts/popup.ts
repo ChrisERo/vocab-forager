@@ -66,6 +66,12 @@ function processRequestedData(dictInfo: DictionaryIdentifier, langs: string[]): 
         document.getElementById('dictionaries')?.addEventListener("click", 
             function (this: HTMLSelectElement) {
                 const languageSelect = (document.getElementById('languages') as HTMLSelectElement);
+                
+                if (languageSelect.value === '' || this.value === "") {
+                    console.log("No dictionary to select")
+                    return;
+                }
+
                 const myLang = langs[parseInt(languageSelect.value)];
                 const dictIndex = parseInt(this.value);
                 

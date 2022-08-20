@@ -60,8 +60,6 @@ body {
   height: 24px;
   width: 100px;
   margin-top: 15px;
-  /* To make sure default arrows don't show up */
-  -webkit-appearance: button;
   border: none;
   outline: none;
 }
@@ -70,7 +68,6 @@ body {
   position: relative;
 }
 .box::before {
-  content: '\25BC';
   position: absolute;
   top: 0;
   right: 0;

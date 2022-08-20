@@ -13,7 +13,7 @@ type sendResponseFunction = (response?: any) => void;
 
 
 function logUnexpected(key: string, value: any) {
-    console.error(`unexpected ${key}: ${value}`);
+    console.error(`unexpected ${key}: ${JSON.stringify(value)}`);
 }
 
 /**
@@ -23,40 +23,36 @@ function logUnexpected(key: string, value: any) {
  * Using a listener per background script caused errors, in particular
  * when loading popup menu for the first time.
  */
- function handler(request: any, _: chrome.runtime.MessageSender, sendResponse: sendResponseFunction): void {
-    console.log(`REQUEST TO BACKGROUND MADE: ${request.type}`);
-    
+ function handler(request: any, _: chrome.runtime.MessageSender, sendResponse: sendResponseFunction): boolean {    
     if (!isBsMessage(request)) {
        logUnexpected("request structure", request);
-       return;
+       return false;
     }
+
+    console.log(`REQUEST TO BACKGROUND MADE: ${request.messageType}`);
 
     switch (request.messageType) {
         case BSMessageType.DictsOfLang: {
             if (isDictsOfLangRequest(request.payload)) {
-                let result = dictionaryManager.getDictionariesOfLanguage(
-                    request.payload.language
-                );
-                sendResponse(result);
+                dictionaryManager
+                    .getDictionariesOfLanguage(request.payload.language)
+                    .then((response) => sendResponse(response));
             } else {
                 logUnexpected('payload', request.payload);
             }
             break;
         }
         case BSMessageType.GetCurrentDictionary: {
-            let response = dictionaryManager.getCurrentDictionaryId();
-            sendResponse(response);
+            dictionaryManager.getCurrentDictionaryId().then((response) => sendResponse(response));
             break;
         }
         case BSMessageType.GetLanguages : {
-            let response = dictionaryManager.getLanguages();
-            sendResponse(response);
+            dictionaryManager.getLanguages().then((response) => sendResponse(response));
             break;
         }
         case BSMessageType.SetCurrentDictionary: {
             if (isDictionaryID(request.payload)) {
-                let result = dictionaryManager.setcurrentDictinoary(request.payload);
-                sendResponse(result);
+                dictionaryManager.setcurrentDictinoary(request.payload).then(() => sendResponse());
             } else {
                 logUnexpected('payload', request.payload);
             }
@@ -64,8 +60,7 @@ function logUnexpected(key: string, value: any) {
         }
         case BSMessageType.GetExistingDictionary : {
             if (isDictionaryID(request.payload)) {
-                let result = dictionaryManager.getDictionaryFromIdentifier(request.payload);
-                sendResponse(result);
+                dictionaryManager.getDictionaryFromIdentifier(request.payload).then((response) => sendResponse(response));
             } else {
                 logUnexpected('payload', request.payload);
             }
@@ -76,24 +71,23 @@ function logUnexpected(key: string, value: any) {
                 let data: Dictionary = request.payload.content;
                 let index: DictionaryIdentifier = request.payload.index;
                 let language: string = request.payload.language;
-                dictionaryManager.modifyExistingDictionary(index, language, data);
-                sendResponse();
+                dictionaryManager.modifyExistingDictionary(index, language, data).then(() => sendResponse());
             } else {
                 logUnexpected('payload', request.payload);
             }
+            break;
         }
         case BSMessageType.AddNewDictionary: {
             if (isAddNewDictRequest(request.payload)) {
                 const dict: Dictionary = request.payload.dict;
                 const langauge: string = request.payload.lang;
-                dictionaryManager.addDictionary(dict, langauge);
-                sendResponse();
+                dictionaryManager.addDictionary(dict, langauge).then(() => sendResponse());
             }
+            break;
         }
         case BSMessageType.DeleteExitingDictionary: {
             if (isDictionaryID(request.payload)) {
-                let result = dictionaryManager.removeDictionary(request.payload);
-                sendResponse(result);
+                dictionaryManager.removeDictionary(request.payload).then((result) => sendResponse(result));
             } else {
                 logUnexpected('payload', request.payload);
             }
@@ -101,8 +95,7 @@ function logUnexpected(key: string, value: any) {
         }
         case BSMessageType.SearchWordURL: {
             if (isSearchRequest(request.payload)) {
-                let result = dictionaryManager.getWordSearchURL(request.payload.word);
-                sendResponse(result);
+                dictionaryManager.getWordSearchURL(request.payload.word).then((result) => sendResponse(result));
             } else {
                 logUnexpected('payload', request.payload);
             }
@@ -121,8 +114,7 @@ function logUnexpected(key: string, value: any) {
         }
         case BSMessageType.GetPageData: {
             if (isGetDataForPageRequest(request.payload)) {
-                let data: SiteData = browserStorage.getPageData(request.payload.url);
-                sendResponse(data);
+                browserStorage.getPageData(request.payload.url).then((data) => sendResponse(data));
             } else {
                 logUnexpected('payload', request.payload);
             }
@@ -138,8 +130,7 @@ function logUnexpected(key: string, value: any) {
             break;
         }
         case BSMessageType.GetCurrentActivation: {
-            let result = browserStorage.getCurrentActivation();
-            sendResponse(result);
+            browserStorage.getCurrentActivation().then((result) => sendResponse(result));
             break;
         }
         case BSMessageType.SetCurrentActivation: {
@@ -162,14 +153,15 @@ function logUnexpected(key: string, value: any) {
             break;
         }
         case BSMessageType.GetAllURLs: {
-            const response: string[] = browserStorage.getAllPageUrls();
-            sendResponse(response);
+            browserStorage.getAllPageUrls().then((response) => sendResponse(response));
             break;
         }
         default: {
             logUnexpected('messageType', request.messageType);
         }
     }
+
+    return true;  // needed because https://stackoverflow.com/questions/54126343/how-to-fix-unchecked-runtime-lasterror-the-message-port-closed-before-a-respon
  }
 
 

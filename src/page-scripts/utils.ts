@@ -7,7 +7,7 @@
  export function addNavToButton(pageName: string): void {
     const htmle = document.getElementById(pageName) as HTMLElement;
     htmle.addEventListener("click", () => {
-        window.location.href = `${pageName}.html`;
+        chrome.tabs.create({ url: `web_pages/${pageName}.html` });
     });
 }
 

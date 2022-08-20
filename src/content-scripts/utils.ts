@@ -89,7 +89,7 @@ export function defineWord(word: string|null) {
  * @param currentNode - Node in document.body
  */
  export function isHighlightNode(currentNode: Node): boolean {
-    return currentNode instanceof Element && isHighlightNode(currentNode)
+    return currentNode instanceof Element && isHighlightElement(currentNode)
 }
 
 /**
