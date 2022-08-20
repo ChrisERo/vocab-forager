@@ -158,6 +158,10 @@ function convertSelectionToWord(select: Selection): Word | null {
         return null;
     }
 
+    if (validTextNodes.length === 1 && startIndex === endIndex) {
+        return null;
+    }
+
     return {
         'word': select.toString(),
         'startOffset': startIndex,
@@ -217,7 +221,7 @@ const previousOnMouseUp = document.onmouseup; // on mouse up value before extens
 
             document.onmouseup = (event: MouseEvent) => {
                 let selected = window.getSelection();
-                if (event.button === MAIN_BUTTON &&selected !== null) {
+                if (event.button === MAIN_BUTTON && selected !== null) {
                     let word = convertSelectionToWord(selected);
                     if (word !== null) {
                         highlightManager.highlight(word);
