@@ -40,5 +40,11 @@
       "48": "icons/icon128.png",
       "128": "icons/icon128.png"
     }
-  }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [ "cross-page-assets/quiz.html" ],
+      "matches": [ "<all_urls>" ]
+    }
+  ]
 }

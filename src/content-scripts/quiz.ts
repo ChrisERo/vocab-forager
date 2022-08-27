@@ -3,7 +3,7 @@ import { defineWord } from "./utils";
 
 const quizHTMLURL = 'cross-page-assets/quiz.html';  // local url for quiz html data
 const quizPopupID = 'quiz_container_box';  // id of div containing quiz in site
-const quizConuterID = "quiz_counter";  // id for component of quiz that
+const quizCounterID = "quiz_counter";  // id for component of quiz that
 const closeButtonID = 'close_the_quiz';  // id for html element used to close popup
 const wordQuestionID = 'word_questioning';  // id for element containiner word being questioned currently
 const nextButtonID = 'next';  // id for nextElement to click
@@ -60,13 +60,13 @@ export class QuizManager {
     }
 
     updateQuizCounter() {
-        let counterIDElement = document.getElementById(quizConuterID);
+        let counterIDElement = document.getElementById(quizCounterID);
         if (counterIDElement === null ) {
-            console.error(`Could not find element ${quizConuterID}. 
+            console.error(`Could not find element ${quizCounterID}. 
                 Check that quiz div was loaded propperly and contains an element with that id`)
             return;
         }
-       counterIDElement .textContent = `${this.wordsEncountered}/${this.quizWordList.length}`;
+       counterIDElement .textContent = `${this.wordsEncountered}/${this.wordsEncountered + this.quizWordList.length - 1}`;
     }
 
     /**
@@ -157,7 +157,7 @@ export class QuizManager {
     loadQuizHTML(siteData: SiteData) {
         if (!this.isQuizActive && 
             siteData.wordEntries.length + siteData.wordEntries.length > 0) {
-            fetch(quizHTMLURL)
+            fetch(chrome.runtime.getURL(quizHTMLURL))
                 .then((response: Response) => response.text())
                 .then((html: string) => {
                     let quizContainer: HTMLElement = this.addQuizContainer();
