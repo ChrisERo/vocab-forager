@@ -129,7 +129,7 @@ class LocalStorage implements NonVolatileBrowserStorage {
     }
 
     async getAllPageUrls(): Promise<string[]> {
-        let nonVolatileMemory = this.getAllEntireLS();
+        let nonVolatileMemory = await this.getAllEntireLS();
         const response: string[] = [];
         for (let key in nonVolatileMemory) {
             if (this.isURL(key)) { 
