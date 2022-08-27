@@ -157,7 +157,7 @@ export class QuizManager {
     loadQuizHTML(siteData: SiteData) {
         if (!this.isQuizActive && 
             siteData.wordEntries.length + siteData.wordEntries.length > 0) {
-            fetch(chrome.runtime.getURL(quizHTMLURL))
+            fetch(quizHTMLURL)
                 .then((response: Response) => response.text())
                 .then((html: string) => {
                     let quizContainer: HTMLElement = this.addQuizContainer();

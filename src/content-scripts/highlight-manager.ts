@@ -1,7 +1,7 @@
 import { BSMessage, BSMessageType } from '../utils/background-script-communication';
 import { SiteData, Word } from '../utils/models'
 import { highlightRecovery } from './highlight-recovery';
-import { defineWord, HILIGHT_CLASS, HILIGHT_CLASS_HOVER, isHighlightElement, isHighlightNode, isTextNode, nodPathToNode } from './utils';
+import { defineWord, HILIGHT_CLASS, HILIGHT_CLASS_HOVER, isHighlightElement, isHighlightNode, isTextNode, nodeToTreePath, nodPathToNode } from './utils';
 
 
 /**
@@ -18,9 +18,9 @@ import { defineWord, HILIGHT_CLASS, HILIGHT_CLASS_HOVER, isHighlightElement, isH
  *
  * @param element - must be a HILIGHT_CLASS HTML element
  */
-function extract_index(element: Element) {
+function extractIndex(element: Element) {
     let id = element.id;
-    return parseInt(id.substring(id.lastIndexOf('_')+1,id.length));
+    return parseInt(id.substring(id.lastIndexOf('_')+1, id.length));
 }
 
 /**
@@ -47,19 +47,21 @@ function extract_index(element: Element) {
             // isTextNode(rootNode) ---> function call ends here
             return;
         }
-        let parents_children = rootNode.firstChild?.parentElement?.children as HTMLCollection;
+        let parents_children = rootNode.childNodes;
         for (let i = traversalStartIndex; i < parents_children.length; i++) {
             // If child node is a highlight node, modify its indecies as well as its 
             // text offset(s)
             // Otherwise, 
-            let child: Element = parents_children[i];
-            if (isHighlightElement(child)) {  //
-                let highlight = highlightManager.highlights[extractIdOfHighlight(child)];
-                if (encounteredIds != null) {
+            let child = parents_children[i];
+            if (isTextNode(child)) {
+                continue;  // TODO: delete in future
+            } else if (isHighlightNode(child)) {
+                let highlight = highlightManager.highlights[extractIdOfHighlight(child as Element)];
+                if (encounteredIds !== null) {
                     encounteredIds.add(highlight.id);
                 }
 
-                let highlightIndex = extract_index(child);
+                let highlightIndex = extractIndex(child as Element);
                 highlight.word.nodePath[highlightIndex][depth] += numberOfNodesToAdd; 
                 if (shouldModifyOffset) {
                     highlight.word.startOffset += offsetToAdd;
@@ -73,7 +75,7 @@ function extract_index(element: Element) {
             } else {
                 // current node != text --> future offsets should not be modified.
                 shouldModifyOffset =  shouldModifyOffset && isTextNode(child);
-                if (encounteredIds != null) {
+                if (encounteredIds !== null) {
                     addNodesAndOffsets(child, depth+1, numberOfNodesToAdd, 0, 0, false, 
                         encounteredIds, highlightManager);
                 }
@@ -189,10 +191,10 @@ class Highlight {
             // Check assumption that the node directly to left and right of a highlight node
             // will always be a #text node
             console.assert(indexOfHighlightNode > 0 && 
-                isTextNode(highlightedChildren[indexOfHighlightNode-1]),
+                isTextNode(parent.childNodes[indexOfHighlightNode-1]),
                 'Node before not text');
-            console.assert(indexOfHighlightNode < highlightedChildren.length - 1 &&
-                isTextNode(highlightedChildren[indexOfHighlightNode+1]),
+            console.assert(indexOfHighlightNode < parent.childNodes.length - 1 &&
+                isTextNode(parent.childNodes[indexOfHighlightNode+1]),
                 'Node after is not text');
             // Perform deletion with preservation of highlight's text content
             let indexBefore = indexOfHighlightNode - 1;
@@ -312,7 +314,7 @@ export class HighlightsManager {
      * @param word: text not currently managed or partially managed by this.
      */
     highlight(word: Word): void {
-        let highlightForWord = new Highlight(word, this.highlight.length, this);
+        let highlightForWord = new Highlight(word, this.highlights.length, this);
         this.insertHighlightData(highlightForWord);
         highlightForWord.highlightWord();
     }
@@ -343,6 +345,8 @@ export class HighlightsManager {
             let missingText = this.freshRehighlight(data);
             if (missingText !== null) {
                 data.missingWords = Array.from(missingText);
+            } else {
+                data.missingWords = [];
             }
 
             data.wordEntries = this.getWordEntries();
@@ -364,7 +368,7 @@ export class HighlightsManager {
         let word: Highlight =  this.highlights[this.indexToDelete];
         this.updateDataBeforeDelete(word);
         word.unHighlightWord();
-        delete this.highlights[this.indexToDelete];
+        this.highlights.splice(this.indexToDelete, 1);
         this.indexToDelete = -1;
     }
 
@@ -388,19 +392,25 @@ export class HighlightsManager {
      * added to DOM yet either.
      */
     private insertHighlightData(highlight: Highlight): void {
-        let parentsToLatestHighlightNode = new Map<Node, number>();
+        let parentsToHighlightNodeIndex = new Map<Node, number[]>();
         for (let i = 0; i < highlight.word.nodePath.length; i++) {
             let nodePath = highlight.word.nodePath[i];
             let hNode = nodPathToNode(nodePath);
             let parent = hNode.parentNode as Node;
-            parentsToLatestHighlightNode.set(parent, nodePath[nodePath.length-1]);  // latest node always later in Word
+            if (!parentsToHighlightNodeIndex.has(parent)) {
+                parentsToHighlightNodeIndex.set(parent, []);
+            }
+
+            parentsToHighlightNodeIndex.get(parent)?.push(nodePath[nodePath.length-1]);
         }
 
         
         let smallestRightId = this.highlights.length;
-        parentsToLatestHighlightNode.forEach((value, parent) => {
-            let children = parent.childNodes;
-            for (let i = value+1; i < children.length; i++) {
+        parentsToHighlightNodeIndex.forEach((orderedHChildren, parent) => {
+            // Find first highlight node in parent right after node we wish to update
+            const lastNodeIndex = orderedHChildren[orderedHChildren.length - 1];
+            const children = parent.childNodes;
+            for (let i = lastNodeIndex + 1; i < children.length; i++) {
                 let brotherNode = children[i];
                 if (isHighlightNode(brotherNode)) {
                     let brotherNodeHighlightId = extractIdOfHighlight(brotherNode as Element);
@@ -408,6 +418,11 @@ export class HighlightsManager {
                     break; 
                 }
             }
+            
+            const depth = nodeToTreePath(parent).length;
+            const offsetToAdd = -highlight.word.endOffset;
+            // TODO: consider changining number of elements to add to be more complex
+            addNodesAndOffsets(parent, depth, 2 * orderedHChildren.length, offsetToAdd, lastNodeIndex+1, true, new Set<number>(), this);
         });
 
         highlight.id = smallestRightId;
@@ -473,10 +488,14 @@ export class HighlightsManager {
 
             // Number of nodes removed by highlight is the highlight node and 1 text node
             // Since text nodes are combined.
+            // TODO: make more complex?
             let numberOfNodesToMake = -2 * word.highlightNodes.length;
         
             // Modify future offsets of other words only if this call contains last
             // highlight node of word
+            // because if this node is not last node in highligt, there must be some node
+            // seperating highlighted one from rest of children, making offset changing incorrect.
+            // as no offset would need to be changed
             let shouldModifyFutureOffsets = lastHighlightNode === word.highlightNodes[word.highlightNodes.length - 1];
         
             let addOffset = 0;
@@ -488,14 +507,17 @@ export class HighlightsManager {
                 console.assert(lastNodeIndex != 0, 'Assumption on how hilights made broken');
                 // Calcualte new offset based on #texts before and after el
                 let counter = lastNodeIndex - 1;
-                while (counter >= 0 && isTextNode(parentChildren[counter])) {
-                    let txt = parentChildren[lastNodeIndex-1].textContent; 
+                const highlightId = extractIdOfHighlight(hNodes[0] as Element);
+                // TODO: reexamine second part of or condition
+                while (counter >= 0 && isTextNode(parentChildren[counter]) || (isHighlightNode(parentChildren[counter]) && extractIdOfHighlight(parentChildren[counter] as Element) === highlightId)) {
+                    let txt = parentChildren[counter].textContent;
                     addOffset += txt === null ? 0 : txt.length;
                     counter--;
                 }
             }
 
-            addNodesAndOffsets(parent, 0, numberOfNodesToMake, addOffset, lastNodeIndex + 1,
+            let depth = nodeToTreePath(parent).length;
+            addNodesAndOffsets(parent, depth, numberOfNodesToMake, addOffset, lastNodeIndex + 1,
                 shouldModifyFutureOffsets, null, this);  // TODO: update depth
     }
 

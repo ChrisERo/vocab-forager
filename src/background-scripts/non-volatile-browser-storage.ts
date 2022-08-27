@@ -1,4 +1,4 @@
-import {GlobalDictionaryData, SiteData} from "../utils/models"
+import {GlobalDictionaryData, isEmpty, SiteData} from "../utils/models"
 
 
 /**
@@ -85,7 +85,7 @@ class LocalStorage implements NonVolatileBrowserStorage {
     }
 
     private setInLS(key: string, value: any): void {
-        let payload = {
+        const payload = {
             [key]: value
         }
         chrome.storage.local.set(payload);
@@ -109,7 +109,6 @@ class LocalStorage implements NonVolatileBrowserStorage {
             myActivation = isActivated;
         }
     
-    
         return myActivation;
     }
 
@@ -118,11 +117,10 @@ class LocalStorage implements NonVolatileBrowserStorage {
     }
 
     storePageData(siteData: SiteData, page: string): void {
-        let saveData: string = JSON.stringify(siteData);
-        if (saveData === '{}') {
+        if (isEmpty(siteData)) {
            this.removeFromLS(page);
         } else {
-            this.setInLS(page, saveData);
+            this.setInLS(page, siteData);
         }
     }
 

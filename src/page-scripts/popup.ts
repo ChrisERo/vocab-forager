@@ -22,6 +22,7 @@ function initButtons(): void {
         const activeToggle = document.getElementById('activate') as HTMLInputElement;
         activeToggle.checked = isActive;
         activeToggle.addEventListener('change',  () => {
+            // Notify background script and all content scripts
             const setChecked: BSMessage = {
                 messageType: BSMessageType.SetCurrentActivation,
                 payload: {
@@ -29,15 +30,15 @@ function initButtons(): void {
                 }
             };
             chrome.runtime.sendMessage(setChecked); 
-            // Send message to currently all tabs to update based on
-            // Since have value already, no need to act after this change
+            // Send message to currently all tabs to update based on new state we set
             const get_tabs = chrome.tabs.query({});
             get_tabs.then((tabs) => {
                 for (let i = 0; i < tabs.length; i++) {
                     const tab = tabs[i];
                     // TODO: make this with value
                     const message: CSMessage = {
-                        messageType: CSMessageType.ActivationStateChange
+                        messageType: CSMessageType.ActivationStateChange,
+                        payload: {newActivatedState: isActive},
                     }
                     if (tab.id !== undefined) {
                         chrome.tabs.sendMessage(tab.id, message);

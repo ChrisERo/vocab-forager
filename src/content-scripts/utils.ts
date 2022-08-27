@@ -34,10 +34,11 @@ export function defineWord(word: string|null) {
  * 
  * @param nodePath  - array of integers the previous element reffers to the the index of the
  * (nodePath.length - i)th node in the previous nodes list of children.
+ * @returns node reprsented by nodePath
  */
- export function nodPathToNode(nodePath: number[]) {
+ export function nodPathToNode(nodePath: number[]): Node {
     let node: Node = document.body;
-    for (let i = nodePath.length-1; i >= 0; i--) {
+    for (let i = 0; i < nodePath.length; i++) {
         node = node.childNodes[nodePath[i]];
     }
 
@@ -71,7 +72,8 @@ export function defineWord(word: string|null) {
         currentNode = parent;
     }
 
-   return nodeIndecies;
+    nodeIndecies.reverse();
+    return nodeIndecies;
 }
 
 /**

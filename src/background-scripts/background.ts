@@ -106,7 +106,6 @@ function logUnexpected(key: string, value: any) {
                 let data: SiteData = request.payload.data;
                 let url: string = request.payload.url;
                 browserStorage.storePageData(data, url);
-                sendResponse();
             } else {
                 logUnexpected('payload', request.payload);
             }
@@ -123,7 +122,6 @@ function logUnexpected(key: string, value: any) {
         case BSMessageType.DeletePageData: {
             if (isGetDataForPageRequest(request.payload)) {
                 browserStorage.removePageData(request.payload.url);
-                sendResponse();
             } else {
                 logUnexpected('payload', request.payload);
             }
@@ -136,7 +134,7 @@ function logUnexpected(key: string, value: any) {
         case BSMessageType.SetCurrentActivation: {
             if (isSetActivationRequest(request.payload)) {
                 browserStorage.setCurrentActivation(request.payload.isActivated);
-                sendResponse();
+                // tab notification done by activaters, so nothing else to do
             } else {
                 logUnexpected('payload', request.payload);
             }
@@ -149,7 +147,6 @@ function logUnexpected(key: string, value: any) {
         }
         case BSMessageType.HideDeleteHighlightsCM: {
             contextMenuManager.hideDeleteContextMenu();
-            sendResponse();
             break;
         }
         case BSMessageType.GetAllURLs: {

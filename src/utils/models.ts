@@ -41,6 +41,10 @@ export interface SiteData {
     missingWords: string[];
 }
 
+export function isEmpty(data: SiteData): boolean {
+    return data.wordEntries.length === 0 && data.missingWords.length === 0;
+}
+
 /**
  * Object used to query for the meanings, of words, or more generally, web pages with
  * data pertinent to some word or term

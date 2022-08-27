@@ -6,7 +6,8 @@ export class ContextMenuManager {
     static readonly activationID = 'activation';
     static readonly quizID = 'quiz';
     static readonly deleteHighlightsID = "delete_hilight";
-    static readonly activateActivationCMTitle = '🟢   Activate';;
+
+    static readonly activateActivationCMTitle = '🟢   Activate';
     static readonly deactivateActivationCMTitle = '🔴  Deactivate';
     static readonly quizCMTitle = "🧠  Quiz";
     static readonly deleteHighlightCMTitle = '❌  Delete Hilighted Text';
@@ -88,8 +89,8 @@ export class ContextMenuManager {
                         let newIsActivatedState = !isActivatedNow;
                         this.storage.setCurrentActivation(newIsActivatedState);
                         this.updateContextMenuBasedOnActivation(newIsActivatedState);            
-                        let get_tabs = chrome.tabs.query({});
-                        get_tabs.then(function (tabs: chrome.tabs.Tab[]) {
+                        let getTabs = chrome.tabs.query({});
+                        getTabs.then(function (tabs: chrome.tabs.Tab[]) {
                             let message: CSMessage = {
                                 messageType: CSMessageType.ActivationStateChange,
                                 payload: {newActivatedState: newIsActivatedState},
@@ -132,7 +133,6 @@ export class ContextMenuManager {
                 }
             }
           });
-        
     }
 
     /**

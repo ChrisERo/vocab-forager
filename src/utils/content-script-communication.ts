@@ -38,5 +38,5 @@ export interface CSMessage {
  */
  export function isCsMessage(mssg: any): mssg is CSMessage {
     let temp = mssg as CSMessage;
-    return temp.messageType !== undefined && temp.payload !== undefined;
+    return temp.messageType !== undefined;
 }

@@ -24,7 +24,7 @@ import { isHighlightElement, isHighlightNode, isTextNode, nodeToTreePath } from 
 
     let i: number;
     let condition: (x: number) => boolean;
-    let action: (x: number) => void;
+    let action: (x: number) => number;
     if (isLookingForLast) {
         i = root.childNodes.length - 1;
         condition = (x) => x >= 0;
@@ -35,11 +35,11 @@ import { isHighlightElement, isHighlightNode, isTextNode, nodeToTreePath } from 
         i = 0;
         condition = (x: number) => x < root.childNodes.length
         action = (x) => {
-            return x - 1;
+            return x + 1;
         }
     }
 
-    for (; condition(i); action(i)) {
+    for (; condition(i); i = action(i)) {
         let child = root.childNodes[i];
         let result = findTextNode(child, isLookingForLast);
         if (result !== null && isTextNode(result)) {
@@ -225,6 +225,7 @@ const previousOnMouseUp = document.onmouseup; // on mouse up value before extens
                     let word = convertSelectionToWord(selected);
                     if (word !== null) {
                         highlightManager.highlight(word);
+                        saveData(highlightManager, missingWords);
                     } 
                 }
             };
@@ -234,7 +235,7 @@ const previousOnMouseUp = document.onmouseup; // on mouse up value before extens
 
 
 function logUnexpected(key: string, value: any) {
-    console.error(`unexpected ${key}: ${value}`);
+    console.error(`unexpected ${key}: ${JSON.stringify(value)}`);
 }
 
 /**
@@ -242,7 +243,7 @@ function logUnexpected(key: string, value: any) {
  * @param request
  */
 function handler(request: any): void {
-    console.log(`REQUEST MADE TO CONTENT SCRIPT: ${request.type}`);
+    console.log(`REQUEST MADE TO CONTENT SCRIPT: ${request.messageType}`);
 
     if (!isCsMessage(request)) {
         logUnexpected("request structure", request);
@@ -300,5 +301,7 @@ setTimeout(() => {
             if (isActivated) {
                 setUp();
             }
+
+            chrome.runtime.onMessage.addListener(handler);
         });
 }, 800);
