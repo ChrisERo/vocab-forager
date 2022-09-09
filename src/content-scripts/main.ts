@@ -51,6 +51,13 @@ import { isHighlightElement, isHighlightNode, isTextNode, nodeToTreePath } from 
     return null;
 }
 
+/**
+ * 
+ * @param node node from which to make bookmarks
+ * @returns map of node and parent nodes up to and including document.body  to the index of
+ * their direct child node in node's TreePath, or null if one or more nodes in this path are
+ * highlights.
+ */
 function makeBookMarksMap(node: Node): Map<Node, number> | null {
     let posInParentList: number[] = nodeToTreePath(node);
     let result: Map<Node, number> = new Map<Node, number>();
@@ -65,8 +72,30 @@ function makeBookMarksMap(node: Node): Map<Node, number> | null {
         currentNode = parent;
     }
 
-    result.set(document.body, -1);
     return result;
+}
+
+
+/**
+ * Returns index of some node within parent's childNodes array 
+ * 
+ * @param node node of DOM of web page
+ * @returns index of node in parent, and -1 if either parent is null or it is somehow not
+ * in parent, which is impossible.
+ */
+function getIndexOfNodeInParent(node: Node): number {
+    let parent = node.parentElement;
+    if (parent === null) {
+        return -1;
+    }
+
+    for (let i = 0; i < parent.childNodes.length; i++) {
+        if (node.isEqualNode(parent.childNodes[i])) {
+            return i;
+        }
+    }
+
+    return -1;
 }
 
 /**
@@ -91,19 +120,22 @@ function makeBookMarksMap(node: Node): Map<Node, number> | null {
  */
 function getNodesToHighlight(currentN: Node, startN: Node, endN: Node, accumulator: Node[], bookMarks: Map<Node, number>): boolean {
     const parentN = currentN.parentNode;
+    const parentOfParent = parentN?.parentNode;
+    let parendNodeIndex = -1;
+    
     if (isTextNode(currentN)) {
         accumulator.push(currentN);
         if (currentN.isEqualNode(endN)) {
             return true;
         } else if (currentN.isEqualNode(startN)) {
             if (parentN === null) {  // no more elements to explore somehow, return start === end
-                return !startN.isEqualNode(endN);
+                return startN.isEqualNode(endN);
             }
 
             return getNodesToHighlight(parentN, startN, endN, accumulator, bookMarks);
+        } else {
+            return false;
         }
-
-        return false;  // TODO: is this needed?
     } else {
         if (isHighlightNode(currentN)) {
             throw new Error("Cannot have highlight node in highlight node");
@@ -111,9 +143,19 @@ function getNodesToHighlight(currentN: Node, startN: Node, endN: Node, accumulat
 
         let children = currentN.childNodes;
         if (children.length > 0) {
-            const startIndex = bookMarks.has(currentN) ? bookMarks.get(currentN) as number : 0;
+            let startIndex = bookMarks.get(currentN);
+            if (startIndex === undefined) {
+                startIndex = 0;
+                bookMarks.set(currentN, 0);
+            }
+
             for (let i = startIndex; i < children.length; i++) {
                 let childN = children.item(i);
+                if (accumulator.includes(childN)) {  // ignore nodes already observed
+                    continue;
+                }
+
+                bookMarks.set(currentN, i+1);  // TODO:F fix this s
                 if (getNodesToHighlight(childN, startN, endN, accumulator, bookMarks)) {
                     return true;
                 }

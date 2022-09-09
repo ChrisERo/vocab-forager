@@ -30,19 +30,18 @@ function extractIndex(element: Element) {
  * it encounters a non-highlight node, and no modifications are moade to traversed nodes
  *
  * @param rootNode - parent of all nodes to consider
- * @param depth - how deep we are down tree 
- *                         starting with first call being depth 0
+ * @param depth - how deep does node change occur
  * @param numberOfNodesToAdd - number of nodes to add to all future hilights
  * @param offsetToAdd - number of offsets to add by a hilights addtion
  * @param traversalStartIndex - index of child of root_node from which to start algorithm
  * @param shouldModifyOffset - true if the startOffset (and maybe endOffset of an encountered
  *                                                 hilight) should be modified)
- * @param encounteredIds - Set of ids that have been encountered during traversal
+ * @param shouldGoDownDepth - true if should go down nodes to edit highlight node's offsets/node paths
  * @param highlightManager - current state of highlights in volatile memory
  */
  function addNodesAndOffsets(rootNode: Node, depth: number, numberOfNodesToAdd: number, 
     offsetToAdd: number, traversalStartIndex: number, shouldModifyOffset: boolean, 
-    encounteredIds: Set<number>|null, highlightManager: HighlightsManager): void {
+        shouldGoDownDepth: boolean, highlightManager: HighlightsManager): void {
         if (!rootNode.hasChildNodes()) {
             // isTextNode(rootNode) ---> function call ends here
             return;
@@ -57,10 +56,6 @@ function extractIndex(element: Element) {
                 continue;  // TODO: delete in future
             } else if (isHighlightNode(child)) {
                 let highlight = highlightManager.highlights[extractIdOfHighlight(child as Element)];
-                if (encounteredIds !== null) {
-                    encounteredIds.add(highlight.id);
-                }
-
                 let highlightIndex = extractIndex(child as Element);
                 highlight.word.nodePath[highlightIndex][depth] += numberOfNodesToAdd; 
                 if (shouldModifyOffset) {
@@ -75,9 +70,9 @@ function extractIndex(element: Element) {
             } else {
                 // current node != text --> future offsets should not be modified.
                 shouldModifyOffset =  shouldModifyOffset && isTextNode(child);
-                if (encounteredIds !== null) {
-                    addNodesAndOffsets(child, depth+1, numberOfNodesToAdd, 0, 0, false, 
-                        encounteredIds, highlightManager);
+                if (shouldGoDownDepth) {
+                    addNodesAndOffsets(child, depth, numberOfNodesToAdd, 0, 0, false, 
+                        shouldGoDownDepth, highlightManager);
                 }
             }
         }
@@ -369,6 +364,10 @@ export class HighlightsManager {
         this.updateDataBeforeDelete(word);
         word.unHighlightWord();
         this.highlights.splice(this.indexToDelete, 1);
+        for (let i = this.indexToDelete; i < this.highlights.length; i++) {
+            this.highlights[i].id--;
+            this.highlights[i].syncIdsOfHighlightNodes();
+        }
         this.indexToDelete = -1;
     }
 
@@ -422,7 +421,7 @@ export class HighlightsManager {
             const depth = nodeToTreePath(parent).length;
             const offsetToAdd = -highlight.word.endOffset;
             // TODO: consider changining number of elements to add to be more complex
-            addNodesAndOffsets(parent, depth, 2 * orderedHChildren.length, offsetToAdd, lastNodeIndex+1, true, new Set<number>(), this);
+            addNodesAndOffsets(parent, depth, 2 * orderedHChildren.length, offsetToAdd, lastNodeIndex+1, true, true, this);
         });
 
         highlight.id = smallestRightId;
@@ -458,7 +457,6 @@ export class HighlightsManager {
        parentToHighlightedChildren.forEach((hNodes: Node[], p: Node) => {
            this.updateDeletesForSameRow(word, hNodes, p);
        });
-
     }
 
     /**
@@ -518,7 +516,7 @@ export class HighlightsManager {
 
             let depth = nodeToTreePath(parent).length;
             addNodesAndOffsets(parent, depth, numberOfNodesToMake, addOffset, lastNodeIndex + 1,
-                shouldModifyFutureOffsets, null, this);  // TODO: update depth
+                shouldModifyFutureOffsets, true, this);  // TODO: update depth
     }
 
     private freshRehighlight(data: SiteData): Set<string>|null {
