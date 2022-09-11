@@ -27,7 +27,7 @@
         "content.js"
       ],
       "css": [
-        "cross-page-assets/highlight_style.css",
+        "cross-page-assets/highlight-style.css",
         "cross-page-assets/vocab_quiz.css"
       ]
     }
