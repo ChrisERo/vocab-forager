@@ -1,7 +1,7 @@
 import { SiteData, Word } from "../utils/models";
 import { isWhiteSpace, nodeToTreePath } from "./utils";
 
-const endOfWord = 'ED';
+const END_OF_WORD = 'ED';
 const SPACE_CHAR = ' ';
 
 type WordConsumer = (w: Word) => void;
@@ -46,7 +46,7 @@ class Trie {
         for (let i = 0; i < text.length; i++) {
             let char: string = text.charAt(i);
             let nextTrie: Trie;
-            if (this.children.has(char)) {
+            if (currentTrie.children.has(char)) {
                 nextTrie = currentTrie.children.get(char) as Trie;
             } else {
                 nextTrie = new Trie(currentTrie, char);
@@ -55,7 +55,7 @@ class Trie {
             currentTrie = nextTrie;
         }
 
-        currentTrie.children.set(endOfWord, new Trie(currentTrie, endOfWord));
+        currentTrie.children.set(END_OF_WORD, new Trie(currentTrie, END_OF_WORD));
     }
 
     /**
@@ -86,7 +86,7 @@ class Trie {
      * @returns true if this trie node represents end of word, false otherwise.
      */
     isEndOfWord(): boolean {
-        return this.char === endOfWord;
+        return this.char === END_OF_WORD;
     }
 
     /**
@@ -99,7 +99,7 @@ class Trie {
      * @returns word removed from structure.
      */
     removeWord(): string {
-        if (this.isEndOfWord()) {
+        if (!this.isEndOfWord()) {
             throw Error(`Node char ${this.char} is not end of word marker`)
         }
 
@@ -193,7 +193,7 @@ class TextIndex {
      * @returns true if advance succeeded in increasing TextIndex's value and false otherwise
      */
     advance(textNodes: Node[]): boolean {
-        return this.changeCursor(textNodes, this.advanceByOne);
+        return this.changeCursor(textNodes,  (x, y) => this.advanceByOne(x, y));
     }
 
      /**
@@ -211,7 +211,7 @@ class TextIndex {
      * @returns true if operation succeeded, otherwise false.
      */
     goBack(textNodes: Node[]): boolean {
-        return this.changeCursor(textNodes, this.goBackByOne)
+        return this.changeCursor(textNodes, (x, y) => this.goBackByOne(x, y))
     }
 
     /**
@@ -250,6 +250,8 @@ class TextIndex {
                 this.charIndex = oldCharIndex;
                 return false;
             }
+
+            currentChar = currentNodeText.charAt(this.charIndex);
         }
 
         this.lastAdvanceIncreasedNode = this.nodeIndex !== oldNodeIndex;
@@ -301,6 +303,7 @@ class TextIndex {
                 return false;
             }
 
+            currentText = textNodes[this.nodeIndex].textContent as string;  // Assumes that all text nodes have at least one character present
             this.charIndex = currentText.length - 1;
             this.lastAdvanceIncreasedNode = true;
         } else {
@@ -334,8 +337,8 @@ export function highlightRecovery(words: Set<string>, highlight: WordConsumer): 
  * @returns Trie representation of words set
  */
 function makeTrieStructure(words: Set<string>): Trie {
-    let result = new Trie(null, '');
-    for (let text in words) {
+    const result = new Trie(null, '');
+    for (const text of words) {
         result.appendWord(text);
     }
     return result;
@@ -353,8 +356,8 @@ function makeTrieStructure(words: Set<string>): Trie {
 function getAllFilledTextNodesUnder(node: Node): Node[]{
     let textNodes: Node[] = [];
     for (let nodeCursor = node.firstChild; nodeCursor; nodeCursor = nodeCursor.nextSibling){
-        if (node.nodeType === Node.TEXT_NODE && node.textContent !== null && node.textContent.length !== 0)  {
-            textNodes.push(node);
+        if (nodeCursor.nodeType === Node.TEXT_NODE && nodeCursor.textContent !== null && nodeCursor.textContent.length !== 0)  {
+            textNodes.push(nodeCursor);
         } else {
             let descendantTextNodes = getAllFilledTextNodesUnder(nodeCursor)
             for (let i = 0; i < descendantTextNodes.length; i++) {
@@ -396,6 +399,7 @@ function findMissingWords(root: Trie, textNodes: Node[], highlight: WordConsumer
                 .slice(startNodeIndex, endNodeIndex + 1)
                 .map(nodeToTreePath);
             
+            // TODO: consider using range here to define foundText instead.
             let foundWordObj: Word = {
                 startOffset: currentPos.charIndex,
                 endOffset: wordEndPos.charIndex + 1,
@@ -457,7 +461,7 @@ function searchForString(startPos: TextIndex, wordEndPosBuffer: TextIndex, textN
      * 
      */
     while (true) {
-        let currentChar = wordEndPosBuffer.getCurrentChar(textNodes) as string;
+        let currentChar = (wordEndPosBuffer.getCurrentChar(textNodes) as string).toLowerCase();
         let nextTrie = trieNode.getNodeWithChar(currentChar);
         
         if (nextTrie === undefined) {
@@ -466,7 +470,7 @@ function searchForString(startPos: TextIndex, wordEndPosBuffer: TextIndex, textN
                 nextTrie = trieNode.getNodeWithChar(SPACE_CHAR);
                 if (nextTrie !== undefined) {
                     trieNode = nextTrie;
-                    continue;
+                    continue;  // retry check now that trie has advanced
                 }
             }
 
@@ -487,12 +491,12 @@ function searchForString(startPos: TextIndex, wordEndPosBuffer: TextIndex, textN
     }
 
     while (!trieNode.isRoot()) {
-        let currentChar = wordEndPosBuffer.getCurrentChar(textNodes) as string
+        let currentChar = (wordEndPosBuffer.getCurrentChar(textNodes) as string).toLocaleLowerCase();
         let goBackFailed = false;
         if (currentChar === trieNode.char || 
             (isWhiteSpace(currentChar) && isWhiteSpace(trieNode.char))) {
-                if (trieNode.children.has(endOfWord)) {
-                    return trieNode.getNodeWithChar(endOfWord) as Trie;
+                if (trieNode.children.has(END_OF_WORD)) {
+                    return trieNode.getNodeWithChar(END_OF_WORD) as Trie;
                 } else {
                     trieNode = trieNode.parent as Trie;
                     goBackFailed = !wordEndPosBuffer.goBack(textNodes);

@@ -133,7 +133,7 @@ class Highlight {
         }
 
         // Make sure that correct text is highlighted, throwing exception otherwise
-        if (textCoveredByHighlightNodes.replace(/\s/g, '') !== this.word.word.replace(/\s/g, '')) {
+        if (textCoveredByHighlightNodes.replace(/\s/g, '').toLowerCase() !== this.word.word.replace(/\s/g, '').toLowerCase()) {
             throw `${this.word.word} does not match ${textCoveredByHighlightNodes}`;
         }
 
@@ -531,10 +531,10 @@ export class HighlightsManager {
         for (let i = 0; i < data.wordEntries.length; i++) {
             wordsToFind.add(data.wordEntries[i].word);
         }
-        for (let i = 0; i < data.wordEntries.length; i++) {
+        for (let i = 0; i < data.missingWords.length; i++) {
             wordsToFind.add(data.missingWords[i]);
         }
 
-        return highlightRecovery(wordsToFind, this.highlight);
+        return highlightRecovery(wordsToFind, (w) => this.highlight(w));
     }
 }
