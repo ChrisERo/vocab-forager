@@ -21,6 +21,8 @@ import { Dictionary, DictionaryIdentifier, SiteData } from "./models";
     ShowDeleteHighlightsCM,
     HideDeleteHighlightsCM,
     GetAllURLs,
+    GetAllExtensionData,
+    LoadExtensionData
 }
 
 /**
@@ -132,11 +134,26 @@ export interface DictsOfLangRequest {
     return temp.language !== undefined && temp.index !== undefined && temp.content !== undefined;
 }
 
+/**
+ * Request to load extension data
+ */
+ export interface LoadExtensionDataRequest {
+    data: any;
+}
+
+/**
+* Returns true if and only if object provided is a GetDataForPage
+*/
+export function isLoadExtensionDataRequest(mssg: any): mssg is LoadExtensionDataRequest {
+   let temp = mssg as LoadExtensionDataRequest;
+   return temp.data !== undefined;
+}
+
 
 
 export type BSMessagePayload = DictsOfLangRequest|SearchRequest|DictionaryIdentifier|
     PageDataPair|SetActivationRequest|GetDataForPage|UpdateDictionaryRequest|
-    AddNewDictRequest|null;
+    AddNewDictRequest|LoadExtensionDataRequest|null;
 
 /**
  * Message that can be sent to background script listener

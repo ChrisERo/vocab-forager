@@ -33,6 +33,11 @@ export interface NonVolatileBrowserStorage {
     getAllPageUrls(): Promise<string[]>;
 
     /**
+     * Returns all data stored in non-volatile storage as a JSON-compatible object
+     */
+    getAllStorageData(): Promise<any>;
+
+    /**
     * Saves page-specific metadata in non-volatile storage.
     * 
     * @param siteData - metadata for particular web url
@@ -57,6 +62,13 @@ export interface NonVolatileBrowserStorage {
      */
     setDictionaryData(gdd: GlobalDictionaryData): void;
 
+    /**
+     * Overrides all extension data stored in non-volatile storage with that present
+     * in data.
+     * 
+     * @param data Data to store into non-volatile storage
+     */
+    uploadExtensionData(data: any): void;
 }
 
 type StoredActivatedState = 1|0;  // type of data the represents data stored in activated state
@@ -127,7 +139,11 @@ class LocalStorage implements NonVolatileBrowserStorage {
     removePageData(url: string): void {
         this.removeFromLS(url);
     }
-
+    
+    getAllStorageData(): Promise<any> {
+        return this.getAllEntireLS();
+    }
+    
     async getAllPageUrls(): Promise<string[]> {
         let nonVolatileMemory = await this.getAllEntireLS();
         const response: string[] = [];
@@ -167,6 +183,12 @@ class LocalStorage implements NonVolatileBrowserStorage {
         this.setInLS(this.dictionaryKey, gdd);
     }
 
+    uploadExtensionData(data: any): void {
+        chrome.storage.local.clear(() => {
+            chrome.storage.local.set(data);
+        });
+    }
+
     /**
      * @param key entry inside LocalStorage
      * @returns true if key corresponds to an entry for a URL and false otherwise
@@ -175,8 +197,6 @@ class LocalStorage implements NonVolatileBrowserStorage {
         return key !== this.dictionaryKey && key !== this.isActivatedKey;
     }
 }
-
-
 
 /**
  * 

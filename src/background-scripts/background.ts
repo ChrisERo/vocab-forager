@@ -1,7 +1,7 @@
 import { DictionaryManager } from "./dictionary";
 import { getNonVolatileStorage, NonVolatileBrowserStorage } from "./non-volatile-browser-storage";
 import {ContextMenuManager} from "./contextmenu"
-import { BSMessageType, isAddNewDictRequest, isBsMessage, isDictsOfLangRequest, isGetDataForPageRequest, isPageDataPair, isSearchRequest, isSetActivationRequest, isUpdateDictionaryRequest } from "../utils/background-script-communication";
+import { BSMessageType, isAddNewDictRequest, isBsMessage, isDictsOfLangRequest, isGetDataForPageRequest, isLoadExtensionDataRequest, isPageDataPair, isSearchRequest, isSetActivationRequest, isUpdateDictionaryRequest } from "../utils/background-script-communication";
 import { Dictionary, DictionaryIdentifier, isDictionaryID, SiteData } from "../utils/models";
 import { isNewActivatedState } from "../utils/content-script-communication";
 
@@ -151,6 +151,18 @@ function logUnexpected(key: string, value: any) {
         }
         case BSMessageType.GetAllURLs: {
             browserStorage.getAllPageUrls().then((response) => sendResponse(response));
+            break;
+        }
+        case BSMessageType.GetAllExtensionData: {
+            browserStorage.getAllStorageData().then((response) => sendResponse(response));
+            break;
+        }
+        case BSMessageType.LoadExtensionData: {
+            if (isLoadExtensionDataRequest(request.payload)) {
+                browserStorage.uploadExtensionData(request.payload.data);
+            } else {
+                logUnexpected('payload', request.payload);
+            }
             break;
         }
         default: {
