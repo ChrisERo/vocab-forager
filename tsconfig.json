@@ -5,7 +5,7 @@
       "target": "es6",
       "esModuleInterop": true,
       "removeComments": true,
-      "sourceMap": false,
+      "sourceMap": true,
       "rootDir": "src",
       "outDir": "extension/js",
       "noEmitOnError": false,
