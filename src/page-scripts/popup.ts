@@ -21,12 +21,13 @@ function initButtons(): void {
     chrome.runtime.sendMessage(getActive, (isActive: boolean) => {
         const activeToggle = document.getElementById('activate') as HTMLInputElement;
         activeToggle.checked = isActive;
-        activeToggle.addEventListener('change',  () => {
+        activeToggle.addEventListener('change',  () =>  {
             // Notify background script and all content scripts
+            let isActive = activeToggle.checked;
             const setChecked: BSMessage = {
                 messageType: BSMessageType.SetCurrentActivation,
                 payload: {
-                    isActivated: activeToggle.checked
+                    isActivated: isActive
                 }
             };
             chrome.runtime.sendMessage(setChecked); 
