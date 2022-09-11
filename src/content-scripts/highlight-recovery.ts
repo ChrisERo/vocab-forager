@@ -95,16 +95,13 @@ class Trie {
      * or we reach root node.
      * 
      * Throws exception if called on node that is not an end of a word.
-     * 
-     * @returns word removed from structure.
      */
-    removeWord(): string {
+    removeWord(): void {
         if (!this.isEndOfWord()) {
             throw Error(`Node char ${this.char} is not end of word marker`)
         }
 
         let t: Trie = this;
-        let word = '';
         while (!t.isRoot()) {
             let parent = t.parent as Trie;
             if (t.children.size === 0) {
@@ -113,12 +110,7 @@ class Trie {
             }
 
             t = parent;
-            if (!t.isRoot()) {
-                word = t.char + word;
-            }
         }
-
-        return word;
     }
 
     /**
@@ -390,19 +382,27 @@ function findMissingWords(root: Trie, textNodes: Node[], highlight: WordConsumer
                 break;
             }
         } else {
-            let endParent = textNodes[wordEndPos.nodeIndex].parentNode as Node;
+            const endParent = textNodes[wordEndPos.nodeIndex].parentNode as Node;
         
-            let foundText: string = endTrieNode.removeWord();
-            let startNodeIndex = currentPos.nodeIndex;
-            let endNodeIndex = wordEndPos.nodeIndex;
-            let nodePaths = textNodes
+            endTrieNode.removeWord();
+            const startNodeIndex = currentPos.nodeIndex;
+            const endNodeIndex = wordEndPos.nodeIndex;
+            const nodePaths = textNodes
                 .slice(startNodeIndex, endNodeIndex + 1)
                 .map(nodeToTreePath);
             
-            // TODO: consider using range here to define foundText instead.
-            let foundWordObj: Word = {
-                startOffset: currentPos.charIndex,
-                endOffset: wordEndPos.charIndex + 1,
+            
+            const startOffset = currentPos.charIndex;
+            const endOffset = wordEndPos.charIndex + 1;
+            const textRange = new Range();
+            textRange.setStart(textNodes[currentPos.nodeIndex], startOffset);
+            textRange.setEnd(textNodes[wordEndPos.nodeIndex], endOffset);
+            const foundText = textRange.toString();
+            
+                // TODO: consider using range here to define foundText instead.
+            const foundWordObj: Word = {
+                startOffset: startOffset,
+                endOffset: endOffset,
                 word: foundText,
                 nodePath: nodePaths,
             };

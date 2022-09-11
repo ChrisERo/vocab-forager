@@ -324,8 +324,9 @@ export class HighlightsManager {
      * Assumes that SiteData has data ordered in increasing order, where order is DFS
      * tree traversal of DOM, starting from left.
      * @param data 
+     * @returns true if highightAllData completed without a a rehighlight and false otherwise
      */
-    highlightAllData(data: SiteData): void {
+    highlightAllData(data: SiteData): boolean {
         try {
             if (data.missingWords.length > 0) {
                 throw 'SiteData has missing words, attempting to find them';
@@ -336,6 +337,8 @@ export class HighlightsManager {
                 newHighlight.highlightWord();
                 this.highlights.push(newHighlight);
            }
+
+           return true;
         } catch {
             let missingText = this.freshRehighlight(data);
             if (missingText !== null) {
@@ -345,6 +348,7 @@ export class HighlightsManager {
             }
 
             data.wordEntries = this.getWordEntries();
+            return false;
         }
     }
     

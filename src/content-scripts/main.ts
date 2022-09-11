@@ -256,9 +256,12 @@ const previousOnMouseUp = document.onmouseup; // on mouse up value before extens
     };
     chrome.runtime.sendMessage(getSDRequest, 
         (data: SiteData) => { 
-            highlightManager.highlightAllData(data);
+            const neededRehighlight = !highlightManager.highlightAllData(data);
             for (let i = 0; i < data.missingWords.length; i++) {
                 missingWords.push(data.missingWords[i]);
+            }
+            if (neededRehighlight) {
+                saveData(highlightManager, missingWords);
             }
 
             document.onmouseup = (event: MouseEvent) => {
