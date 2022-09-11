@@ -1,8 +1,8 @@
 import { BSMessage, BSMessageType, SearchRequest } from "../utils/background-script-communication";
 
 // TODO: rename once TS is done
-export const HILIGHT_CLASS = 'vocabulario_hilighted'; // class of hilighted sections in html page
-export const HILIGHT_CLASS_HOVER = 'vocabulario_hilighted_hover'; // class of hilighted sections when hovered over
+export const HILIGHT_CLASS = 'vf-highlighted'; // class of hilighted sections in html page
+export const HILIGHT_CLASS_HOVER = 'vf-highlighted-hover'; // class of hilighted sections when hovered over
 
 /**
  * Uses background script to open up a website asociated with a particular word. The 

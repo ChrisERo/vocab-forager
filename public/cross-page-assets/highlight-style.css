@@ -1,9 +1,9 @@
-.vocabulario_hilighted {
+.vf-highlighted {
     background-color: #ffff01 !important;
     display: inline !important;
 }
 
-.vocabulario_hilighted_hover {
+.vf-highlighted-hover {
     border-top: 2px solid #6afff3 !important;
     border-bottom: 2px solid #6afff3 !important;
     cursor: pointer !important;

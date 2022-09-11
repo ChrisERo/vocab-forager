@@ -96,10 +96,10 @@ export class QuizManager {
      * Initalises list of words to quiz user one and sets listeners for elemetns 
      * inside quiz container box
      *
-     * @param {Object} vocabulario_data - vocabulary data pertaining to current web page
+     * @param {Object} siteData - vocabulary data pertaining to current web page
      */
-    setUpQuiz(vocabulario_data: SiteData, quizContainer: HTMLElement) {
-        this.setUpWordsAndCounter(vocabulario_data);
+    setUpQuiz(siteData: SiteData, quizContainer: HTMLElement) {
+        this.setUpWordsAndCounter(siteData);
 
         // Setup for close button
         let close = document.getElementById(closeButtonID);
@@ -137,7 +137,7 @@ export class QuizManager {
         nextButton.addEventListener('click', () => {
             this.quizWordList.pop();
             if (this.quizWordList.length === 0) {
-                this.setUpWordsAndCounter(vocabulario_data);  // reset counter and shuffle quiz questinos
+                this.setUpWordsAndCounter(siteData);  // reset counter and shuffle quiz questinos
             } else {
                 this.wordsEncountered++;
                 this.updateQuizCounter();
