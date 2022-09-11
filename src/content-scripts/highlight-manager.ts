@@ -134,6 +134,7 @@ class Highlight {
 
         // Make sure that correct text is highlighted, throwing exception otherwise
         if (textCoveredByHighlightNodes.replace(/\s/g, '').toLowerCase() !== this.word.word.replace(/\s/g, '').toLowerCase()) {
+            this.unHighlightWord();
             throw `${this.word.word} does not match ${textCoveredByHighlightNodes}`;
         }
 
