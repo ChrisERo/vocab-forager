@@ -1,0 +1,7 @@
+package-lock.json
+*.zip
+*.swp
+node_modules/*
+notepads/*
+extension/*
+.vscode/*

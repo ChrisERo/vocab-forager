@@ -1,0 +1,14 @@
+{
+   "compilerOptions": {
+      "strict": true,
+      "module": "es6",
+      "target": "es6",
+      "esModuleInterop": true,
+      "removeComments": true,
+      "sourceMap": true,
+      "rootDir": "src",
+      "outDir": "extension/js",
+      "noEmitOnError": false,
+      "typeRoots": [ "node_modules/@types" ]
+   }
+}

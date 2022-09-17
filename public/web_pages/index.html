@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VocabForager</title>
+
+    <link rel="icon" type="image/svg" href="../icons/icon128.png">
+    <link rel="stylesheet" type="text/css" href="../cross-page-assets/vf-style.css">
+    <style>
+        .boton {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="banner_anchor"></div>
+    <div id="options">
+        <div style="text-align: center;">
+            <p class="boton" id="new-dict">Create New Dictionary</p>
+        </div>
+        <div style="text-align: center;">
+            <p class="boton" id="edit-dict">Edit / Delete Dictionary</p>
+        </div>
+        <div style="text-align: center;">
+            <p class="boton" id="see-sites">See Highlighted Sites</p>
+        </div>
+
+        <div style="text-align: center;"></div>
+
+        <div style="text-align: center;">
+            <p class="boton" id="export-data">Export Extension Data</p>
+        </div>
+        <div style="text-align: center;">
+            <p class="boton" id="import-data">Import Extension Data</p>
+        </div>
+    </div>
+
+    <input type="file" id="import-data-path" accept=".json" style="display:none"/>
+    <script src=../page-scripts/index.js> </script>
+</body>
+</html>

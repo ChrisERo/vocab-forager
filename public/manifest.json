@@ -1,0 +1,50 @@
+{
+  "name": "VocabForager",
+  "description": "VocabForager is a browser extension built for people trying to build up their vocabulary for one, or several, languages. Users can highlight both words and phrases on a webpage and search for them in an online dictionary of their choice.!",
+  "version": "2.0.0",
+  "manifest_version": 3,
+  "icons": {
+    "16": "icons/icon128.png",
+    "32": "icons/icon128.png",
+    "48": "icons/icon128.png",
+    "128": "icons/icon128.png"
+  },
+  "permissions": [
+    "activeTab",
+    "contextMenus",
+    "scripting",
+    "storage",
+    "tabs",
+    "webRequest"
+  ],
+  "background": {
+    "service_worker": "background.js" 
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*/*"],
+      "js": [
+        "content.js"
+      ],
+      "css": [
+        "cross-page-assets/highlight-style.css",
+        "cross-page-assets/vocab_quiz.css"
+      ]
+    }
+  ],
+  "action": {
+    "default_popup": "web_pages/popup.html",
+    "default_icon": {
+      "16": "icons/icon128.png",
+      "32": "icons/icon128.png",
+      "48": "icons/icon128.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [ "cross-page-assets/quiz.html" ],
+      "matches": [ "<all_urls>" ]
+    }
+  ]
+}

@@ -1,1 +1,0 @@
-zip -r -FS ../hoot-hoot.zip * --exclude 'LICENSE' 'README.md' '*notepads*' '*git*' '*DS_Store*' '*.bash'
