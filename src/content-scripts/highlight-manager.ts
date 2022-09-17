@@ -27,7 +27,10 @@ function extractIndex(element: Element) {
  * Updates all metadata for Highlights managed by HighlightManager that are decendants 
  * of root node that come after some start index in root node's children list. If encounteredIds
  * is not null, that means that the function should make recursive calls in the case where
- * it encounters a non-highlight node, and no modifications are moade to traversed nodes
+ * it encounters a non-highlight node, and no modifications are moade to traversed nodes.
+ *
+ * If firstEncounteredElement is not null, sets firstEncounteredElement's first element
+ * to the smalest id encountered, which should be the very first one.
  *
  * @param rootNode - parent of all nodes to consider
  * @param depth - how deep does node change occur
@@ -35,13 +38,16 @@ function extractIndex(element: Element) {
  * @param offsetToAdd - number of offsets to add by a hilights addtion
  * @param traversalStartIndex - index of child of root_node from which to start algorithm
  * @param shouldModifyOffset - true if the startOffset (and maybe endOffset of an encountered
- *                                                 hilight) should be modified)
+ *                             hilight) should be modified)
  * @param shouldGoDownDepth - true if should go down nodes to edit highlight node's offsets/node paths
  * @param highlightManager - current state of highlights in volatile memory
+ * @param firstEncounteredElement - either null if not tracking highlight id of first encountered
+ *                                  highlight or an array with a single number containing
+ *                                  smallest highlight id encountered so far.
  */
  function addNodesAndOffsets(rootNode: Node, depth: number, numberOfNodesToAdd: number, 
     offsetToAdd: number, traversalStartIndex: number, shouldModifyOffset: boolean, 
-        shouldGoDownDepth: boolean, highlightManager: HighlightsManager): void {
+    shouldGoDownDepth: boolean, highlightManager: HighlightsManager, firstEncounteredElement: number[]|null): void {
         if (!rootNode.hasChildNodes()) {
             // isTextNode(rootNode) ---> function call ends here
             return;
@@ -55,7 +61,8 @@ function extractIndex(element: Element) {
             if (isTextNode(child)) {
                 continue;  // TODO: delete in future
             } else if (isHighlightNode(child)) {
-                let highlight = highlightManager.highlights[extractIdOfHighlight(child as Element)];
+                const highlightId = extractIdOfHighlight(child as Element);
+                let highlight = highlightManager.highlights[highlightId];
                 let highlightIndex = extractIndex(child as Element);
                 highlight.word.nodePath[highlightIndex][depth] += numberOfNodesToAdd; 
                 if (shouldModifyOffset) {
@@ -67,12 +74,16 @@ function extractIndex(element: Element) {
                     }
                     shouldModifyOffset = false;
                 }
+                if (firstEncounteredElement !== null && firstEncounteredElement[0] > highlightId) {
+                    firstEncounteredElement[0] = highlightId;
+                    firstEncounteredElement = null;  // found old highlight, so no need to carry it
+                }
             } else {
                 // current node != text --> future offsets should not be modified.
                 shouldModifyOffset =  shouldModifyOffset && isTextNode(child);
                 if (shouldGoDownDepth) {
                     addNodesAndOffsets(child, depth, numberOfNodesToAdd, 0, 0, false, 
-                        shouldGoDownDepth, highlightManager);
+                        shouldGoDownDepth, highlightManager, firstEncounteredElement);
                 }
             }
         }
@@ -408,28 +419,16 @@ export class HighlightsManager {
             parentsToHighlightNodeIndex.get(parent)?.push(nodePath[nodePath.length-1]);
         }
 
-        
-        let smallestRightId = this.highlights.length;
+        let idOfNewHighlight: number[] = [this.highlights.length];
         parentsToHighlightNodeIndex.forEach((orderedHChildren, parent) => {
-            // Find first highlight node in parent right after node we wish to update
             const lastNodeIndex = orderedHChildren[orderedHChildren.length - 1];
-            const children = parent.childNodes;
-            for (let i = lastNodeIndex + 1; i < children.length; i++) {
-                let brotherNode = children[i];
-                if (isHighlightNode(brotherNode)) {
-                    let brotherNodeHighlightId = extractIdOfHighlight(brotherNode as Element);
-                    smallestRightId = Math.min(smallestRightId, brotherNodeHighlightId);
-                    break; 
-                }
-            }
-            
             const depth = nodeToTreePath(parent).length;
             const offsetToAdd = -highlight.word.endOffset;
             // TODO: consider changining number of elements to add to be more complex
-            addNodesAndOffsets(parent, depth, 2 * orderedHChildren.length, offsetToAdd, lastNodeIndex+1, true, true, this);
+            addNodesAndOffsets(parent, depth, 2 * orderedHChildren.length, offsetToAdd, lastNodeIndex+1, true, true, this, idOfNewHighlight);
         });
 
-        highlight.id = smallestRightId;
+        highlight.id = idOfNewHighlight[0];
         this.highlights.splice(highlight.id, 0, highlight);
         for (let i = highlight.id + 1; i < this.highlights.length; i++) {
             let h = this.highlights[i];
@@ -521,7 +520,7 @@ export class HighlightsManager {
 
             let depth = nodeToTreePath(parent).length;
             addNodesAndOffsets(parent, depth, numberOfNodesToMake, addOffset, lastNodeIndex + 1,
-                shouldModifyFutureOffsets, true, this);  // TODO: update depth
+                shouldModifyFutureOffsets, true, this, null);  // TODO: update depth
     }
 
     private freshRehighlight(data: SiteData): Set<string>|null {
