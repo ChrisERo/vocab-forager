@@ -74,7 +74,7 @@ function extractIndex(element: Element) {
                     }
                     shouldModifyOffset = false;
                 }
-                if (firstEncounteredElement !== null && firstEncounteredElement[0] < highlightId) {
+                if (firstEncounteredElement !== null && firstEncounteredElement[0] > highlightId) {
                     firstEncounteredElement[0] = highlightId;
                     firstEncounteredElement = null;  // found old highlight, so no need to carry it
                 }
