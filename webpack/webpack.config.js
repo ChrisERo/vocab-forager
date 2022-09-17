@@ -41,7 +41,7 @@ module.exports = (env) => {
     ], 
   }
 
-  if (env.mode === 'production') {
+  if (env.mode === 'development') {
     config['devtool'] = 'cheap-module-source-map';
   }
   return config;
