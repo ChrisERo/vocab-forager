@@ -533,10 +533,10 @@ export class HighlightsManager {
 
         let wordsToFind = new Set<string>();
         for (let i = 0; i < data.wordEntries.length; i++) {
-            wordsToFind.add(data.wordEntries[i].word);
+            wordsToFind.add(data.wordEntries[i].word.trim());
         }
         for (let i = 0; i < data.missingWords.length; i++) {
-            wordsToFind.add(data.missingWords[i]);
+            wordsToFind.add(data.missingWords[i].trim());
         }
 
         return highlightRecovery(wordsToFind, (w) => this.highlight(w));

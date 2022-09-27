@@ -1,5 +1,5 @@
 import { SiteData, Word } from "../utils/models";
-import { isWhiteSpace, nodeToTreePath } from "./utils";
+import { isTextNode, isWhiteSpace, nodeToTreePath } from "./utils";
 
 const END_OF_WORD = 'ED';
 const SPACE_CHAR = ' ';
@@ -231,11 +231,7 @@ class TextIndex {
         let oldCharIndex = this.charIndex;
         let oldLastAdvanceIncreasedNode = this.lastAdvanceIncreasedNode;
 
-        this.lastAdvanceIncreasedNode = false;
         while(isWhiteSpace(currentChar)) {
-            if (this.lastAdvanceIncreasedNode) {
-                currentNodeText = (textNodes[this.nodeIndex].textContent as string);
-            }
             if (!updateCursor(currentNodeText, textNodes)) {
                 this.lastAdvanceIncreasedNode = oldLastAdvanceIncreasedNode;
                 this.nodeIndex = oldNodeIndex;
@@ -243,6 +239,7 @@ class TextIndex {
                 return false;
             }
 
+            currentNodeText = (textNodes[this.nodeIndex].textContent as string);
             currentChar = currentNodeText.charAt(this.charIndex);
         }
 
@@ -399,7 +396,7 @@ function findMissingWords(root: Trie, textNodes: Node[], highlight: WordConsumer
             textRange.setEnd(textNodes[wordEndPos.nodeIndex], endOffset);
             const foundText = textRange.toString();
             
-                // TODO: consider using range here to define foundText instead.
+            // TODO: consider using range here to define foundText instead.
             const foundWordObj: Word = {
                 startOffset: startOffset,
                 endOffset: endOffset,
@@ -415,7 +412,15 @@ function findMissingWords(root: Trie, textNodes: Node[], highlight: WordConsumer
             // Update textNodes assumes that highlight always results in 3 new nodes 
             // at parent level
             textNodes = textNodes.slice(endNodeIndex + 1);
-            textNodes.unshift(Array.from(endParent.childNodes)[endNodeIndex + 2]);
+            const lastNodeArray = nodePaths[nodePaths.length - 1]
+            const domEndNodeIndex = lastNodeArray[lastNodeArray.length - 1];
+            const firstTextNodeAfterNewHighlight = endParent.childNodes[domEndNodeIndex + 2];
+            if (firstTextNodeAfterNewHighlight !== null &&
+                firstTextNodeAfterNewHighlight.textContent !== null &&
+                firstTextNodeAfterNewHighlight.textContent.trim().length !== 0) {
+                    console.assert(isTextNode(firstTextNodeAfterNewHighlight));
+                    textNodes.unshift(firstTextNodeAfterNewHighlight);
+            }
 
             currentPos.charIndex = 0;
             currentPos.nodeIndex = 0;
