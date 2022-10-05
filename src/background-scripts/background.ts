@@ -134,6 +134,7 @@ function logUnexpected(key: string, value: any) {
         case BSMessageType.SetCurrentActivation: {
             if (isSetActivationRequest(request.payload)) {
                 browserStorage.setCurrentActivation(request.payload.isActivated);
+                contextMenuManager.updateContextMenuBasedOnActivation(request.payload.isActivated);
                 // tab notification done by activaters, so nothing else to do
             } else {
                 logUnexpected('payload', request.payload);
@@ -159,7 +160,10 @@ function logUnexpected(key: string, value: any) {
         }
         case BSMessageType.LoadExtensionData: {
             if (isLoadExtensionDataRequest(request.payload)) {
-                browserStorage.uploadExtensionData(request.payload.data);
+                browserStorage.uploadExtensionData(request.payload.data).then(
+                    (response) =>
+                    contextMenuManager.updateContextMenuBasedOnActivation(response)
+                );
             } else {
                 logUnexpected('payload', request.payload);
             }
