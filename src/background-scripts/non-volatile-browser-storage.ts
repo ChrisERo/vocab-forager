@@ -64,11 +64,11 @@ export interface NonVolatileBrowserStorage {
 
     /**
      * Overrides all extension data stored in non-volatile storage with that present
-     * in data.
+     * in data and returns activation status in data
      * 
      * @param data Data to store into non-volatile storage
      */
-    uploadExtensionData(data: any): void;
+    uploadExtensionData(data: any): Promise<boolean>;
 }
 
 type StoredActivatedState = 1|0;  // type of data the represents data stored in activated state
@@ -183,10 +183,10 @@ class LocalStorage implements NonVolatileBrowserStorage {
         this.setInLS(this.dictionaryKey, gdd);
     }
 
-    uploadExtensionData(data: any): void {
-        chrome.storage.local.clear(() => {
-            chrome.storage.local.set(data);
-        });
+    async uploadExtensionData(data: any): Promise<boolean> {
+        await chrome.storage.local.clear();
+        await chrome.storage.local.set(data);
+        return this.getCurrentActivation();
     }
 
     /**
