@@ -1,7 +1,7 @@
 const path = require('path');
 const CopyPlugin = require('copy-webpack-plugin');
 
-const pageScriptsDirectory = '../src/page-scripts'
+const pageScriptsDirectory = '../src/page-scripts';
 
 module.exports = (env) => {
   let config = {
@@ -43,6 +43,14 @@ module.exports = (env) => {
 
   if (env.mode === 'development') {
     config['devtool'] = 'cheap-module-source-map';
+  } else if (env.mode === 'production') {
+    let copyLicense = new CopyPlugin({
+      patterns: [
+        {from: 'LICENSE.md'}
+      ]
+    });
+    config['plugins'].push(copyLicense);
   }
+
   return config;
 };
