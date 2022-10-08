@@ -1,7 +1,7 @@
 {
   "name": "vocab-forager",
   "version": "2.0.0",
-  "description": "VocabForager helps people build their vocabulary for one, or several, languages through webpage highlighting and a user-configured list of dictionaries.",
+  "description": "VocabForager is a browser extension built for people trying to build up their vocabulary for one, or several, languages.",
   "main": "index.js",
   "scripts": {
     "clean": "rm -rf extension extension.zip",
