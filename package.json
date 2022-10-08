@@ -1,11 +1,13 @@
 {
   "name": "vocab-forager",
   "version": "2.0.0",
-  "description": "VocabForager is a browser extension built for people trying to build up their vocabulary for one, or several, languages. Users can highlight both words and phrases on a webpage and search for them in an online dictionary of their choice.",
+  "description": "VocabForager helps people build their vocabulary for one, or several, languages through webpage highlighting and a user-configured list of dictionaries.",
   "main": "index.js",
   "scripts": {
+    "clean": "rm -rf extension extension.zip",
     "build-dev": "webpack --env mode=development --config webpack/webpack.config.js",
-    "build-prod": "webpack --env mode=production --config webpack/webpack.config.js && tar -czvf extension.tar.gz ./extension"
+    "build-prod": "webpack --env mode=production --config webpack/webpack.config.js",
+    "build-prod-zip": "npm run clean && npm run build-prod && zip -r extension.zip extension"
   },
   "repository": {
     "type": "git",

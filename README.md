@@ -1,8 +1,8 @@
 # VocabForager
 
 VocabForager is a Chrome extension for people trying to build up their vocabulary for one, 
-or several, languages. With just a few clicks, users can highlight words and phrases on a 
-webpage and search for them in an online dictionary of their choice.
+or several, languages. Users can highlight words and phrases on a webpage and search for
+them in an online dictionary of their choice.
 
 ### Activate Addon
 
