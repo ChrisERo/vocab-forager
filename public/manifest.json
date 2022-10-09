@@ -11,10 +11,7 @@
   },
   "permissions": [
     "contextMenus",
-    "scripting",
-    "storage",
-    "tabs",
-    "webRequest"
+    "storage"
   ],
   "background": {
     "service_worker": "background.js" 
