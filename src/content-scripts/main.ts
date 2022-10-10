@@ -311,6 +311,8 @@ function handler(request: any): void {
                     }
                     highlightManager.highlights = [];
                     highlightManager.indexToDelete = -1;
+
+                    document.onmouseup = previousOnMouseUp;
                 }
 
                 isActivated = request.payload.newActivatedState
