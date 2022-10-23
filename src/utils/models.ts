@@ -13,7 +13,7 @@ export interface Word {
 }
 
 /**
- * Creats Word object from 
+ * Creates Word object from
  * 
  * @param w text of Word interface
  * @param startOffset 
@@ -31,7 +31,15 @@ export function wordFromComponents(w: string, startOffset: number, endOffset: nu
 }
 
 /**
- * Representation of all data asociated with specfic web URL 
+ * Includes data used to change highlight styling
+ */
+export interface HighlightOptions {
+    fontColor: string;
+    backgroundColor: string;
+}
+
+/**
+ * Representation of all data associated with specific web URL
  */
 export interface SiteData {
     // list of texts in current site that were last highlighted. ID of highlighted text 
@@ -39,6 +47,59 @@ export interface SiteData {
     wordEntries: Word[];
     // list of words to look for in site; e.g. words that we expected to find but did not
     missingWords: string[];
+    // generic field for shit
+    highlightOptions?: HighlightOptions;
+}
+
+/**
+ * @param highlightOptions 
+ * @returns true if options corresponds to light-mode, false otherwise
+ */
+export function isHighlightLight(highlightOptions?: HighlightOptions): boolean {
+    return highlightOptions === undefined || (
+        highlightOptions.fontColor === '#000000'
+        && highlightOptions.backgroundColor === '#ffff01'
+        );
+}
+
+/**
+ * Change highlights for a light webpage (yellow background with black text)
+ * 
+ * @param options current style options for a webpage
+ */
+export function enforceExplicityLightMode(options?: HighlightOptions): HighlightOptions {
+    return setSiteDataHighlightOptions(options, '#ffff01', '#000000');
+}
+
+/**
+ * Change highlights for a dark webpage (blue background with white text)
+ *
+ * @param options current style options
+ */
+export function enforceExplicityDarkMode(options?: HighlightOptions): HighlightOptions {
+    return setSiteDataHighlightOptions(options, '#0008fa', '#ffffff');
+}
+
+/**
+ * Set style options for background and font color for highlighted text.
+ *
+ * @param options 
+ * @param backgroundColor 
+ * @param fontColor 
+ */
+function setSiteDataHighlightOptions(options: HighlightOptions | undefined, 
+    backgroundColor: string, fontColor: string): HighlightOptions {
+        if (!options) {
+            return {
+                fontColor: fontColor,
+                backgroundColor: backgroundColor
+            };
+        } else {
+            options.backgroundColor = backgroundColor;
+            options.fontColor = fontColor;
+            return options;
+        }
+    }
 }
 
 export function isEmpty(data: SiteData): boolean {
@@ -95,4 +156,37 @@ export interface GlobalDictionaryData {
 export function getLanguages(dc: GlobalDictionaryData): string[] {
     let mapping: SubjectToDictsMapping = dc.languagesToResources;
     return Object.getOwnPropertyNames(mapping);
+}
+
+/**
+ * Modifies HighlightOptions to contain whatever changes are requested
+ * 
+ * Assumes that highlight-style.css has been injected into this webpage
+ * 
+ * @param highlightOptions highlight options to apply
+ */
+export function applyStylingOptions(highlightOptions: HighlightOptions): void {
+    const fontColor = highlightOptions.fontColor
+    const backgroundColor = highlightOptions.backgroundColor
+
+    for (let i = 0; i < document.styleSheets.length; i++) {
+        let style = document.styleSheets[i];
+        if (style === null) {
+            continue;
+        }
+
+        const rules = style.cssRules;
+        for (let j = 0; j < rules.length; j++) {
+            let regla = rules[j];
+            if (!(regla instanceof CSSStyleRule)) {
+                continue;
+            }
+
+            if (regla.selectorText === '.vf-highlighted') {
+                regla.style.color = fontColor;
+                regla.style.backgroundColor = backgroundColor;
+                return;
+            }
+        }
+    }
 }

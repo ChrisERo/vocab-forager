@@ -1,5 +1,5 @@
 import { BSMessage, BSMessageType } from '../utils/background-script-communication';
-import { SiteData, Word } from '../utils/models'
+import { applyStylingOptions, HighlightOptions, SiteData, Word } from '../utils/models'
 import { highlightRecovery } from './highlight-recovery';
 import { defineWord, HILIGHT_CLASS, HILIGHT_CLASS_HOVER, isHighlightElement, isHighlightNode, isTextNode, nodeToTreePath, nodPathToNode } from './utils';
 
@@ -307,10 +307,46 @@ export class HighlightsManager {
     highlights: Highlight[];
     // Number whose ID is the last highlight node to have been hovered over
     indexToDelete: number;
+    // styling options for highlighting
+    highlightStyleOptions?: HighlightOptions;
 
     constructor() {
         this.highlights = [];
         this.indexToDelete = -1;
+    }
+
+    /**
+     * Sets the style options of highlights based on SiteData
+     *
+     * @param siteData Site data for current website
+     */
+     setStyleOptionsFromSiteData(siteData: SiteData): void {
+        this.highlightStyleOptions = siteData.highlightOptions;
+    }
+
+    /**
+     * Sets the style options of highlights
+     *
+     * @param opts Highlight styling optoins to use
+     */
+     setStyleOptions(opts: HighlightOptions): void {
+        this.highlightStyleOptions = opts;
+    }
+
+    /**
+     * Gets the style options of highlights based on SiteData
+     */
+    getStyleOptions(): HighlightOptions | undefined {
+        return this.highlightStyleOptions;
+    }
+
+    /**
+     * If highlight style is defined, changes highlight class style to provided operation.
+     */
+    applyHighlightStyle() {
+        if (this.highlightStyleOptions) {
+            applyStylingOptions(this.highlightStyleOptions);
+        }
     }
 
     /**
