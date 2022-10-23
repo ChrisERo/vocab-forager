@@ -1,6 +1,6 @@
 import { BSMessage, BSMessageType } from "../utils/background-script-communication";
 import { CSMessageType, isCsMessage, isNewActivatedState } from "../utils/content-script-communication";
-import { SiteData, Word } from "../utils/models";
+import { enforceExplicityDarkMode, enforceExplicityLightMode, isHighlightLight, SiteData, Word } from "../utils/models";
 import { HighlightsManager } from "./highlight-manager";
 import { QuizManager } from "./quiz";
 import { isHighlightElement, isHighlightNode, isTextNode, nodeToTreePath } from "./utils";
@@ -256,6 +256,9 @@ const previousOnMouseUp = document.onmouseup; // on mouse up value before extens
     };
     chrome.runtime.sendMessage(getSDRequest, 
         (data: SiteData) => { 
+            highlightManager.setStyleOptionsFromSiteData(data);
+            highlightManager.applyHighlightStyle();
+
             const neededRehighlight = !highlightManager.highlightAllData(data);
             for (let i = 0; i < data.missingWords.length; i++) {
                 missingWords.push(data.missingWords[i]);
@@ -320,12 +323,23 @@ function handler(request: any): void {
             break;
         }
         case CSMessageType.StartQuiz: {
-            let data: SiteData = {
+            const data: SiteData = {
                 wordEntries: highlightManager.getWordEntries(),
                 missingWords: missingWords
             };
             quizManager.loadQuizHTML(data);
             break;
+        }
+        case CSMessageType.ChangeHighlightStyle: {
+            let highlightOptions  = highlightManager.getStyleOptions();
+            if (isHighlightLight(highlightOptions)) {
+                highlightOptions = enforceExplicityLightMode(highlightOptions);
+            } else {
+                highlightOptions = enforceExplicityDarkMode(highlightOptions);
+            }
+            highlightManager.setStyleOptions(highlightOptions);
+            highlightManager.applyHighlightStyle();
+            saveData(highlightManager, missingWords);
         }
         default: {
             console.log(`CONTENT_REQUEST UNKNOWN: ${request.messageType}`);

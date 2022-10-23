@@ -6,6 +6,7 @@ export enum CSMessageType {
     ActivationStateChange,
     DeleteChosenHighlight,
     StartQuiz,
+    ChangeHighlightStyle,
 }
 
 /**
