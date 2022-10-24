@@ -1,5 +1,5 @@
 import { BSMessage, BSMessageType } from '../utils/background-script-communication';
-import { applyStylingOptions, HighlightOptions, SiteData, Word } from '../utils/models'
+import { HighlightOptions, SiteData, Word } from '../utils/models'
 import { highlightRecovery } from './highlight-recovery';
 import { defineWord, HILIGHT_CLASS, HILIGHT_CLASS_HOVER, isHighlightElement, isHighlightNode, isTextNode, nodeToTreePath, nodPathToNode } from './utils';
 
@@ -181,8 +181,23 @@ class Highlight {
      */
     syncIdsOfHighlightNodes() {
         for (let i = 0; i < this.highlightNodes.length; i++) {
-            let node = this.highlightNodes[i] as Element;
+            const node = this.highlightNodes[i] as Element;
             node.setAttribute("id", `word_${this.id}_${i}`);
+        }
+    }
+
+    /**
+     * Change styling of DOM nodes covered by this highlight element.
+     * 
+     * @param highlightStyleOptions CSS styling to apply to highlight DOM element.
+     */
+    applyStyle(highlightStyleOptions: HighlightOptions): void {
+        const fontColor = highlightStyleOptions.fontColor;
+        const bgColor = highlightStyleOptions.backgroundColor;
+        for (let i = 0; i < this.highlightNodes.length; i++) {
+            const node = this.highlightNodes[i] as HTMLElement;
+            node.style.color = fontColor;
+            node.style.backgroundColor = bgColor;
         }
     }
 
@@ -345,7 +360,10 @@ export class HighlightsManager {
      */
     applyHighlightStyle() {
         if (this.highlightStyleOptions) {
-            applyStylingOptions(this.highlightStyleOptions);
+            for (let i = 0; i < this.highlights.length; i++) {
+                const highlight = this.highlights[i];
+                highlight.applyStyle(this.highlightStyleOptions);
+            }
         }
     }
 
@@ -360,6 +378,9 @@ export class HighlightsManager {
         let highlightForWord = new Highlight(word, this.highlights.length, this);
         this.insertHighlightData(highlightForWord);
         highlightForWord.highlightWord();
+        if (this.highlightStyleOptions) {
+            highlightForWord.applyStyle(this.highlightStyleOptions);
+        }
     }
 
     /**
@@ -397,6 +418,8 @@ export class HighlightsManager {
 
             data.wordEntries = this.getWordEntries();
             return false;
+        } finally {
+            this.applyHighlightStyle();
         }
     }
     

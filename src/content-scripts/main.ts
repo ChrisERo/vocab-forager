@@ -225,6 +225,10 @@ function saveData(hm: HighlightsManager, missingWords: string[]): void {
         wordEntries: wordsHighlighted,
         missingWords: missingWords
     }
+    const styleOpt = hm.getStyleOptions();
+    if (styleOpt) {
+        data.highlightOptions = styleOpt;
+    }
 
     let saveMessage: BSMessage = {
         messageType: BSMessageType.StorePageData,
@@ -257,8 +261,6 @@ const previousOnMouseUp = document.onmouseup; // on mouse up value before extens
     chrome.runtime.sendMessage(getSDRequest, 
         (data: SiteData) => { 
             highlightManager.setStyleOptionsFromSiteData(data);
-            highlightManager.applyHighlightStyle();
-
             const neededRehighlight = !highlightManager.highlightAllData(data);
             for (let i = 0; i < data.missingWords.length; i++) {
                 missingWords.push(data.missingWords[i]);
@@ -333,13 +335,14 @@ function handler(request: any): void {
         case CSMessageType.ChangeHighlightStyle: {
             let highlightOptions  = highlightManager.getStyleOptions();
             if (isHighlightLight(highlightOptions)) {
-                highlightOptions = enforceExplicityLightMode(highlightOptions);
-            } else {
                 highlightOptions = enforceExplicityDarkMode(highlightOptions);
+            } else {
+                highlightOptions = enforceExplicityLightMode(highlightOptions);
             }
             highlightManager.setStyleOptions(highlightOptions);
             highlightManager.applyHighlightStyle();
             saveData(highlightManager, missingWords);
+            break;
         }
         default: {
             console.log(`CONTENT_REQUEST UNKNOWN: ${request.messageType}`);

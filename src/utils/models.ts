@@ -32,6 +32,9 @@ export function wordFromComponents(w: string, startOffset: number, endOffset: nu
 
 /**
  * Includes data used to change highlight styling
+ * 
+ * Important implementation limitation of feature described here:
+ * https://betterprogramming.pub/how-to-fix-the-failed-to-read-the-cssrules-property-from-cssstylesheet-error-431d84e4a139
  */
 export interface HighlightOptions {
     fontColor: string;
@@ -87,18 +90,16 @@ export function enforceExplicityDarkMode(options?: HighlightOptions): HighlightO
  * @param backgroundColor 
  * @param fontColor 
  */
-function setSiteDataHighlightOptions(options: HighlightOptions | undefined, 
-    backgroundColor: string, fontColor: string): HighlightOptions {
-        if (!options) {
-            return {
-                fontColor: fontColor,
-                backgroundColor: backgroundColor
-            };
-        } else {
-            options.backgroundColor = backgroundColor;
-            options.fontColor = fontColor;
-            return options;
-        }
+function setSiteDataHighlightOptions(options: HighlightOptions | undefined, backgroundColor: string, fontColor: string): HighlightOptions {
+    if (!options) {
+        return {
+            fontColor: fontColor,
+            backgroundColor: backgroundColor
+        };
+    } else {
+        options.backgroundColor = backgroundColor;
+        options.fontColor = fontColor;
+        return options;
     }
 }
 
@@ -156,37 +157,4 @@ export interface GlobalDictionaryData {
 export function getLanguages(dc: GlobalDictionaryData): string[] {
     let mapping: SubjectToDictsMapping = dc.languagesToResources;
     return Object.getOwnPropertyNames(mapping);
-}
-
-/**
- * Modifies HighlightOptions to contain whatever changes are requested
- * 
- * Assumes that highlight-style.css has been injected into this webpage
- * 
- * @param highlightOptions highlight options to apply
- */
-export function applyStylingOptions(highlightOptions: HighlightOptions): void {
-    const fontColor = highlightOptions.fontColor
-    const backgroundColor = highlightOptions.backgroundColor
-
-    for (let i = 0; i < document.styleSheets.length; i++) {
-        let style = document.styleSheets[i];
-        if (style === null) {
-            continue;
-        }
-
-        const rules = style.cssRules;
-        for (let j = 0; j < rules.length; j++) {
-            let regla = rules[j];
-            if (!(regla instanceof CSSStyleRule)) {
-                continue;
-            }
-
-            if (regla.selectorText === '.vf-highlighted') {
-                regla.style.color = fontColor;
-                regla.style.backgroundColor = backgroundColor;
-                return;
-            }
-        }
-    }
 }

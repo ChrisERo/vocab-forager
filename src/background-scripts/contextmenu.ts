@@ -6,7 +6,7 @@ export class ContextMenuManager {
     static readonly activationID = 'activation';
     static readonly quizID = 'quiz';
     static readonly deleteHighlightsID = "delete_hilight";
-    static readonly changeHighlightStyling = 'highlight-style';
+    static readonly changeHighlightStylingID = 'highlight-style';
 
     static readonly activateActivationCMTitle = '🟢   Activate';
     static readonly deactivateActivationCMTitle = '🔴  Deactivate';
@@ -70,7 +70,7 @@ export class ContextMenuManager {
             contexts: ["all"]
           });
           chrome.contextMenus.create({
-            id: ContextMenuManager.changeHighlightStyling,
+            id: ContextMenuManager.changeHighlightStylingID,
             title: ContextMenuManager.changeHighlightStyleingTitle,
             contexts: ["all"],
           });
@@ -140,7 +140,7 @@ export class ContextMenuManager {
                     chrome.tabs.sendMessage(tab.id, message);
                     break;
                 }
-                case ContextMenuManager.changeHighlightStyleingTitle: {
+                case ContextMenuManager.changeHighlightStylingID: {
                     // notify triggering tab that it needs to change highlight style
                     if (tab === undefined || tab.id === undefined) {
                         console.error('highlight change triggered without active tab')
