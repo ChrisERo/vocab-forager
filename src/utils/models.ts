@@ -35,6 +35,7 @@ export function wordFromComponents(w: string, startOffset: number, endOffset: nu
  * 
  * Important implementation limitation of feature described here:
  * https://betterprogramming.pub/how-to-fix-the-failed-to-read-the-cssrules-property-from-cssstylesheet-error-431d84e4a139
+ * https://stackoverflow.com/questions/49993633/uncaught-domexception-failed-to-read-the-cssrules-property
  */
 export interface HighlightOptions {
     fontColor: string;
