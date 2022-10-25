@@ -6,11 +6,13 @@ export class ContextMenuManager {
     static readonly activationID = 'activation';
     static readonly quizID = 'quiz';
     static readonly deleteHighlightsID = "delete_hilight";
+    static readonly changeHighlightStylingID = 'highlight-style';
 
     static readonly activateActivationCMTitle = '🟢   Activate';
     static readonly deactivateActivationCMTitle = '🔴  Deactivate';
     static readonly quizCMTitle = "🧠  Quiz";
     static readonly deleteHighlightCMTitle = '❌  Delete Hilighted Text';
+    static readonly changeHighlightStyleingTitle = '🖌 Change Highlight Style';
 
     setUpCMsCalled: boolean;  // true iff context menus have already been set up
     storage: NonVolatileBrowserStorage;
@@ -68,6 +70,16 @@ export class ContextMenuManager {
             contexts: ["all"]
           });
           chrome.contextMenus.create({
+            id: ContextMenuManager.changeHighlightStylingID,
+            title: ContextMenuManager.changeHighlightStyleingTitle,
+            contexts: ["all"],
+          });
+          chrome.contextMenus.create({
+            id: "separator-3",
+            type: "separator",
+            contexts: ["all"]
+          });
+          chrome.contextMenus.create({
             id: ContextMenuManager.deleteHighlightsID,
             title: ContextMenuManager.deleteHighlightCMTitle,
             contexts: ["all"],
@@ -117,13 +129,25 @@ export class ContextMenuManager {
                     break;
                 }
                 case ContextMenuManager.quizID: {
-                    // notify trigerring tab that it needs to delete something
+                    // notify triggering tab that it needs to delete something
                     if (tab === undefined || tab.id === undefined) {
-                        console.error('quiz trigerred wtihout valid tab')
+                        console.error('quiz triggered without active tab')
                         break;
                     }
                     let message: CSMessage = {
                         messageType: CSMessageType.StartQuiz,
+                    }
+                    chrome.tabs.sendMessage(tab.id, message);
+                    break;
+                }
+                case ContextMenuManager.changeHighlightStylingID: {
+                    // notify triggering tab that it needs to change highlight style
+                    if (tab === undefined || tab.id === undefined) {
+                        console.error('highlight change triggered without active tab')
+                        break;
+                    }
+                    let message: CSMessage = {
+                        messageType: CSMessageType.ChangeHighlightStyle,
                     }
                     chrome.tabs.sendMessage(tab.id, message);
                     break;

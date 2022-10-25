@@ -1,5 +1,6 @@
 .vf-highlighted {
-    background-color: #ffff01 !important;
+    background-color: #ffff01;
+    color: #000000;
     display: inline !important;
 }
 

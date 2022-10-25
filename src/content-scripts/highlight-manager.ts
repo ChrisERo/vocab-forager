@@ -1,5 +1,5 @@
 import { BSMessage, BSMessageType } from '../utils/background-script-communication';
-import { SiteData, Word } from '../utils/models'
+import { HighlightOptions, SiteData, Word } from '../utils/models'
 import { highlightRecovery } from './highlight-recovery';
 import { defineWord, HILIGHT_CLASS, HILIGHT_CLASS_HOVER, isHighlightElement, isHighlightNode, isTextNode, nodeToTreePath, nodPathToNode } from './utils';
 
@@ -181,8 +181,23 @@ class Highlight {
      */
     syncIdsOfHighlightNodes() {
         for (let i = 0; i < this.highlightNodes.length; i++) {
-            let node = this.highlightNodes[i] as Element;
+            const node = this.highlightNodes[i] as Element;
             node.setAttribute("id", `word_${this.id}_${i}`);
+        }
+    }
+
+    /**
+     * Change styling of DOM nodes covered by this highlight element.
+     * 
+     * @param highlightStyleOptions CSS styling to apply to highlight DOM element.
+     */
+    applyStyle(highlightStyleOptions: HighlightOptions): void {
+        const fontColor = highlightStyleOptions.fontColor;
+        const bgColor = highlightStyleOptions.backgroundColor;
+        for (let i = 0; i < this.highlightNodes.length; i++) {
+            const node = this.highlightNodes[i] as HTMLElement;
+            node.style.color = fontColor;
+            node.style.backgroundColor = bgColor;
         }
     }
 
@@ -307,10 +322,49 @@ export class HighlightsManager {
     highlights: Highlight[];
     // Number whose ID is the last highlight node to have been hovered over
     indexToDelete: number;
+    // styling options for highlighting
+    highlightStyleOptions?: HighlightOptions;
 
     constructor() {
         this.highlights = [];
         this.indexToDelete = -1;
+    }
+
+    /**
+     * Sets the style options of highlights based on SiteData
+     *
+     * @param siteData Site data for current website
+     */
+     setStyleOptionsFromSiteData(siteData: SiteData): void {
+        this.highlightStyleOptions = siteData.highlightOptions;
+    }
+
+    /**
+     * Sets the style options of highlights
+     *
+     * @param opts Highlight styling optoins to use
+     */
+     setStyleOptions(opts: HighlightOptions): void {
+        this.highlightStyleOptions = opts;
+    }
+
+    /**
+     * Gets the style options of highlights based on SiteData
+     */
+    getStyleOptions(): HighlightOptions | undefined {
+        return this.highlightStyleOptions;
+    }
+
+    /**
+     * If highlight style is defined, changes highlight class style to provided operation.
+     */
+    applyHighlightStyle() {
+        if (this.highlightStyleOptions) {
+            for (let i = 0; i < this.highlights.length; i++) {
+                const highlight = this.highlights[i];
+                highlight.applyStyle(this.highlightStyleOptions);
+            }
+        }
     }
 
     /**
@@ -324,6 +378,9 @@ export class HighlightsManager {
         let highlightForWord = new Highlight(word, this.highlights.length, this);
         this.insertHighlightData(highlightForWord);
         highlightForWord.highlightWord();
+        if (this.highlightStyleOptions) {
+            highlightForWord.applyStyle(this.highlightStyleOptions);
+        }
     }
 
     /**
@@ -361,6 +418,8 @@ export class HighlightsManager {
 
             data.wordEntries = this.getWordEntries();
             return false;
+        } finally {
+            this.applyHighlightStyle();
         }
     }
     
