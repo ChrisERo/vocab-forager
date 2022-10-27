@@ -8,12 +8,72 @@ import { isNewActivatedState } from "../utils/content-script-communication";
 const browserStorage: NonVolatileBrowserStorage = getNonVolatileStorage();
 const dictionaryManager: DictionaryManager = new DictionaryManager(browserStorage);
 const contextMenuManager: ContextMenuManager = new ContextMenuManager(browserStorage);
+let defineTabId: number | null = null;
 
 type sendResponseFunction = (response?: any) => void; 
 
 
+/**
+ * Logs that an unexpected value was asociated with a particular key
+ * 
+ * @param key 
+ * @param value 
+ */
 function logUnexpected(key: string, value: any) {
     console.error(`unexpected ${key}: ${JSON.stringify(value)}`);
+}
+
+/**
+ * Creates a new, active tab with specified url and and stores tab's id for future
+ * searches 
+ * 
+ * @param url url in which to open new tab
+ */
+function openNewDefineTab(url: string): void {
+    const message: chrome.tabs.CreateProperties = {
+        active: true,
+        url: url
+    };
+    chrome.tabs.create(message).then((newTab) => {
+        if (newTab.id) {
+            defineTabId = newTab.id;
+        } else {
+            console.error(`Created new tab without id for url: ${url}`);
+        }
+    });
+}
+
+
+/**
+ * 
+ * @param id tab id to query
+ * @returns true if tab with id already exists and false otherwise
+ */
+async function isTabCurrentlyOpen(id: number): Promise<boolean> {
+    try {
+        let t = await chrome.tabs.get(id);
+        return t.id === defineTabId;
+    } catch {  // Not present
+        return false;
+    }
+}
+
+/**
+ * Opens either an existing tab with id defineTabId if one exists. If this id is null or
+ * no such tab exists, opens new tab and stores its id in defineTabId variable
+ * 
+ * @param url url with which to open tab
+ */
+async function openTab(url: string): Promise<void> {
+    if (defineTabId !== null && await isTabCurrentlyOpen(defineTabId)) {
+        const updateMessage: chrome.tabs.UpdateProperties = {
+            active: true,
+            url: url
+        }
+        chrome.tabs.update(defineTabId, updateMessage);
+    } else {
+        openNewDefineTab(url);
+    }
 }
 
 /**
@@ -95,7 +155,7 @@ function logUnexpected(key: string, value: any) {
         }
         case BSMessageType.SearchWordURL: {
             if (isSearchRequest(request.payload)) {
-                dictionaryManager.getWordSearchURL(request.payload.word).then((result) => sendResponse(result));
+                dictionaryManager.getWordSearchURL(request.payload.word).then(openTab);
             } else {
                 logUnexpected('payload', request.payload);
             }
