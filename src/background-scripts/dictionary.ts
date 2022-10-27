@@ -91,7 +91,7 @@ export class DictionaryManager {
      * 
      * @param word - word we wish to look up 
      */
-    async getWordSearchURL(word: string): Promise<String> {
+    async getWordSearchURL(word: string): Promise<string> {
         let dc: GlobalDictionaryData = await this.source.getDictionaryData();
         let currentDic = this.getDictionaryFromIdentifierHelper(dc, dc.currentDictionary);
         let template = currentDic.url;

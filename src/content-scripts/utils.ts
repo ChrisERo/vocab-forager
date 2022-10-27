@@ -20,10 +20,7 @@ export function defineWord(word: string|null) {
             } as SearchRequest
         };
         
-        chrome.runtime.sendMessage(mssg, (response) => {
-            let url = response;
-            window.open(url, '_blank');
-        });
+        chrome.runtime.sendMessage(mssg);
     }
 }
 
