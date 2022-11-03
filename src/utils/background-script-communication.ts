@@ -37,7 +37,7 @@ import { Dictionary, DictionaryIdentifier, SiteData } from "./models";
  */
  export function isSetActivationRequest(mssg: any): mssg is SetActivationRequest {
     let temp = mssg as SetActivationRequest;
-    return temp.isActivated !== undefined;
+    return temp != null && temp.isActivated !== undefined;
 }
 
 /**
@@ -53,7 +53,7 @@ import { Dictionary, DictionaryIdentifier, SiteData } from "./models";
  */
  export function isAddNewDictRequest(mssg: any): mssg is AddNewDictRequest {
     let temp = mssg as AddNewDictRequest;
-    return temp.dict !== undefined && temp.lang !== undefined;
+    return temp != null && temp.dict !== undefined && temp.lang !== undefined;
 }
 
 /**
