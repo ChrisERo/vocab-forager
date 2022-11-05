@@ -135,7 +135,18 @@ export interface DictionaryIdentifier {
 
 export function isDictionaryID(obj: any): obj is DictionaryIdentifier {
     let dict = obj as DictionaryIdentifier;
-    return dict.language !== undefined && dict.index !== undefined;
+    return dict != null && dict.language !== undefined && dict.index !== undefined;
+}
+
+/**
+ * Type guard for Dictionary interface
+ * 
+ * @param dict object whose type we want to check
+ * @returns true if dict is a Dictionary and false otherwise
+ */
+export function isDictionary(dict: any): dict is Dictionary {
+    let temp = dict as Dictionary;
+    return temp != null && temp.name !== undefined && temp.url !== undefined;
 }
 
 /**

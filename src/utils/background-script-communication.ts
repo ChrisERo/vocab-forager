@@ -1,4 +1,4 @@
-import { Dictionary, DictionaryIdentifier, SiteData } from "./models";
+import { Dictionary, DictionaryIdentifier, isDictionary, SiteData } from "./models";
 
 /**
  * Types of messages that can be sent to background script listener for processing
@@ -53,7 +53,7 @@ import { Dictionary, DictionaryIdentifier, SiteData } from "./models";
  */
  export function isAddNewDictRequest(mssg: any): mssg is AddNewDictRequest {
     let temp = mssg as AddNewDictRequest;
-    return temp != null && temp.dict !== undefined && temp.lang !== undefined;
+    return temp != null && temp.lang !== undefined && isDictionary(temp.dict);
 }
 
 /**
