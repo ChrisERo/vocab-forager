@@ -1,4 +1,4 @@
-import { isDictionary } from "./models";
+import * as models from "./models";
 
 describe('Type Checks', () => {
     it.each([
@@ -12,7 +12,7 @@ describe('Type Checks', () => {
         [null, false],
         [undefined, false],
     ])('Is %p a Dictionary', (object: any, isRequestType: boolean) => {
-        expect(isDictionary(object)).toEqual(isRequestType);
+        expect(models.isDictionary(object)).toEqual(isRequestType);
     });
 
 });

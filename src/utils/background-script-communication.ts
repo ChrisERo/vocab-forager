@@ -1,4 +1,4 @@
-import { Dictionary, DictionaryIdentifier, isDictionary, SiteData } from "./models";
+import { Dictionary, DictionaryIdentifier, isDictionary, isSiteData, SiteData } from "./models";
 
 /**
  * Types of messages that can be sent to background script listener for processing
@@ -68,7 +68,7 @@ export interface DictsOfLangRequest {
  */
  export function isDictsOfLangRequest(mssg: any): mssg is DictsOfLangRequest {
     let temp = mssg as DictsOfLangRequest;
-    return temp.language !== undefined;
+    return temp != null && temp.language !== undefined;
 }
 
 /**
@@ -83,7 +83,7 @@ export interface DictsOfLangRequest {
  */
  export function isSearchRequest(mssg: any): mssg is SearchRequest {
     let temp = mssg as SearchRequest;
-    return temp.word !== undefined;
+    return temp != null && temp.word !== undefined;
 }
 
 /**
@@ -99,7 +99,7 @@ export interface DictsOfLangRequest {
  */
  export function isPageDataPair(mssg: any): mssg is PageDataPair {
     let temp = mssg as PageDataPair;
-    return temp.url !== undefined && temp.data !== undefined;
+    return temp != null && temp.url !== undefined && isSiteData(temp.data);
 }
 
 /**

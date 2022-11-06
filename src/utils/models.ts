@@ -7,7 +7,7 @@ export interface Word {
     // offsets of first and last character in their respective DOM Node
     startOffset: number;
     endOffset: number;
-    // in-order list of nodes that contain word parameter in its entirity. Each node is 
+    // in-order list of nodes that contain word parameter in its entirety. Each node is 
     // represented as the path to it from 
     nodePath: number[][];
 }
@@ -51,9 +51,14 @@ export interface SiteData {
     wordEntries: Word[];
     // list of words to look for in site; e.g. words that we expected to find but did not
     missingWords: string[];
-    // generic field for shit
+    // style options
     highlightOptions?: HighlightOptions;
 }
+
+export function isSiteData(data: any): data is SiteData {
+    const temp = data as SiteData;
+    return temp != null && temp.wordEntries !== undefined && temp.missingWords !== undefined && isHighlightLight(temp.highlightOptions);
+} 
 
 /**
  * @param highlightOptions 
@@ -118,9 +123,9 @@ export interface Dictionary {
 }
 
 /**
- * Mapping form unique strings, which correspond to langauges, or subjects, to Dicitonaries
- * asociated with thos subjects. For instance, one can have "spanish" as a subject and
- * two dicitonaries, one asociated with https://dle.rae.es and another with 
+ * Mapping form unique strings, which correspond to languages, or subjects, to Dictionaries
+ * associated with those subjects. For instance, one can have "spanish" as a subject and
+ * two dictionaries, one associated with https://dle.rae.es and another with 
  * https://www.spanishdict.com.
  */
 export type SubjectToDictsMapping = { [subject: string]: Dictionary[] };
