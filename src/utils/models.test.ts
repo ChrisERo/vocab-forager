@@ -15,4 +15,29 @@ describe('Type Checks', () => {
         expect(models.isDictionary(object)).toEqual(isRequestType);
     });
 
+    it.each([
+        ['pyar', 0, 5, [[4, 5, 6, 2]]],
+        ['my name is', 13, 1, [[4, 5, 6, 2], [3, 5, 6, 2]]],
+    ])('Is %p a Dictionary', (word: string, 
+        startIndex: number,endIndex: number, nodes
+        ) => {
+        const data = models.wordFromComponents(word, startIndex, endIndex, nodes);
+        expect(data.word).toEqual(word);
+        expect(data.startOffset).toEqual(startIndex);
+        expect(data.endOffset).toEqual(endIndex);
+        expect(data.nodePath).toEqual(nodes);
+    });
+
+    it.each([
+        [null, false],
+        [undefined, false],
+        [{wordEntries: [], missingWords: []}, true],
+        [{wordEntries: [], missingWords: ['foo', 'bar'] }, true],
+        [{missingWords: ['foo', 'bar']}, false],
+        [{wordEntries: [], missingWords: ['foo', 'bar'], highlightOptions: {fontColor: '#000000', backgroundColor: '#000000'} }, true],
+        [{wordEntries: [], missingWords: ['foo', 'bar'], highlightOptions: {fontColor: '#000000'} }, false],
+    ])('Is %p a SiteData', (object: any, isSiteData: boolean) => {
+        expect(models.isSiteData(object)).toBe(isSiteData);
+    });
+
 });

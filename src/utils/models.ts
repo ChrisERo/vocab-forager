@@ -42,6 +42,11 @@ export interface HighlightOptions {
     backgroundColor: string;
 }
 
+export function isHighlightOption(data: any): data is SiteData {
+    const temp = data as HighlightOptions;
+    return temp != null && temp.fontColor !== undefined && temp.backgroundColor !== undefined;
+} 
+
 /**
  * Representation of all data associated with specific web URL
  */
@@ -57,7 +62,8 @@ export interface SiteData {
 
 export function isSiteData(data: any): data is SiteData {
     const temp = data as SiteData;
-    return temp != null && temp.wordEntries !== undefined && temp.missingWords !== undefined && isHighlightLight(temp.highlightOptions);
+    return temp != null && temp.wordEntries !== undefined && temp.missingWords !== undefined &&
+        (temp.highlightOptions === undefined || isHighlightOption(temp.highlightOptions));
 } 
 
 /**
