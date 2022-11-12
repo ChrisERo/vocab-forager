@@ -171,15 +171,20 @@ function getNodesToHighlight(currentN: Node, startN: Node, endN: Node, accumulat
 }
 
 /**
- * Converts Seleciton object for highlighted text into a Word object for that text whose
+ * Converts Selection object for highlighted text into a Word object for that text whose
  * offset and node data represents where this text is in the website.
  * 
  * @param select Selection object representing text user has highlighted
  * @returns Word representation of specific text in Selection
  */
 function convertSelectionToWord(select: Selection): Word | null {
-    let range: Range = select.getRangeAt(0);
 
+    const selectedText: string = select.toString().trim();
+    if (selectedText.length === 0) {
+        return null;
+    }
+
+    const range: Range = select.getRangeAt(0);
     let startNode = findTextNode(range.startContainer, false);
     if (startNode === null) {
         return null;
@@ -205,7 +210,7 @@ function convertSelectionToWord(select: Selection): Word | null {
     }
 
     return {
-        'word': select.toString(),
+        'word': selectedText,
         'startOffset': startIndex,
         'endOffset': endIndex,
         'nodePath': validTextNodes.map(nodeToTreePath)
@@ -352,7 +357,7 @@ function handler(request: any): void {
 
 // Load data from local storage and, if configured to have highlight nodes, query for
 // stored text of this node and attempt to highlight them
-// TODO: shortten delay or remove once have watcher for DOM update.
+// TODO: shorten delay or remove once have watcher for DOM update.
 setTimeout(() => {
     let getActivationMssg: BSMessage = {
         messageType: BSMessageType.GetCurrentActivation,

@@ -143,8 +143,8 @@ class Highlight {
             textCoveredByHighlightNodes += range.toString();
         }
 
-        // Make sure that correct text is highlighted, throwing exception otherwise
-        if (textCoveredByHighlightNodes.replace(/\s/g, '').toLowerCase() !== this.word.word.replace(/\s/g, '').toLowerCase()) {
+        // Make sure that correct text without space is highlighted, throwing exception otherwise
+        if (textCoveredByHighlightNodes.replace(/\s+/g, '').toLowerCase() !== this.word.word.replace(/\s+/g, '').toLowerCase()) {
             this.unHighlightWord();
             throw `${this.word.word} does not match ${textCoveredByHighlightNodes}`;
         }
