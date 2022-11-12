@@ -71,10 +71,8 @@ export function isSiteData(data: any): data is SiteData {
  * @returns true if options corresponds to light-mode, false otherwise
  */
 export function isHighlightLight(highlightOptions?: HighlightOptions): boolean {
-    return highlightOptions === undefined || (
-        highlightOptions.fontColor === '#000000'
-        && highlightOptions.backgroundColor === '#ffff01'
-        );
+    return highlightOptions !== undefined && highlightOptions.fontColor === '#000000'
+        && highlightOptions.backgroundColor === '#ffff01';
 }
 
 /**
