@@ -1,4 +1,4 @@
-import { Dictionary, DictionaryIdentifier, SiteData } from "./models";
+import { Dictionary, DictionaryIdentifier, isDictionary, isDictionaryID, isSiteData, SiteData } from "./models";
 
 /**
  * Types of messages that can be sent to background script listener for processing
@@ -37,7 +37,7 @@ import { Dictionary, DictionaryIdentifier, SiteData } from "./models";
  */
  export function isSetActivationRequest(mssg: any): mssg is SetActivationRequest {
     let temp = mssg as SetActivationRequest;
-    return temp.isActivated !== undefined;
+    return temp != null && temp.isActivated !== undefined;
 }
 
 /**
@@ -53,7 +53,7 @@ import { Dictionary, DictionaryIdentifier, SiteData } from "./models";
  */
  export function isAddNewDictRequest(mssg: any): mssg is AddNewDictRequest {
     let temp = mssg as AddNewDictRequest;
-    return temp.dict !== undefined && temp.lang !== undefined;
+    return temp != null && temp.lang !== undefined && isDictionary(temp.dict);
 }
 
 /**
@@ -68,7 +68,7 @@ export interface DictsOfLangRequest {
  */
  export function isDictsOfLangRequest(mssg: any): mssg is DictsOfLangRequest {
     let temp = mssg as DictsOfLangRequest;
-    return temp.language !== undefined;
+    return temp != null && temp.language !== undefined;
 }
 
 /**
@@ -83,7 +83,7 @@ export interface DictsOfLangRequest {
  */
  export function isSearchRequest(mssg: any): mssg is SearchRequest {
     let temp = mssg as SearchRequest;
-    return temp.word !== undefined;
+    return temp != null && temp.word !== undefined;
 }
 
 /**
@@ -99,7 +99,7 @@ export interface DictsOfLangRequest {
  */
  export function isPageDataPair(mssg: any): mssg is PageDataPair {
     let temp = mssg as PageDataPair;
-    return temp.url !== undefined && temp.data !== undefined;
+    return temp != null && temp.url !== undefined && isSiteData(temp.data);
 }
 
 /**
@@ -114,7 +114,7 @@ export interface DictsOfLangRequest {
  */
  export function isGetDataForPageRequest(mssg: any): mssg is GetDataForPage {
     let temp = mssg as GetDataForPage;
-    return temp.url !== undefined;
+    return temp != null && temp.url !== undefined;
 }
 
 /**
@@ -131,7 +131,7 @@ export interface DictsOfLangRequest {
  */
  export function isUpdateDictionaryRequest(mssg: any): mssg is UpdateDictionaryRequest {
     let temp = mssg as UpdateDictionaryRequest;
-    return temp.language !== undefined && temp.index !== undefined && temp.content !== undefined;
+    return temp != null && temp.language !== undefined && isDictionaryID(temp.index) && isDictionary(temp.content);
 }
 
 /**
@@ -146,7 +146,7 @@ export interface DictsOfLangRequest {
 */
 export function isLoadExtensionDataRequest(mssg: any): mssg is LoadExtensionDataRequest {
    let temp = mssg as LoadExtensionDataRequest;
-   return temp.data !== undefined;
+   return temp != null && temp.data !== undefined;
 }
 
 
@@ -169,5 +169,5 @@ export type BSMessagePayload = DictsOfLangRequest|SearchRequest|DictionaryIdenti
  */
 export function isBsMessage(mssg: any): mssg is BSMessage {
     let temp = mssg as BSMessage;
-    return temp.messageType !== undefined && temp.payload !== undefined;
+    return temp != null && temp.messageType !== undefined && temp.payload !== undefined;
 }

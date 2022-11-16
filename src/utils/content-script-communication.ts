@@ -21,7 +21,7 @@ export interface NewActivatedState {
  */
  export function isNewActivatedState(mssg: any): mssg is NewActivatedState {
     let temp = mssg as NewActivatedState;
-    return temp.newActivatedState !== undefined;
+    return temp != null && temp.newActivatedState !== undefined;
 }
 
 type CSMessagePayload = NewActivatedState|null;
@@ -39,5 +39,5 @@ export interface CSMessage {
  */
  export function isCsMessage(mssg: any): mssg is CSMessage {
     let temp = mssg as CSMessage;
-    return temp.messageType !== undefined;
+    return temp != null && temp.messageType !== undefined;
 }

@@ -7,7 +7,7 @@ export interface Word {
     // offsets of first and last character in their respective DOM Node
     startOffset: number;
     endOffset: number;
-    // in-order list of nodes that contain word parameter in its entirity. Each node is 
+    // in-order list of nodes that contain word parameter in its entirety. Each node is 
     // represented as the path to it from 
     nodePath: number[][];
 }
@@ -42,6 +42,11 @@ export interface HighlightOptions {
     backgroundColor: string;
 }
 
+export function isHighlightOption(data: any): data is SiteData {
+    const temp = data as HighlightOptions;
+    return temp != null && temp.fontColor !== undefined && temp.backgroundColor !== undefined;
+} 
+
 /**
  * Representation of all data associated with specific web URL
  */
@@ -51,19 +56,23 @@ export interface SiteData {
     wordEntries: Word[];
     // list of words to look for in site; e.g. words that we expected to find but did not
     missingWords: string[];
-    // generic field for shit
+    // style options
     highlightOptions?: HighlightOptions;
 }
+
+export function isSiteData(data: any): data is SiteData {
+    const temp = data as SiteData;
+    return temp != null && temp.wordEntries !== undefined && temp.missingWords !== undefined &&
+        (temp.highlightOptions === undefined || isHighlightOption(temp.highlightOptions));
+} 
 
 /**
  * @param highlightOptions 
  * @returns true if options corresponds to light-mode, false otherwise
  */
 export function isHighlightLight(highlightOptions?: HighlightOptions): boolean {
-    return highlightOptions === undefined || (
-        highlightOptions.fontColor === '#000000'
-        && highlightOptions.backgroundColor === '#ffff01'
-        );
+    return highlightOptions !== undefined && highlightOptions.fontColor === '#000000'
+        && highlightOptions.backgroundColor === '#ffff01';
 }
 
 /**
@@ -118,9 +127,9 @@ export interface Dictionary {
 }
 
 /**
- * Mapping form unique strings, which correspond to langauges, or subjects, to Dicitonaries
- * asociated with thos subjects. For instance, one can have "spanish" as a subject and
- * two dicitonaries, one asociated with https://dle.rae.es and another with 
+ * Mapping form unique strings, which correspond to languages, or subjects, to Dictionaries
+ * associated with those subjects. For instance, one can have "spanish" as a subject and
+ * two dictionaries, one associated with https://dle.rae.es and another with 
  * https://www.spanishdict.com.
  */
 export type SubjectToDictsMapping = { [subject: string]: Dictionary[] };
@@ -135,7 +144,18 @@ export interface DictionaryIdentifier {
 
 export function isDictionaryID(obj: any): obj is DictionaryIdentifier {
     let dict = obj as DictionaryIdentifier;
-    return dict.language !== undefined && dict.index !== undefined;
+    return dict != null && dict.language !== undefined && dict.index !== undefined;
+}
+
+/**
+ * Type guard for Dictionary interface
+ * 
+ * @param dict object whose type we want to check
+ * @returns true if dict is a Dictionary and false otherwise
+ */
+export function isDictionary(dict: any): dict is Dictionary {
+    let temp = dict as Dictionary;
+    return temp != null && temp.name !== undefined && temp.url !== undefined;
 }
 
 /**
