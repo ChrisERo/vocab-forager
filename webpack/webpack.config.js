@@ -35,7 +35,7 @@ module.exports = (env) => {
     plugins: [
       new CopyPlugin({
         patterns: [
-          {from: ".", context: "public"}
+          {from: ".", context: "public", globOptions: {ignore: ["**/*.xcf"]}}
         ],
       }),
     ], 
