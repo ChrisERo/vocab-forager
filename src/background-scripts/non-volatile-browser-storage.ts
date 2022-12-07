@@ -2,11 +2,11 @@ import {GlobalDictionaryData, isEmpty, SiteData} from "../utils/models"
 
 
 /**
- * Interfacce for retrieving and writing data needed for functionality of content scripts
+ * Interface for retrieving and writing data needed for functionality of content scripts
  */
 export interface NonVolatileBrowserStorage {
     /**
-     * Querries whether extension should be activated or not from from extension's 
+     * Queries whether extension should be activated or not from from extension's 
      * non-volatile storage. If value is not set, initializes value to false.
      * 
      * @returns true if extension is currently activated, and false otherwise
