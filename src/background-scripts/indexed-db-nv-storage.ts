@@ -1,17 +1,31 @@
 import { SiteData } from "../utils/models";
+import { parseURL } from "../utils/utils";
 import { NonVolatileBrowserStorage } from "./non-volatile-browser-storage";
 
 
 export const DB_NAME = 'vocab-forager';
 export const DB_VERSION = 1;
 
- /*
-    https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API
-    https://stackoverflow.com/questions/71451848/how-to-use-indexeddb-from-chrome-extension-service-workers
-    https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API/Using_IndexedDB
-    https://dev.to/anobjectisa/local-database-and-chrome-extensions-indexeddb-36n
-  */
-    
+
+export interface IDBSiteData extends SiteData {
+    schemeAndHost: string;
+    urlPath: string;
+}
+
+function siteDataToIDBSiteData(siteData: SiteData, url: string): IDBSiteData {
+    const urlList = parseURL(url);
+    const schemeAndHost: string = urlList[0];
+    const urlPath: string = urlList[1];
+
+    const siteDataToStore = siteData as any;
+    siteDataToStore.schemeAndHost = schemeAndHost;
+    siteDataToStore.urlPath = urlPath;
+    return siteDataToStore;
+}
+
+/**
+ * NonVolatileBrowserStorage DAO used to store SiteData inside IndexedDB
+ */ 
 export class IndexedDBStorage {
     // name of table to use
     public static readonly TABLE_NAME = 'site-data';
@@ -52,8 +66,7 @@ export class IndexedDBStorage {
     }
 
     /**
-     * 
-     * @returns value of db object
+     * @returns value of db connection for this object
      */
     getDB():  IDBDatabase | null {
         return this.db;
@@ -64,47 +77,69 @@ export class IndexedDBStorage {
      * 
      * @param url - url of a website
      */
-     getPageData(url: string): Promise<SiteData | null> {
-        let schemeAndHost: string;
-        let urlPath: string;
-        const indexOfSchemeEnd = url.indexOf('://')
-        const indexOfHostEnd = url.indexOf('/', indexOfSchemeEnd + 3);
-        if (indexOfHostEnd === -1) {
-            schemeAndHost = url;
-            urlPath = '';
-        } else {
-            schemeAndHost = url.substring(0, indexOfHostEnd);
-            urlPath = url.substring(indexOfHostEnd);
-        }
-
+     getPageData(url: string): Promise<SiteData> {
         if (this.db !== null) {
+            const urlList = parseURL(url);
+            const schemeAndHost: string = urlList[0];
+            const urlPath: string = urlList[1];
+
             const getTransaction = this.db.transaction(IndexedDBStorage.TABLE_NAME, "readonly");
             const objectStore = getTransaction.objectStore(IndexedDBStorage.TABLE_NAME);
             const osIndex = objectStore.index('url');
             
             return new Promise((resolve, reject) => {
-                getTransaction.onerror = (ex) =>  {
-                    console.error(`Failed to get site data: ${ex}`)
-                }
                 const getRequest = osIndex.get([schemeAndHost, urlPath]);
+                getRequest.onerror = (ex) =>  {
+                    console.error(`Failed to get site data: ${ex}`)
+                };
                 getRequest.onsuccess = (event: any) => {  // TODO: make sure that null returned if nothing found
-                    let siteData: SiteData | null = event.target.result as (SiteData | null)
-                    if (siteData === null) {
+                    let siteData: SiteData | undefined = event.target.result as (SiteData | undefined)
+                    if (siteData === undefined) {
                         siteData = {
                             wordEntries: [],
                             missingWords: [],
-                        };;
+                        };
                     }
 
                     resolve(siteData);
-                }
+                };
             });
         } else {
             return new Promise((resolve, reject) => {
-                resolve(null);
+                reject('IndexedDB object not initialized');
             });
         }
      }
+
+     /**
+      * Either adds a new SiteData entry to the TABLE_NAME table or updates an existing one
+      * if siteData's url index matches an existing entry.
+      * 
+      * @param siteData 
+      * @param url 
+      */
+     storePageData(siteData: SiteData, url: string): Promise<void> {
+        const thisDB = this.db
+        if (thisDB !== null) {
+            return new Promise((resolve, reject) => {
+                const siteDataToStore = siteDataToIDBSiteData(siteData, url);
+                const writeTransaction = thisDB.transaction(IndexedDBStorage.TABLE_NAME, "readwrite");
+                const objectStore = writeTransaction.objectStore(IndexedDBStorage.TABLE_NAME);
+    
+                const request = objectStore.put(siteDataToStore, [siteDataToStore.schemeAndHost, siteDataToStore.urlPath]);
+                request.onerror = (err) => {
+                    reject(`Unexpected error when saving ${url} ` + err);
+                };
+                request.onsuccess = (event: any) => {
+                    resolve();
+                };
+            });
+        } else {
+             return new Promise((resolve, reject) => {
+                reject('IndexedDB object not initialized');
+            });
+        }
+    }
 
     private static v1Creation(db: IDBDatabase): void {
         // Create an objectStore for this database
