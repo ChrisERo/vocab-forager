@@ -71,13 +71,8 @@ export class IndexedDBStorage {
     getDB():  IDBDatabase | null {
         return this.db;
     }
-
-    /**
-     * Given the url to a website, returns the page-specific metadata for said site
-     * 
-     * @param url - url of a website
-     */
-     getPageData(url: string): Promise<SiteData> {
+    
+    getPageData(url: string): Promise<SiteData> {
         if (this.db !== null) {
             const urlList = parseURL(url);
             const schemeAndHost: string = urlList[0];
@@ -115,8 +110,8 @@ export class IndexedDBStorage {
       * Either adds a new SiteData entry to the TABLE_NAME table or updates an existing one
       * if siteData's url index matches an existing entry.
       * 
-      * @param siteData 
-      * @param url 
+      * @param siteData  data to store in IndexedDB
+      * @param url url corresponding to siteData
       */
      storePageData(siteData: SiteData, url: string): Promise<void> {
         const thisDB = this.db
@@ -140,6 +135,34 @@ export class IndexedDBStorage {
             });
         }
     }
+
+    removePageData(url: string): Promise<void> {
+        const thisDB = this.db
+        if (thisDB !== null) {
+            return new Promise((resolve, reject) => {
+                const urlAsArray = parseURL(url);
+                const schemeAndHost = urlAsArray[0];
+                const urlPath = urlAsArray[1];
+
+                const writeTransaction = thisDB.transaction(IndexedDBStorage.TABLE_NAME, "readwrite");
+                const objectStore = writeTransaction.objectStore(IndexedDBStorage.TABLE_NAME);
+                const osIndex = objectStore.index('url');
+    
+                const request = objectStore.delete([schemeAndHost, urlPath]);
+                request.onerror = (err) => {
+                    reject(`Unexpected error when saving ${url} ` + err);
+                };
+                request.onsuccess = (event: any) => {
+                    resolve();
+                };
+            });
+        } else {
+             return new Promise((resolve, reject) => {
+                reject('IndexedDB object not initialized');
+            });
+        }
+    }    
+
 
     private static v1Creation(db: IDBDatabase): void {
         // Create an objectStore for this database

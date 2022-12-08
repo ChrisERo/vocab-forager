@@ -53,7 +53,7 @@ describe('IndexedDBStorage SiteDataStorage', () => {
         expect(objectStore.indexNames).toContain('url');
       });
 
-      it.each([
+    it.each([
         [  // Nothing
             [],
             [],
@@ -299,7 +299,7 @@ describe('IndexedDBStorage SiteDataStorage', () => {
             ],
             [1, 2, 2]
         ],
-    ])('Save and Put SiteData Test: %#', async (urls: string[], siteDatae: SiteData[], count: number[]) => {
+    ])('Get and Put SiteData Test: %#', async (urls: string[], siteDatae: SiteData[], count: number[]) => {
         dao = new IndexedDBStorage();
         const internalDB: IDBDatabase = await dao.setUp();
         expect(internalDB).not.toEqual(null);
@@ -326,6 +326,160 @@ describe('IndexedDBStorage SiteDataStorage', () => {
             const storedData: SiteData = await dao.getPageData(url);
             expect(storedData.missingWords).toEqual(dataToStore.missingWords);
             expect(storedData.wordEntries).toEqual(dataToStore.wordEntries);
+        };
+
+        const getAllData: Promise<number> = new Promise((resolve, reject) => {
+            const transaction = internalDB.transaction(IndexedDBStorage.TABLE_NAME, 'readonly');
+            const objectStore = transaction.objectStore(IndexedDBStorage.TABLE_NAME);
+            const getTodo = objectStore.getAll();
+            getTodo.onsuccess = (event: any) => {
+                resolve(getTodo.result.length);
+            };
+            getTodo.onerror = (err: any) => {
+                reject(err);
+            }
+        });
+        const dataCount: number = await getAllData;
+        expect(dataCount).toBe(count[count.length - 1]);
+    });
+
+    it.each([
+        [  // Nothing
+            [],
+            [],
+            [0],
+        ],
+        [  // Remove non-existant SiteData
+            ['https://www.fakesite.com/noexist'],
+            [null],
+            [0, 0],
+        ],
+        [  // Write new article then remove
+            [
+                "https://www.articles.com/article1", 
+                "https://www.articles.com/article1"],
+            [
+                { 
+                    wordEntries: [
+                        {
+                            word: 'comida',
+                            startOffset: 0,
+                            endOffset: 13,
+                            nodePath: [[9,6,3,0]]
+                        }
+                    ], 
+                    missingWords: ["foo", "bar"]
+                },
+                null
+            ],
+            [1, 0, 0]
+        ],
+        [  // Write new 2 new articles and delete one of them
+            [
+                "https://www.articles.com", 
+                "https://www.articles.com/article2",
+                "https://www.articles.com", 
+            ],   
+            [
+                { 
+                    wordEntries: [
+                        {
+                            word: 'comida',
+                            startOffset: 0,
+                            endOffset: 13,
+                            nodePath: [[9,6,3,0]]
+                        }
+                    ], 
+                    missingWords: ["foo", "bar"]
+                },
+                { 
+                    wordEntries: [
+                        {
+                            word: 'manzana',
+                            startOffset: 33,
+                            endOffset: 44,
+                            nodePath: [[9,6,3,0], [10,6,3,0]]
+                        }
+                    ], 
+                    missingWords: []
+                }, 
+                null
+            ],
+            [1, 2, 1, 1]
+        ],
+        [  // Update same article  then delete, then re-add
+            [
+                "https://www.articles.com/article1", 
+                "https://www.articles.com/article1", 
+                "https://www.articles.com/article1",
+                "https://www.articles.com/article1/"],
+            [
+                { 
+                    wordEntries: [
+                        {
+                            word: 'comida',
+                            startOffset: 0,
+                            endOffset: 13,
+                            nodePath: [[9,6,3,0]]
+                        }
+                    ], 
+                    missingWords: ["foo", "bar"]
+                },
+                null,
+                null,
+                { 
+                    wordEntries: [
+                        {
+                            word: 'manzana',
+                            startOffset: 33,
+                            endOffset: 44,
+                            nodePath: [[9,6,3,0], [10,6,3,0]]
+                        }
+                    ], 
+                    missingWords: []
+                }
+            ],
+            [1, 0, 0, 1, 1]
+        ],
+    ])('Add and Remove data Test: %#', async (urls: string[], siteDatae: (SiteData | null)[], count: number[]) => {
+        dao = new IndexedDBStorage();
+        const internalDB: IDBDatabase = await dao.setUp();
+        expect(internalDB).not.toEqual(null);
+
+        for (let i = 0; i < urls.length; i++) {
+            const url = urls[i];
+            const dataToStore = siteDatae[i];
+            if (dataToStore === null) {
+                await dao.removePageData(url);
+            } else {
+                await dao.storePageData(dataToStore, url);
+
+            }
+
+            // Want to test if change in count first
+            const getAllData: Promise<number> = new Promise((resolve, reject) => {
+                const transaction = internalDB.transaction(IndexedDBStorage.TABLE_NAME, 'readonly');
+                const objectStore = transaction.objectStore(IndexedDBStorage.TABLE_NAME);
+                const getTodo = objectStore.getAll();
+                getTodo.onsuccess = (event: any) => {
+                    resolve(getTodo.result.length)
+                };
+                getTodo.onerror = (err: any) => {
+                    reject(err)
+                }
+            });
+            const dataCount: number = await getAllData;
+            expect(dataCount).toBe(count[i]);
+
+            if (dataToStore === null) {
+                const storedData: SiteData = await dao.getPageData(url);
+                expect(storedData.missingWords).toEqual([]);
+                expect(storedData.wordEntries).toEqual([]);
+            } else {
+                const storedData: SiteData = await dao.getPageData(url);
+                expect(storedData.missingWords).toEqual(dataToStore.missingWords);
+                expect(storedData.wordEntries).toEqual(dataToStore.wordEntries);
+            }
         };
 
         const getAllData: Promise<number> = new Promise((resolve, reject) => {
