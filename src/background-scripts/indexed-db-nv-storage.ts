@@ -1,11 +1,12 @@
-import { SiteData } from "../utils/models";
-import { parseURL } from "../utils/utils";
+import { GlobalDictionaryData, isSiteData, SiteData } from "../utils/models";
+import { combineUrl, parseURL } from "../utils/utils";
 import { NonVolatileBrowserStorage } from "./non-volatile-browser-storage";
 
 
 export const DB_NAME = 'vocab-forager';
 export const DB_VERSION = 1;
 
+type SiteDataMap =  {[url: string]: SiteData}
 
 export interface IDBSiteData extends SiteData {
     schemeAndHost: string;
@@ -34,20 +35,12 @@ export class IndexedDBStorage {
 
     private db: IDBDatabase | null = null;  // database connection object
 
-    async getCurrentActivation(): Promise<boolean> {
-        throw Error('Current Activation is not stored in IndexedDBStorage')
-    }
-
-     setCurrentActivation(isActivated: boolean): void {
-        throw Error('Current Activation is not stored in IndexedDBStorage')
-    }
-
     setUp(): Promise<IDBDatabase> {
         return new Promise<IDBDatabase>((resolve, reject) => {
             const openRequest = indexedDB.open(DB_NAME, DB_VERSION);
             openRequest.onerror = function (event) {
               reject("Problem opening DB: " + event);
-            }
+            };
             openRequest.onupgradeneeded = (event: any) => {
                 console.log(`Upgrading ${DB_NAME} to ${event.newVersion} from ${event.oldVersion}`)
                 const db: IDBDatabase = event.target.result;
@@ -82,7 +75,7 @@ export class IndexedDBStorage {
             const objectStore = getTransaction.objectStore(IndexedDBStorage.TABLE_NAME);
             const osIndex = objectStore.index('url');
             
-            return new Promise((resolve, reject) => {
+            return new Promise((resolve) => {
                 const getRequest = osIndex.get([schemeAndHost, urlPath]);
                 getRequest.onerror = (ex) =>  {
                     console.error(`Failed to get site data: ${ex}`)
@@ -100,7 +93,7 @@ export class IndexedDBStorage {
                 };
             });
         } else {
-            return new Promise((resolve, reject) => {
+            return new Promise((_, reject) => {
                 reject('IndexedDB object not initialized');
             });
         }
@@ -125,7 +118,7 @@ export class IndexedDBStorage {
                 request.onerror = (err) => {
                     reject(`Unexpected error when saving ${url} ` + err);
                 };
-                request.onsuccess = (event: any) => {
+                request.onsuccess = () => {
                     resolve();
                 };
             });
@@ -152,7 +145,7 @@ export class IndexedDBStorage {
                 request.onerror = (err) => {
                     reject(`Unexpected error when saving ${url} ` + err);
                 };
-                request.onsuccess = (event: any) => {
+                request.onsuccess = () => {
                     resolve();
                 };
             });
@@ -161,8 +154,94 @@ export class IndexedDBStorage {
                 reject('IndexedDB object not initialized');
             });
         }
-    }    
+    }
 
+    /**
+     * Returns all data stored in non-volatile storage as a JSON-compatible object
+     */
+    getAllStorageData(): Promise<SiteDataMap> {
+        const thisDB = this.db
+        if (thisDB !== null) {
+            return new Promise((resolve, reject) => {
+                const writeTransaction = thisDB.transaction(IndexedDBStorage.TABLE_NAME, 'readonly');
+                const objectStore = writeTransaction.objectStore(IndexedDBStorage.TABLE_NAME);
+
+                const request = objectStore.getAll();
+                request.onerror = (err) => {
+                    reject(`Unexpected error when getting all SiteData:` + err);
+                };
+                request.onsuccess = (event: any) => {
+                    const rawData = event.target.result as IDBSiteData[];
+                    const result:  {[subject: string]: SiteData} = {};
+                    rawData.forEach((x) => {
+                        const url = combineUrl(x.schemeAndHost, x.urlPath);
+                        result[url] = x;
+                    });
+                    resolve(result);
+                };
+            });
+        } else {
+             return new Promise((_, reject) => {
+                reject('IndexedDB object not initialized');
+            });
+        }
+        
+    }
+
+    /**
+     * 
+     * @param data 
+     * @returns true if operations succeeded completely and false otherwise
+     */
+    uploadExtensionData(data: any): Promise<boolean> {
+        const thisDB = this.db
+        if (thisDB !== null) {
+            return new Promise((resolve) => {
+                const writeTransaction = thisDB.transaction(IndexedDBStorage.TABLE_NAME, "readwrite");
+                const objectStore = writeTransaction.objectStore(IndexedDBStorage.TABLE_NAME);
+
+                const request = objectStore.clear();
+                request.onerror = (err) => {
+                    console.error(`Unexpected error when deleting all SiteData:` + err);
+                    resolve(false);
+                };
+                request.onsuccess = () => {
+                    const writeTransaction = thisDB.transaction(IndexedDBStorage.TABLE_NAME, "readwrite");
+                    const objectStore = writeTransaction.objectStore(IndexedDBStorage.TABLE_NAME);
+                    for (let key in data) {
+                        if (data.hasOwnProperty(key)) {
+                            const element = data[key];
+                            if (isSiteData(element)) {
+                                const elementToStore = siteDataToIDBSiteData(element, key);
+                                objectStore.put(elementToStore, [elementToStore.schemeAndHost, elementToStore.urlPath]);
+                            }
+                        }
+                    }
+                    resolve(true);
+                };
+            });
+        } else {
+             return new Promise((_, reject) => {
+                reject('IndexedDB object not initialized');
+            });
+        }
+    }
+
+    getCurrentActivation(): Promise<boolean> {
+        throw Error('Current Activation is not stored in IndexedDBStorage')
+    }
+
+     setCurrentActivation(isActivated: boolean): void {
+        throw Error('Current Activation is not stored in IndexedDBStorage')
+    }
+
+    getDictionaryData(): Promise<GlobalDictionaryData> {
+        throw Error('IndexedDBStorage does not store dictionary data');
+    }
+
+    setDictionaryData(gdd: GlobalDictionaryData): void {
+        throw Error('IndexedDBStorage does not store dictionary data');
+    }
 
     private static v1Creation(db: IDBDatabase): void {
         // Create an objectStore for this database

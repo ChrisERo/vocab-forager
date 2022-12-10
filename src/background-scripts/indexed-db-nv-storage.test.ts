@@ -1,6 +1,7 @@
 import { DB_NAME, DB_VERSION, IndexedDBStorage } from "./indexed-db-nv-storage";
 import "fake-indexeddb/auto";
-import { SiteData } from "../utils/models";
+import { GlobalDictionaryData, SiteData } from "../utils/models";
+import { combineUrl } from "../utils/utils";
 
 
 describe('IndexedDBStorage Fails when required to', () => {
@@ -12,6 +13,7 @@ describe('IndexedDBStorage Fails when required to', () => {
             expect(ex.message).toBe('Current Activation is not stored in IndexedDBStorage');
         }
       });
+      
       test('getCurrentActivation', async () => {
         const dao: IndexedDBStorage = new IndexedDBStorage();
         try {
@@ -19,6 +21,46 @@ describe('IndexedDBStorage Fails when required to', () => {
             throw Error(`getCurrentActivation() succeeded, returning ${result}`)
         } catch (ex: any) {
             expect(ex.message).toBe('Current Activation is not stored in IndexedDBStorage');
+        }
+      });
+
+      test('getDictionaryData', () => {
+        const dao: IndexedDBStorage = new IndexedDBStorage();
+        try {
+            const globalDictData: GlobalDictionaryData = {
+                languagesToResources: { 
+                    'ESP': [
+                        {
+                            name: 'Dict1', 
+                            url: 'http://www.dict1.com/{word}'
+                        }, 
+                        {
+                            name: 'DRAE',
+                            url: 'https://dle.rae.es/{word}'
+                        },
+                    ],
+                    'FRA': [
+                        {
+                            name: 'WordReference', 
+                            url: 'https://www.wordreference.com/fren/{word}',
+                        }
+                    ]
+                }, 
+                currentDictionary: {language: 'ESP', index: 1}
+            };
+            dao.setDictionaryData(globalDictData);
+        } catch (ex: any) {
+            expect(ex.message).toBe('IndexedDBStorage does not store dictionary data');
+        }
+      });
+      
+      test('getDictionaryData', async () => {
+        const dao: IndexedDBStorage = new IndexedDBStorage();
+        try {
+            const result = await dao.getDictionaryData();
+            throw Error(`getDictionaryData() succeeded, returning ${result}`)
+        } catch (ex: any) {
+            expect(ex.message).toBe('IndexedDBStorage does not store dictionary data');
         }
       });
 });
@@ -519,4 +561,112 @@ describe('IndexedDBStorage SiteDataStorage', () => {
         expect(storedData.missingWords).toEqual([]);
         expect(storedData.wordEntries).toEqual([]);
       });
+
+    test('Get All Site Data', async () => {
+        dao = new IndexedDBStorage();
+        const internalDB: IDBDatabase = await dao.setUp();
+        expect(internalDB).not.toEqual(null);
+        let dataToStore = [
+            { 
+                schemeAndHost: 'https://www.articles.fake.net',
+                urlPath: '/articles/334567',
+                wordEntries: [
+                    {
+                        word: 'comida',
+                        startOffset: 0,
+                        endOffset: 13,
+                        nodePath: [[9,6,3,0]]
+                    }
+                ], 
+                missingWords: ["foo", "bar"]
+            },
+            {
+                schemeAndHost: 'https://www.articles.fake.net',
+                urlPath: '/articles/456701', 
+                wordEntries: [
+                    {
+                        word: 'manzana',
+                        startOffset: 33,
+                        endOffset: 44,
+                        nodePath: [[9,6,3,0], [10,6,3,0]]
+                    },
+                    {
+                        word: 'banana',
+                        startOffset: 45,
+                        endOffset: 12,
+                        nodePath: [[9,6,3,0], [9,7,3,0]]
+                    }
+                ], 
+                missingWords: []
+            }
+        ];
+        dataToStore.forEach(async (x) => {
+            await dao.storePageData(x, combineUrl(x.schemeAndHost, x.urlPath))
+        });
+
+        const getResults = await dao.getAllStorageData();
+        expect(Object.keys(getResults).length).toBe(2);
+        expect(getResults['https://www.articles.fake.net/articles/334567'])
+            .toEqual(dataToStore[0]);
+        expect(getResults['https://www.articles.fake.net/articles/456701'])
+            .toEqual(dataToStore[1]);
+    });
+
+    test('Put All Site Data', async () => {
+        dao = new IndexedDBStorage();
+        const internalDB: IDBDatabase = await dao.setUp();
+        expect(internalDB).not.toEqual(null);
+        let dataToStore = {
+            'https://www.articles.fake.net/articles/334567': { 
+                schemeAndHost: 'https://www.articles.fake.net',
+                urlPath: '/articles/334567',
+                wordEntries: [
+                    {
+                        word: 'comida',
+                        startOffset: 0,
+                        endOffset: 13,
+                        nodePath: [[9,6,3,0]]
+                    }
+                ], 
+                missingWords: ["foo", "bar"]
+            },
+            'https://www.articles.fake.net/articles/456701': {
+                schemeAndHost: 'https://www.articles.fake.net',
+                urlPath: '/articles/456701', 
+                wordEntries: [
+                    {
+                        word: 'manzana',
+                        startOffset: 33,
+                        endOffset: 44,
+                        nodePath: [[9,6,3,0], [10,6,3,0]]
+                    },
+                    {
+                        word: 'banana',
+                        startOffset: 45,
+                        endOffset: 12,
+                        nodePath: [[9,6,3,0], [9,7,3,0]]
+                    }
+                ], 
+                missingWords: []
+            },
+            'https://www.articles.net/articles/798054': {
+                schemeAndHost: 'https://www.articles.net',
+                urlPath: '/articles/798054', 
+                wordEntries: [
+                    {
+                        word: 'eucaristía',
+                        startOffset: 4,
+                        endOffset: 7,
+                        nodePath: [[9,6,3,0], [0,7,3,0]]
+                    },
+                ], 
+                missingWords: ['vino']
+            }
+        };
+
+        await dao.uploadExtensionData(dataToStore);
+        const getResults = await dao.getAllStorageData();
+        expect(Object.keys(getResults).length).toBe(3);
+        expect(getResults).toEqual(dataToStore);
+    });
 });
