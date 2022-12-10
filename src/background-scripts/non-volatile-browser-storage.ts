@@ -63,10 +63,10 @@ export interface NonVolatileBrowserStorage {
     setDictionaryData(gdd: GlobalDictionaryData): void;
 
     /**
-     * Overrides all extension data stored in non-volatile storage with that present
-     * in data and returns activation status in data
+     * Overrides all extension data stored in non-volatile storage present
      * 
      * @param data Data to store into non-volatile storage
+     * @return boolean value whose return value depends on specific implementation
      */
     uploadExtensionData(data: any): Promise<boolean>;
 }
@@ -183,6 +183,12 @@ class LocalStorage implements NonVolatileBrowserStorage {
         this.setInLS(this.dictionaryKey, gdd);
     }
 
+    /**
+     * Overrides all extension data stored in non-volatile storage present
+     * in data and returns activation status in data
+     * 
+     * @param data Data to store into non-volatile storage
+     */
     async uploadExtensionData(data: any): Promise<boolean> {
         await chrome.storage.local.clear();
         await chrome.storage.local.set(data);
