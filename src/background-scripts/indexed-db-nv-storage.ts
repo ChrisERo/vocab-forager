@@ -27,7 +27,7 @@ function siteDataToIDBSiteData(siteData: SiteData, url: string): IDBSiteData {
 /**
  * NonVolatileBrowserStorage DAO used to store SiteData inside IndexedDB
  */ 
-export class IndexedDBStorage {
+export class IndexedDBStorage implements NonVolatileBrowserStorage {
     // name of table to use
     public static readonly TABLE_NAME = 'site-data';
     // index  mapping database version to trnasform function to move from previous version of table to said table
@@ -56,13 +56,6 @@ export class IndexedDBStorage {
                 resolve(this.db);
             };
         });
-    }
-
-    /**
-     * @returns value of db connection for this object
-     */
-    getDB():  IDBDatabase | null {
-        return this.db;
     }
     
     getPageData(url: string): Promise<SiteData> {
@@ -97,7 +90,7 @@ export class IndexedDBStorage {
                 reject('IndexedDB object not initialized');
             });
         }
-     }
+    }
 
      /**
       * Either adds a new SiteData entry to the TABLE_NAME table or updates an existing one
@@ -181,11 +174,39 @@ export class IndexedDBStorage {
                 };
             });
         } else {
+            return new Promise((_, reject) => {
+                reject('IndexedDB object not initialized');
+            });
+        }
+    }
+
+    getAllPageUrls(): Promise<string[]> {
+        const thisDB = this.db
+        if (thisDB !== null) {
+            return new Promise((resolve, reject) => {
+                const writeTransaction = thisDB.transaction(IndexedDBStorage.TABLE_NAME, 'readonly');
+                const objectStore = writeTransaction.objectStore(IndexedDBStorage.TABLE_NAME);
+                const osIndex = objectStore.index('url');
+
+                const request = osIndex.getAllKeys();
+                request.onerror = (err) => {
+                    reject(`Unexpected error when getting all SiteData:` + err);
+                };
+                request.onsuccess = (event: any) => {
+                    const rawData = event.target.result as string[][];
+                    const result: string[] = [];
+                    rawData.forEach((x) => {
+                        const url = combineUrl(x[0], x[1]);
+                        result.push(url);
+                    });
+                    resolve(result);
+                };
+            });
+        } else {
              return new Promise((_, reject) => {
                 reject('IndexedDB object not initialized');
             });
         }
-        
     }
 
     /**
@@ -221,7 +242,7 @@ export class IndexedDBStorage {
                 };
             });
         } else {
-             return new Promise((_, reject) => {
+            return new Promise((_, reject) => {
                 reject('IndexedDB object not initialized');
             });
         }
@@ -241,6 +262,13 @@ export class IndexedDBStorage {
 
     setDictionaryData(gdd: GlobalDictionaryData): void {
         throw Error('IndexedDBStorage does not store dictionary data');
+    }
+
+    /**
+     * @returns value of db connection for this object
+     */
+    getDB():  IDBDatabase | null {
+        return this.db;
     }
 
     private static v1Creation(db: IDBDatabase): void {

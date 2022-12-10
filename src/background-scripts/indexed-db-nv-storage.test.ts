@@ -612,7 +612,7 @@ describe('IndexedDBStorage SiteDataStorage', () => {
             .toEqual(dataToStore[1]);
     });
 
-    test('Put All Site Data', async () => {
+    test('Upload Extension Data', async () => {
         dao = new IndexedDBStorage();
         const internalDB: IDBDatabase = await dao.setUp();
         expect(internalDB).not.toEqual(null);
@@ -668,5 +668,66 @@ describe('IndexedDBStorage SiteDataStorage', () => {
         const getResults = await dao.getAllStorageData();
         expect(Object.keys(getResults).length).toBe(3);
         expect(getResults).toEqual(dataToStore);
+    });
+
+    test('Get All Site URLs', async () => {
+        dao = new IndexedDBStorage();
+        const internalDB: IDBDatabase = await dao.setUp();
+        expect(internalDB).not.toEqual(null);
+        let dataToStore = {
+            'https://www.articles.fake.net/articles/334567': { 
+                schemeAndHost: 'https://www.articles.fake.net',
+                urlPath: '/articles/334567',
+                wordEntries: [
+                    {
+                        word: 'comida',
+                        startOffset: 0,
+                        endOffset: 13,
+                        nodePath: [[9,6,3,0]]
+                    }
+                ], 
+                missingWords: ["foo", "bar"]
+            },
+            'https://www.articles.fake.net/articles/456701': {
+                schemeAndHost: 'https://www.articles.fake.net',
+                urlPath: '/articles/456701', 
+                wordEntries: [
+                    {
+                        word: 'manzana',
+                        startOffset: 33,
+                        endOffset: 44,
+                        nodePath: [[9,6,3,0], [10,6,3,0]]
+                    },
+                    {
+                        word: 'banana',
+                        startOffset: 45,
+                        endOffset: 12,
+                        nodePath: [[9,6,3,0], [9,7,3,0]]
+                    }
+                ], 
+                missingWords: []
+            },
+            'https://www.articles.net/articles/798054': {
+                schemeAndHost: 'https://www.articles.net',
+                urlPath: '/articles/798054', 
+                wordEntries: [
+                    {
+                        word: 'eucaristía',
+                        startOffset: 4,
+                        endOffset: 7,
+                        nodePath: [[9,6,3,0], [0,7,3,0]]
+                    },
+                ], 
+                missingWords: ['vino']
+            }
+        };
+
+        await dao.uploadExtensionData(dataToStore);
+        const getResults = await dao.getAllPageUrls();
+        expect(getResults.length).toBe(3);
+        const keys = Object.keys(dataToStore);
+        keys.forEach((x) => {
+            expect(getResults).toContain(x);
+        });
     });
 });

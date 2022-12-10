@@ -74,8 +74,7 @@ export interface NonVolatileBrowserStorage {
 type StoredActivatedState = 1|0;  // type of data the represents data stored in activated state
 
 /**
- * Implementation of NonVolatileBrowserStorage with localStorage being the non-volatile 
- * data source.
+ * Implementation of NonVolatileBrowserStorage with chrome.storage.local
  */
 class LocalStorage implements NonVolatileBrowserStorage {
     readonly isActivatedKey: string;
