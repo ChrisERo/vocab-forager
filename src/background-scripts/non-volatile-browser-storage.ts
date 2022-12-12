@@ -76,7 +76,7 @@ type StoredActivatedState = 1|0;  // type of data the represents data stored in 
 /**
  * Implementation of NonVolatileBrowserStorage with chrome.storage.local
  */
-class LocalStorage implements NonVolatileBrowserStorage {
+export class LocalStorage implements NonVolatileBrowserStorage {
     readonly isActivatedKey: string;
     readonly dictionaryKey: string;
 
@@ -204,9 +204,8 @@ class LocalStorage implements NonVolatileBrowserStorage {
 }
 
 /**
- * 
- * @returns default NonVolatileBrowserStorage implementation
+ * @returns NonVolatileBrowserStorage implementation using chrome.local.storage
  */
-export function getNonVolatileStorage(): NonVolatileBrowserStorage {
+export function getLocalStorage(): LocalStorage {
     return new LocalStorage('is_activated', 'dicts');
 }

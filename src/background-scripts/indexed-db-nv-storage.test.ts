@@ -1,8 +1,101 @@
-import { DB_NAME, DB_VERSION, IndexedDBStorage } from "./indexed-db-nv-storage";
+import { DB_NAME, DB_VERSION, getIndexedDBStorage, IndexedDBStorage } from "./indexed-db-nv-storage";
 import "fake-indexeddb/auto";
 import { GlobalDictionaryData, SiteData } from "../utils/models";
 import { combineUrl } from "../utils/utils";
+import { getLocalStorage } from "./non-volatile-browser-storage";
 
+
+class MockLocalStorage implements chrome.storage.LocalStorageArea {
+
+    private storage: {[key: string]: any};
+    QUOTA_BYTES: number;
+
+    constructor() {
+        this.storage = {};
+        this.QUOTA_BYTES = -1;
+    }
+
+    getBytesInUse(callback: (bytesInUse: number) => void): void;
+    getBytesInUse(keys?: string | string[] | null | undefined): Promise<number>;
+    getBytesInUse(keys: string | string[] | null, callback: (bytesInUse: number) => void): void;
+    getBytesInUse(keys?: unknown, callback?: unknown): void | Promise<number> {
+        throw new Error("Method not implemented.");
+    }
+    clear(): Promise<void>;
+    clear(callback?: (() => void) | undefined): void;
+    clear(callback?: unknown): void | Promise<void> {
+        return new Promise<void>((resolve, _) => {
+            this.storage = {};
+            resolve();
+        });
+    }
+
+    set(items: { [key: string]: any; }): Promise<void> {
+        return new Promise<void>((resolve, _) => {
+            const keys = Object.keys(items);
+            for (let i = 0; i < keys.length; i++) {
+                const k = keys[i];
+                this.storage[k] = items[k];
+            }
+            resolve();
+        });
+    }
+
+    remove(keys: string | string[]): Promise<void> {
+        return new Promise<void>((resolve, _) => {
+            for (let i = 0; i < keys.length; i++) {
+                const k = keys[i];
+                delete this.storage[k];
+            }
+            resolve();
+        });
+    }
+
+    get(callback: (items: { [key: string]: any; }) => void): void;
+    get(keys?: string | string[] | { [key: string]: any; } | null | undefined): Promise<{ [key: string]: any; }>;
+    get(keys: string | string[] | { [key: string]: any; } | null, callback: (items: { [key: string]: any; }) => void): void;
+    get(keys?: unknown, callback?: unknown): void | Promise<{ [key: string]: any; }> {
+        return new Promise<object>((resolve, _) => {
+            if (keys == null) {
+                resolve({ ...this.storage });
+            } else if (typeof keys === 'string' || keys instanceof String) {
+                resolve(this.storage[keys as string]);
+            } else {
+                let keysList: string[];
+                if (Array.isArray(keys)) {
+                    keysList = keys;
+                } else {
+                    keysList = Object.keys(keys);
+                }
+
+                const returnObject: any = {};
+                for (let i = 0; i < keysList.length; i++) {
+                    const k = keysList[i];
+                    returnObject[k] = this.storage[k];
+                }
+
+                resolve(returnObject);
+            }
+        });
+    }
+}
+
+global.chrome = {
+    storage: {
+        local: new MockLocalStorage(),
+        sync: {
+            ...new MockLocalStorage(),
+            MAX_SUSTAINED_WRITE_OPERATIONS_PER_MINUTE: -1,
+            QUOTA_BYTES_PER_ITEM: -1,
+            MAX_ITEMS: -1,
+            MAX_WRITE_OPERATIONS_PER_HOUR: -1,
+            MAX_WRITE_OPERATIONS_PER_MINUTE: -1,
+        } as chrome.storage.SyncStorageArea,
+        session: new MockLocalStorage(),
+        managed: new MockLocalStorage(),
+        onChanged: {} as chrome.storage.StorageChange,
+    }
+} as unknown as typeof chrome;
 
 describe('IndexedDBStorage Fails when required to', () => {
     test('setCurrentActivation', () => {
@@ -14,7 +107,7 @@ describe('IndexedDBStorage Fails when required to', () => {
         }
       });
       
-      test('getCurrentActivation', async () => {
+    test('getCurrentActivation', async () => {
         const dao: IndexedDBStorage = new IndexedDBStorage();
         try {
             const result: boolean = await dao.getCurrentActivation();
@@ -24,7 +117,7 @@ describe('IndexedDBStorage Fails when required to', () => {
         }
       });
 
-      test('getDictionaryData', () => {
+    test('getDictionaryData', () => {
         const dao: IndexedDBStorage = new IndexedDBStorage();
         try {
             const globalDictData: GlobalDictionaryData = {
@@ -54,7 +147,7 @@ describe('IndexedDBStorage Fails when required to', () => {
         }
       });
       
-      test('getDictionaryData', async () => {
+    test('getDictionaryData', async () => {
         const dao: IndexedDBStorage = new IndexedDBStorage();
         try {
             const result = await dao.getDictionaryData();
@@ -93,6 +186,78 @@ describe('IndexedDBStorage SiteDataStorage', () => {
         const objectStore = transaction.objectStore(IndexedDBStorage.TABLE_NAME);
         expect(objectStore.indexNames).toContain('schemeAndHost');
         expect(objectStore.indexNames).toContain('url');
+      });
+
+    test('Setup load localStorage', async () => {
+        const dataToStore: any = {
+            'is_activated': false,
+            'https://www.articles.fake.net/articles/334567': { 
+                schemeAndHost: 'https://www.articles.fake.net',
+                urlPath: '/articles/334567',
+                wordEntries: [
+                    {
+                        word: 'comida',
+                        startOffset: 0,
+                        endOffset: 13,
+                        nodePath: [[9,6,3,0]]
+                    }
+                ], 
+                missingWords: ["foo", "bar"]
+            },
+            'https://www.articles.fake.net/articles/456701': {
+                schemeAndHost: 'https://www.articles.fake.net',
+                urlPath: '/articles/456701', 
+                wordEntries: [
+                    {
+                        word: 'manzana',
+                        startOffset: 33,
+                        endOffset: 44,
+                        nodePath: [[9,6,3,0], [10,6,3,0]]
+                    },
+                    {
+                        word: 'banana',
+                        startOffset: 45,
+                        endOffset: 12,
+                        nodePath: [[9,6,3,0], [9,7,3,0]]
+                    }
+                ], 
+                missingWords: []
+            },
+            'https://www.articles.net/articles/798054': {
+                schemeAndHost: 'https://www.articles.net',
+                urlPath: '/articles/798054', 
+                wordEntries: [
+                    {
+                        word: 'eucaristía',
+                        startOffset: 4,
+                        endOffset: 7,
+                        nodePath: [[9,6,3,0], [0,7,3,0]]
+                    },
+                ], 
+                missingWords: ['vino']
+            },
+            'foo': 'bar',
+        };
+
+        await chrome.storage.local.clear();
+        await chrome.storage.local.set(dataToStore);
+
+        dao = new IndexedDBStorage();
+        
+        await dao.setUp(getLocalStorage());
+
+        let indexedDBData = await dao.getAllStorageData()
+        expect(Object.keys(indexedDBData).length).toEqual(3);
+        delete dataToStore.foo;
+        delete dataToStore.is_activated;
+        expect(indexedDB)
+      });
+
+    test('Get IndexedDBStorage Convenience Function', async () => {
+        dao = getIndexedDBStorage();
+        expect(dao).not.toEqual(null);
+        await new Promise((r) => setTimeout(r, 1000));
+        expect(dao.getDB()).not.toEqual(null);
       });
 
     it.each([

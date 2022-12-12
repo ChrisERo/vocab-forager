@@ -1,6 +1,6 @@
 import { GlobalDictionaryData, isSiteData, SiteData } from "../utils/models";
 import { combineUrl, parseURL } from "../utils/utils";
-import { NonVolatileBrowserStorage } from "./non-volatile-browser-storage";
+import { LocalStorage, NonVolatileBrowserStorage } from "./non-volatile-browser-storage";
 
 
 export const DB_NAME = 'vocab-forager';
@@ -35,7 +35,7 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
 
     private db: IDBDatabase | null = null;  // database connection object
 
-    setUp(): Promise<IDBDatabase> {
+    setUp(oldStorage?: LocalStorage): Promise<IDBDatabase> {
         return new Promise<IDBDatabase>((resolve, reject) => {
             const openRequest = indexedDB.open(DB_NAME, DB_VERSION);
             openRequest.onerror = function (event) {
@@ -50,9 +50,19 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
                 }
 
             };
-            openRequest.onsuccess = (event: any) => {
+            openRequest.onsuccess = async (event: any) => {
                 this.db = event.target.result as IDBDatabase;
                 console.log('this.db set');
+                
+                if (oldStorage !== undefined) {
+                    // Use fact that localStorage mimics up/down-load data format 
+                    console.log('Transferring any old localStorage http data to indexedDB');  // TODO: move to step 0 and figure out how to delete stuff well
+                    const oldData = await oldStorage.getAllStorageData();
+                    await this.uploadExtensionData(oldData);
+                    //console.log('Loading Completed, Removing useless data from localStorage');
+                    //oldStorage.
+                }
+                
                 resolve(this.db);
             };
         });
@@ -279,4 +289,13 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
        objectStore.createIndex('schemeAndHost', 'schemeAndHost', { unique: false });
        objectStore.createIndex('url', ['schemeAndHost', 'urlPath'], { unique: true });
    }
+}
+
+/**
+ * @returns preset IndexedDBStorage object
+ */
+ export function getIndexedDBStorage(): IndexedDBStorage {
+    const nonVolatileStorage =  new IndexedDBStorage();
+    nonVolatileStorage.setUp();
+    return nonVolatileStorage;
 }
