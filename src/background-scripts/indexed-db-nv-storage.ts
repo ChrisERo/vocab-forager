@@ -41,8 +41,12 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
             openRequest.onerror = function (event) {
               reject("Problem opening DB: " + event);
             };
+
+            let shouldPullSiteDataFromLS: boolean = false;
             openRequest.onupgradeneeded = (event: any) => {
-                console.log(`Upgrading ${DB_NAME} to ${event.newVersion} from ${event.oldVersion}`)
+                console.log(`Upgrading ${DB_NAME} to ${event.newVersion} from ${event.oldVersion}`);
+                shouldPullSiteDataFromLS = event.oldVersion <= 0;
+
                 const db: IDBDatabase = event.target.result;
                 for (let i = Math.max(0, event.oldVersion); i <= event.newVersion; i++) {
                     const func = IndexedDBStorage.TRANSFORMS[i];
@@ -53,8 +57,7 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
             openRequest.onsuccess = async (event: any) => {
                 this.db = event.target.result as IDBDatabase;
                 console.log('this.db set');
-                
-                if (oldStorage !== undefined) {
+                if (shouldPullSiteDataFromLS && oldStorage !== undefined) {
                     // Use fact that localStorage mimics up/down-load data format 
                     console.log('Transferring any old localStorage http data to indexedDB');  // TODO: move to step 0 and figure out how to delete stuff well
                     const oldData = await oldStorage.getAllStorageData();
