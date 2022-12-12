@@ -1,11 +1,13 @@
 import { DictionaryManager } from "./dictionary";
-import { getNonVolatileStorage, NonVolatileBrowserStorage } from "./non-volatile-browser-storage";
+import { getLocalStorage, LocalStorage, NonVolatileBrowserStorage } from "./non-volatile-browser-storage";
 import {ContextMenuManager} from "./contextmenu"
 import { BSMessageType, isAddNewDictRequest, isBsMessage, isDictsOfLangRequest, isGetDataForPageRequest, isLoadExtensionDataRequest, isPageDataPair, isSearchRequest, isSetActivationRequest, isUpdateDictionaryRequest } from "../utils/background-script-communication";
 import { Dictionary, DictionaryIdentifier, isDictionaryID, SiteData } from "../utils/models";
 import { isNewActivatedState } from "../utils/content-script-communication";
+import { getIndexedDBStorage, IndexedDBStorage } from "./indexed-db-nv-storage";
 
-const browserStorage: NonVolatileBrowserStorage = getNonVolatileStorage();
+const browserStorage: LocalStorage = getLocalStorage();
+const siteDateStorage: IndexedDBStorage = getIndexedDBStorage(browserStorage);
 const dictionaryManager: DictionaryManager = new DictionaryManager(browserStorage);
 const contextMenuManager: ContextMenuManager = new ContextMenuManager(browserStorage);
 let defineTabId: number | null = null;
@@ -165,7 +167,7 @@ async function openTab(url: string): Promise<void> {
             if (isPageDataPair(request.payload)) {
                 let data: SiteData = request.payload.data;
                 let url: string = request.payload.url;
-                browserStorage.storePageData(data, url);
+                siteDateStorage.storePageData(data, url);
             } else {
                 logUnexpected('payload', request.payload);
             }
@@ -173,7 +175,7 @@ async function openTab(url: string): Promise<void> {
         }
         case BSMessageType.GetPageData: {
             if (isGetDataForPageRequest(request.payload)) {
-                browserStorage.getPageData(request.payload.url).then((data) => sendResponse(data));
+                siteDateStorage.getPageData(request.payload.url).then((data) => sendResponse(data));
             } else {
                 logUnexpected('payload', request.payload);
             }
@@ -181,7 +183,7 @@ async function openTab(url: string): Promise<void> {
         }
         case BSMessageType.DeletePageData: {
             if (isGetDataForPageRequest(request.payload)) {
-                browserStorage.removePageData(request.payload.url);
+                siteDateStorage.removePageData(request.payload.url);
             } else {
                 logUnexpected('payload', request.payload);
             }
@@ -211,19 +213,32 @@ async function openTab(url: string): Promise<void> {
             break;
         }
         case BSMessageType.GetAllURLs: {
-            browserStorage.getAllPageUrls().then((response) => sendResponse(response));
+            siteDateStorage.getAllPageUrls().then((response) => sendResponse(response));
             break;
         }
         case BSMessageType.GetAllExtensionData: {
-            browserStorage.getAllStorageData().then((response) => sendResponse(response));
+            const globalD = browserStorage.getAllStorageData();
+            const siteD = siteDateStorage.getAllPageUrls();
+            globalD.then((globalData) => {
+                siteD.then((siteData) => {
+                    const response = {
+                        ...globalData,
+                        ...siteData
+                    };
+                    sendResponse(response)
+                });
+            });
             break;
         }
         case BSMessageType.LoadExtensionData: {
             if (isLoadExtensionDataRequest(request.payload)) {
-                browserStorage.uploadExtensionData(request.payload.data).then(
-                    (response) =>
+                const onlyGlobalData:{[key: string]: any} = {};
+                onlyGlobalData[browserStorage.isActivatedKey] = request.payload.data[browserStorage.isActivatedKey];
+                onlyGlobalData[browserStorage.dictionaryKey] = request.payload.data[browserStorage.dictionaryKey];
+                browserStorage.uploadExtensionData(onlyGlobalData).then((response) =>
                     contextMenuManager.updateContextMenuBasedOnActivation(response)
                 );
+                siteDateStorage.uploadExtensionData(request.payload.data);
             } else {
                 logUnexpected('payload', request.payload);
             }

@@ -2,11 +2,11 @@ import {GlobalDictionaryData, isEmpty, SiteData} from "../utils/models"
 
 
 /**
- * Interfacce for retrieving and writing data needed for functionality of content scripts
+ * Interface for retrieving and writing data needed for functionality of content scripts
  */
 export interface NonVolatileBrowserStorage {
     /**
-     * Querries whether extension should be activated or not from from extension's 
+     * Queries whether extension should be activated or not from from extension's 
      * non-volatile storage. If value is not set, initializes value to false.
      * 
      * @returns true if extension is currently activated, and false otherwise
@@ -63,10 +63,10 @@ export interface NonVolatileBrowserStorage {
     setDictionaryData(gdd: GlobalDictionaryData): void;
 
     /**
-     * Overrides all extension data stored in non-volatile storage with that present
-     * in data and returns activation status in data
+     * Overrides all extension data stored in non-volatile storage present
      * 
      * @param data Data to store into non-volatile storage
+     * @return boolean value whose return value depends on specific implementation
      */
     uploadExtensionData(data: any): Promise<boolean>;
 }
@@ -74,10 +74,9 @@ export interface NonVolatileBrowserStorage {
 type StoredActivatedState = 1|0;  // type of data the represents data stored in activated state
 
 /**
- * Implementation of NonVolatileBrowserStorage with localStorage being the non-volatile 
- * data source.
+ * Implementation of NonVolatileBrowserStorage with chrome.storage.local
  */
-class LocalStorage implements NonVolatileBrowserStorage {
+export class LocalStorage implements NonVolatileBrowserStorage {
     readonly isActivatedKey: string;
     readonly dictionaryKey: string;
 
@@ -183,6 +182,12 @@ class LocalStorage implements NonVolatileBrowserStorage {
         this.setInLS(this.dictionaryKey, gdd);
     }
 
+    /**
+     * Overrides all extension data stored in non-volatile storage present
+     * in data and returns activation status in data
+     * 
+     * @param data Data to store into non-volatile storage
+     */
     async uploadExtensionData(data: any): Promise<boolean> {
         await chrome.storage.local.clear();
         await chrome.storage.local.set(data);
@@ -199,9 +204,8 @@ class LocalStorage implements NonVolatileBrowserStorage {
 }
 
 /**
- * 
- * @returns default NonVolatileBrowserStorage implementation
+ * @returns NonVolatileBrowserStorage implementation using chrome.local.storage
  */
-export function getNonVolatileStorage(): NonVolatileBrowserStorage {
+export function getLocalStorage(): LocalStorage {
     return new LocalStorage('is_activated', 'dicts');
 }
