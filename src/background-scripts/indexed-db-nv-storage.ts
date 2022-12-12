@@ -292,10 +292,13 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
 }
 
 /**
- * @returns preset IndexedDBStorage object
+ * Get IndexedDBStorage object and commence setting it up. 
+ * 
+ * @param ls NonVolatileBrowserStorage object from which to obtain previously-stored data
+ * @returns IndexedDBStorage that will eventually complete calling its set up function
  */
- export function getIndexedDBStorage(): IndexedDBStorage {
+ export function getIndexedDBStorage(ls?: LocalStorage): IndexedDBStorage {
     const nonVolatileStorage =  new IndexedDBStorage();
-    nonVolatileStorage.setUp();
+    nonVolatileStorage.setUp(ls);
     return nonVolatileStorage;
 }

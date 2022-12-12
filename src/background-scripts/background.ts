@@ -7,7 +7,7 @@ import { isNewActivatedState } from "../utils/content-script-communication";
 import { getIndexedDBStorage, IndexedDBStorage } from "./indexed-db-nv-storage";
 
 const browserStorage: LocalStorage = getLocalStorage();
-const siteDateStorage: IndexedDBStorage = getIndexedDBStorage();
+const siteDateStorage: IndexedDBStorage = getIndexedDBStorage(browserStorage);
 const dictionaryManager: DictionaryManager = new DictionaryManager(browserStorage);
 const contextMenuManager: ContextMenuManager = new ContextMenuManager(browserStorage);
 let defineTabId: number | null = null;

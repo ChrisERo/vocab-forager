@@ -243,7 +243,6 @@ describe('IndexedDBStorage SiteDataStorage', () => {
         await chrome.storage.local.set(dataToStore);
 
         dao = new IndexedDBStorage();
-        
         await dao.setUp(getLocalStorage());
 
         let indexedDBData = await dao.getAllStorageData()
