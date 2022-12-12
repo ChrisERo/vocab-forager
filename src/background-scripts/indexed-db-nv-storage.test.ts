@@ -2,7 +2,7 @@ import { DB_NAME, DB_VERSION, getIndexedDBStorage, IndexedDBStorage } from "./in
 import "fake-indexeddb/auto";
 import { GlobalDictionaryData, SiteData } from "../utils/models";
 import { combineUrl } from "../utils/utils";
-import { getLocalStorage } from "./non-volatile-browser-storage";
+import { getLocalStorage, LocalStorage } from "./non-volatile-browser-storage";
 
 
 class MockLocalStorage implements chrome.storage.LocalStorageArea {
@@ -43,10 +43,15 @@ class MockLocalStorage implements chrome.storage.LocalStorageArea {
 
     remove(keys: string | string[]): Promise<void> {
         return new Promise<void>((resolve, _) => {
-            for (let i = 0; i < keys.length; i++) {
-                const k = keys[i];
-                delete this.storage[k];
+            if (Array.isArray(keys)) {
+                for (let i = 0; i < keys.length; i++) {
+                    const k = keys[i];
+                    delete this.storage[k];
+                }
+            } else {
+                delete this.storage[keys];
             }
+
             resolve();
         });
     }
@@ -163,6 +168,7 @@ describe('IndexedDBStorage SiteDataStorage', () => {
 
     beforeEach(() => {
         indexedDB.deleteDatabase(DB_NAME);
+        chrome.storage.local.clear();
     });
 
     afterEach(() => {
@@ -236,20 +242,21 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                 ], 
                 missingWords: ['vino']
             },
-            'foo': 'bar',
+            'dicts': {},
         };
 
         await chrome.storage.local.clear();
         await chrome.storage.local.set(dataToStore);
 
         dao = new IndexedDBStorage();
-        await dao.setUp(getLocalStorage());
+        const localStorage: LocalStorage = getLocalStorage();
+        expect(await localStorage.getAllPageUrls()).toHaveLength(3);
 
+        await dao.setUp(localStorage);
         let indexedDBData = await dao.getAllStorageData()
         expect(Object.keys(indexedDBData).length).toEqual(3);
-        delete dataToStore.foo;
-        delete dataToStore.is_activated;
-        expect(indexedDB)
+        await new Promise((r) => setTimeout(r, 1000));
+        expect(await localStorage.getAllPageUrls()).toHaveLength(0);
       });
 
     test('Get IndexedDBStorage Convenience Function', async () => {
