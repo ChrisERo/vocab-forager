@@ -4,9 +4,10 @@
  * Assumes url is a valid url
  * 
  * @param url string representing url to parse
- * @returns array with 1 element if url has no path, otherwise 2 elements, where the first
- * element is the combination of scheme and host of a url and the second is the path,
- * including first /.
+ * @returns array with 2 string elements. The first element is a combination of the scheme
+ * (protocol-section) of the url followed by the domain (host[:port]). The second element
+ * is the path (including leading / character) of the url (empty string if no path is 
+ * provided or if path is just /)
  */
 export function parseURL(url: string): string[] {
     if (url.length > 0 && url.charAt(url.length - 1) === '/') {
@@ -28,6 +29,14 @@ export function parseURL(url: string): string[] {
     return [schemeAndHost, urlPath];
  }
 
+ /**
+  * The opposite of parseURL(url: string): string[])
+  * 
+  * @param scheme scheme-host combination of url
+  * @param path path of url.
+  * @returns URL obtained when combining scheme with url (both of which correspond to 
+  * elements returned by parseURL(url: string): string[]).
+  */
  export function combineUrl(scheme: string, path: string) {
     if (path === '') {
         return scheme;
