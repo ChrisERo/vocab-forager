@@ -231,8 +231,8 @@ async function openTab(url: string): Promise<void> {
         case BSMessageType.LoadExtensionData: {
             if (isLoadExtensionDataRequest(request.payload)) {
                 const onlyGlobalData:{[key: string]: any} = {};
-                onlyGlobalData[localStorage.isActivatedKey] = request.payload.data[localStorage.isActivatedKey];
-                onlyGlobalData[localStorage.dictionaryKey] = request.payload.data[localStorage.dictionaryKey];
+                onlyGlobalData[browserStorage.isActivatedKey] = request.payload.data[browserStorage.isActivatedKey];
+                onlyGlobalData[browserStorage.dictionaryKey] = request.payload.data[browserStorage.dictionaryKey];
                 browserStorage.uploadExtensionData(onlyGlobalData).then((response) =>
                     contextMenuManager.updateContextMenuBasedOnActivation(response)
                 );
