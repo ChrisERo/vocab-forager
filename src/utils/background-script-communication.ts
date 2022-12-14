@@ -21,6 +21,7 @@ import { Dictionary, DictionaryIdentifier, isDictionary, isDictionaryID, isSiteD
     ShowDeleteHighlightsCM,
     HideDeleteHighlightsCM,
     GetAllURLs,
+    GetAllDomains,
     GetAllExtensionData,
     LoadExtensionData
 }
@@ -148,8 +149,6 @@ export function isLoadExtensionDataRequest(mssg: any): mssg is LoadExtensionData
    let temp = mssg as LoadExtensionDataRequest;
    return temp != null && temp.data !== undefined;
 }
-
-
 
 export type BSMessagePayload = DictsOfLangRequest|SearchRequest|DictionaryIdentifier|
     PageDataPair|SetActivationRequest|GetDataForPage|UpdateDictionaryRequest|

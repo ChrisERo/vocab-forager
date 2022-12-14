@@ -216,6 +216,10 @@ async function openTab(url: string): Promise<void> {
             siteDateStorage.getAllPageUrls().then((response) => sendResponse(response));
             break;
         }
+        case BSMessageType.GetAllDomains: {
+            siteDateStorage.getAllDomains().then((response) => sendResponse(response));
+            break;
+        }
         case BSMessageType.GetAllExtensionData: {
             const globalD = browserStorage.getAllStorageData();
             const siteD = siteDateStorage.getAllPageUrls();
