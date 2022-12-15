@@ -38,6 +38,13 @@ export interface NonVolatileBrowserStorage {
      */
     getAllDomains(): Promise<string[]>;
 
+    /**
+     * Returns an array with all urls for a given domain
+     * 
+     * @param schemeAndHost the domain (protocol + host, like https://www.spam.com) to query for
+     */
+    getUrlsOfDomain(schemeAndHost: string): Promise<string[]>;
+
 
     /**
      * Returns all data stored in non-volatile storage as a JSON-compatible object
@@ -167,6 +174,12 @@ export class LocalStorage implements NonVolatileBrowserStorage {
         const preResultSet: Set<string> = new Set<string>();
         urls.forEach((url) => preResultSet.add(parseURL(url)[0]));
         return Array.from(preResultSet);
+    }
+
+    async getUrlsOfDomain(schemeAndHost: string): Promise<string[]> {
+        const urls: string[] = await this.getAllPageUrls();
+        const filteredUrls = urls.filter((u) => parseURL(u)[0] === schemeAndHost);
+        return filteredUrls;
     }
 
     async getPageData(site: string): Promise<SiteData> {

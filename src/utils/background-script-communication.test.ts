@@ -182,6 +182,13 @@ describe('Type Checks', () => {
             }, 
             true
         ],
+        [
+            {
+                messageType: bgcom.BSMessageType.GetAllDomains,
+                payload: null
+            }, 
+            true
+        ],
         [null, false],
         [undefined, false],
     ])('Is %p a BsMessage', (object: any, isRequestType: boolean) => {

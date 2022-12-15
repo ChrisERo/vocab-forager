@@ -258,6 +258,31 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
         }
     }
 
+    getUrlsOfDomain(schemeAndHost: string): Promise<string[]> {
+        const thisDB = this.db
+        if (thisDB !== null) {
+            return new Promise((resolve, reject) => {
+                const writeTransaction = thisDB.transaction(IndexedDBStorage.TABLE_NAME, 'readonly');
+                const objectStore = writeTransaction.objectStore(IndexedDBStorage.TABLE_NAME);
+                const osIndex = objectStore.index('schemeAndHost');
+
+                const request = osIndex.getAllKeys(schemeAndHost);
+                request.onerror = (err) => {
+                    reject(`Unexpected error when getting all SiteData:` + err);
+                };
+                const result: Set<string> = new Set<string>();
+                request.onsuccess = (event: any) => {
+                    const resultado = request.result as string[][]
+                    resolve(resultado.map((url) => combineUrl(url[0], url[1])));
+                };
+            });
+        } else {
+             return new Promise((_, reject) => {
+                reject('IndexedDB object not initialized');
+            });
+        }
+    }
+
     /**
      * 
      * @param data 

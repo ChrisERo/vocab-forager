@@ -6,8 +6,7 @@ const DOMAIN_LIST_ELEMENT = document.getElementById('list-of-domains') as HTMLEl
 const URL_LIST_ELEMENT =  document.getElementById('list-of-urls') as HTMLElement;
 
 const DELETE_BUTTON = document.getElementById('delete-sites') as HTMLElement;
-const REFRESH_DOMAIN_BUTTON = document.getElementById('domain-button') as HTMLElement;
-
+const REFRESH_DOMAIN_BUTTON = document.getElementById('domains-button') as HTMLElement;
 
 /**
  * Appends checkbox and non-styled link to url as an option under list-of-urls div.
@@ -36,16 +35,14 @@ function addURLOption(url: string): void {
     URL_LIST_ELEMENT.appendChild(formElement);
 }
 
-
-
 /**
  * Queries non-volatile storage of add-on for all urls with specified domain that have 
- * highlights and presents them in website with the option of either deleteing them, or opening the url
+ * highlights and presents them in website with the option of either deleting them, or opening the url
  */
 function getSites(domain: string): void {
     const message: BSMessage = {
-        messageType: BSMessageType.GetAllURLs,
-        payload: {domain: domain}}
+        messageType: BSMessageType.GetURLSOfDomain,
+        payload: {schemeAndHost: domain}
     }
     chrome.runtime.sendMessage(message, (urls: string[]) => {
         urls.sort();
@@ -67,8 +64,8 @@ function addDomainOption(domain: string): void {
     const label = document.createElement('div');
     label.textContent = domain;
     label.addEventListener('click', () => { // Clear domains list and populate url list
-        DELETE_BUTTON.setAttribute('disabled', 'true');
-        REFRESH_DOMAIN_BUTTON.setAttribute('disabled', 'true');
+        DELETE_BUTTON.style.display = 'block';
+        REFRESH_DOMAIN_BUTTON.style.display = 'block';
         DOMAIN_LIST_ELEMENT.innerHTML = '';
         getSites(domain);
     });
@@ -92,14 +89,14 @@ function getDomains() {
 
 function refreshPageWithDomains() {
     URL_LIST_ELEMENT.innerHTML = '';
-    DELETE_BUTTON.setAttribute('disabled', 'true');
-    REFRESH_DOMAIN_BUTTON.setAttribute('disabled', 'true');
+    DELETE_BUTTON.style.display = 'none';
+    REFRESH_DOMAIN_BUTTON.style.display = 'none';
     getDomains();
 }
 
 
 loadBannerHtml();
-getDomains();
+refreshPageWithDomains();
 
 // Delete all urls that were checked by user from non-volatile storage
 DELETE_BUTTON.addEventListener('click', () => {
@@ -119,6 +116,5 @@ DELETE_BUTTON.addEventListener('click', () => {
 });
 
 // Delete all urls that were checked by user from non-volatile storage
-(document.getElementById('domain-button') as HTMLElement)
-    .addEventListener('click', refreshPageWithDomains);
+REFRESH_DOMAIN_BUTTON.addEventListener('click', refreshPageWithDomains);
 

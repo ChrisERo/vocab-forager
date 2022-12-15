@@ -1,7 +1,7 @@
 import { DictionaryManager } from "./dictionary";
 import { getLocalStorage, LocalStorage, NonVolatileBrowserStorage } from "./non-volatile-browser-storage";
 import {ContextMenuManager} from "./contextmenu"
-import { BSMessageType, isAddNewDictRequest, isBsMessage, isDictsOfLangRequest, isGetDataForPageRequest, isLoadExtensionDataRequest, isPageDataPair, isSearchRequest, isSetActivationRequest, isUpdateDictionaryRequest } from "../utils/background-script-communication";
+import { BSMessageType, isAddNewDictRequest, isBsMessage, isDictsOfLangRequest, isGetDataForPageRequest, isGetUrlsOfDomainRequest, isLoadExtensionDataRequest, isPageDataPair, isSearchRequest, isSetActivationRequest, isUpdateDictionaryRequest } from "../utils/background-script-communication";
 import { Dictionary, DictionaryIdentifier, isDictionaryID, SiteData } from "../utils/models";
 import { isNewActivatedState } from "../utils/content-script-communication";
 import { getIndexedDBStorage, IndexedDBStorage } from "./indexed-db-nv-storage";
@@ -212,12 +212,17 @@ async function openTab(url: string): Promise<void> {
             contextMenuManager.hideDeleteContextMenu();
             break;
         }
-        case BSMessageType.GetAllURLs: {
-            siteDateStorage.getAllPageUrls().then((response) => sendResponse(response));
-            break;
-        }
         case BSMessageType.GetAllDomains: {
             siteDateStorage.getAllDomains().then((response) => sendResponse(response));
+            break;
+        }
+        case BSMessageType.GetURLSOfDomain: {
+            siteDateStorage.getAllDomains().then((response) => sendResponse(response));
+            if (isGetUrlsOfDomainRequest(request.payload)) {
+                siteDateStorage.getUrlsOfDomain(request.payload.schemeAndHost).then((response) => sendResponse(response));
+            } else {
+                logUnexpected('payload', request.payload);
+            }
             break;
         }
         case BSMessageType.GetAllExtensionData: {
