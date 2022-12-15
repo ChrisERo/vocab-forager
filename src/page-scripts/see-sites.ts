@@ -64,8 +64,8 @@ function addDomainOption(domain: string): void {
     const label = document.createElement('div');
     label.textContent = domain;
     label.addEventListener('click', () => { // Clear domains list and populate url list
-        DELETE_BUTTON.style.display = 'block';
-        REFRESH_DOMAIN_BUTTON.style.display = 'block';
+        DELETE_BUTTON.style.display = 'inline-block';
+        REFRESH_DOMAIN_BUTTON.style.display = 'inline-block';
         DOMAIN_LIST_ELEMENT.innerHTML = '';
         getSites(domain);
     });
