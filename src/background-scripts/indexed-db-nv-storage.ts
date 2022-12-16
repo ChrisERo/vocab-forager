@@ -230,8 +230,8 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
         const thisDB = this.db
         if (thisDB !== null) {
             return new Promise((resolve, reject) => {
-                const writeTransaction = thisDB.transaction(IndexedDBStorage.TABLE_NAME, 'readonly');
-                const objectStore = writeTransaction.objectStore(IndexedDBStorage.TABLE_NAME);
+                const readTransaction = thisDB.transaction(IndexedDBStorage.TABLE_NAME, 'readonly');
+                const objectStore = readTransaction.objectStore(IndexedDBStorage.TABLE_NAME);
                 const osIndex = objectStore.index('schemeAndHost');
 
                 // There is no function to just get all values of an index: 
@@ -262,18 +262,17 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
         const thisDB = this.db
         if (thisDB !== null) {
             return new Promise((resolve, reject) => {
-                const writeTransaction = thisDB.transaction(IndexedDBStorage.TABLE_NAME, 'readonly');
-                const objectStore = writeTransaction.objectStore(IndexedDBStorage.TABLE_NAME);
+                const readTransaction = thisDB.transaction(IndexedDBStorage.TABLE_NAME, 'readonly');
+                const objectStore = readTransaction.objectStore(IndexedDBStorage.TABLE_NAME);
                 const osIndex = objectStore.index('schemeAndHost');
 
                 const request = osIndex.getAllKeys(schemeAndHost);
                 request.onerror = (err) => {
                     reject(`Unexpected error when getting all SiteData:` + err);
                 };
-                const result: Set<string> = new Set<string>();
                 request.onsuccess = (event: any) => {
-                    const resultado = request.result as string[][]
-                    resolve(resultado.map((url) => combineUrl(url[0], url[1])));
+                    const result = request.result as string[][]
+                    resolve(result.map((url) => combineUrl(url[0], url[1])));
                 };
             });
         } else {
