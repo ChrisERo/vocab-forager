@@ -226,6 +226,62 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
         }
     }
 
+    getAllDomains(): Promise<string[]> {
+        const thisDB = this.db
+        if (thisDB !== null) {
+            return new Promise((resolve, reject) => {
+                const readTransaction = thisDB.transaction(IndexedDBStorage.TABLE_NAME, 'readonly');
+                const objectStore = readTransaction.objectStore(IndexedDBStorage.TABLE_NAME);
+                const osIndex = objectStore.index('schemeAndHost');
+
+                // There is no function to just get all values of an index: 
+                // https://stackoverflow.com/questions/53590913/how-to-get-all-idbindex-key-values-instead-of-object-store-primary-keys
+                const request = osIndex.openKeyCursor();
+                request.onerror = (err) => {
+                    reject(`Unexpected error when getting all SiteData:` + err);
+                };
+                const result: Set<string> = new Set<string>();
+                request.onsuccess = (event: any) => {
+                    let cursor: IDBCursor | null = event.target.result;
+                    if (cursor) {
+                        result.add(cursor.key as string);
+                        cursor.continue();
+                    } else {
+                        resolve(Array.from(result));
+                    }
+                };
+            });
+        } else {
+             return new Promise((_, reject) => {
+                reject('IndexedDB object not initialized');
+            });
+        }
+    }
+
+    getUrlsOfDomain(schemeAndHost: string): Promise<string[]> {
+        const thisDB = this.db
+        if (thisDB !== null) {
+            return new Promise((resolve, reject) => {
+                const readTransaction = thisDB.transaction(IndexedDBStorage.TABLE_NAME, 'readonly');
+                const objectStore = readTransaction.objectStore(IndexedDBStorage.TABLE_NAME);
+                const osIndex = objectStore.index('schemeAndHost');
+
+                const request = osIndex.getAllKeys(schemeAndHost);
+                request.onerror = (err) => {
+                    reject(`Unexpected error when getting all SiteData:` + err);
+                };
+                request.onsuccess = (event: any) => {
+                    const result = request.result as string[][]
+                    resolve(result.map((url) => combineUrl(url[0], url[1])));
+                };
+            });
+        } else {
+             return new Promise((_, reject) => {
+                reject('IndexedDB object not initialized');
+            });
+        }
+    }
+
     /**
      * 
      * @param data 
@@ -293,8 +349,8 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
        const objectStore = db.createObjectStore(IndexedDBStorage.TABLE_NAME, { autoIncrement: true });
 
        // define what data items the objectStore will contain
-       objectStore.createIndex('schemeAndHost', 'schemeAndHost', { unique: false });
        objectStore.createIndex('url', ['schemeAndHost', 'urlPath'], { unique: true });
+       objectStore.createIndex('schemeAndHost', 'schemeAndHost', { unique: false });
    }
 }
 

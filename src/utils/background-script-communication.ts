@@ -20,7 +20,8 @@ import { Dictionary, DictionaryIdentifier, isDictionary, isDictionaryID, isSiteD
     SetCurrentActivation,
     ShowDeleteHighlightsCM,
     HideDeleteHighlightsCM,
-    GetAllURLs,
+    GetAllDomains,
+    GetURLSOfDomain,
     GetAllExtensionData,
     LoadExtensionData
 }
@@ -149,11 +150,24 @@ export function isLoadExtensionDataRequest(mssg: any): mssg is LoadExtensionData
    return temp != null && temp.data !== undefined;
 }
 
+/**
+ * Request to get all URLs of a given domain
+ */
+export interface GetAllURLsOfDomainRequest {
+    schemeAndHost: string;
+}
 
+/**
+* Returns true if and only if object provided is a GetDataForPage
+*/
+export function isGetUrlsOfDomainRequest(mssg: any): mssg is GetAllURLsOfDomainRequest {
+   let temp = mssg as GetAllURLsOfDomainRequest;
+   return temp != null && temp.schemeAndHost !== undefined;
+}
 
 export type BSMessagePayload = DictsOfLangRequest|SearchRequest|DictionaryIdentifier|
     PageDataPair|SetActivationRequest|GetDataForPage|UpdateDictionaryRequest|
-    AddNewDictRequest|LoadExtensionDataRequest|null;
+    AddNewDictRequest|LoadExtensionDataRequest|GetAllURLsOfDomainRequest|null;
 
 /**
  * Message that can be sent to background script listener
@@ -161,7 +175,6 @@ export type BSMessagePayload = DictsOfLangRequest|SearchRequest|DictionaryIdenti
  export interface BSMessage {
     messageType: BSMessageType;
     payload: BSMessagePayload;
-
 }
 
 /**

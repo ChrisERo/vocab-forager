@@ -1,4 +1,5 @@
 import {GlobalDictionaryData, isEmpty, SiteData} from "../utils/models"
+import { parseURL } from "../utils/utils";
 
 
 /**
@@ -31,6 +32,19 @@ export interface NonVolatileBrowserStorage {
      * Returns array of all URLs stored in non-volatiel storage
      */
     getAllPageUrls(): Promise<string[]>;
+
+    /**
+     * Returns array of all scheme-host pairs of data stored in non-volatile storage
+     */
+    getAllDomains(): Promise<string[]>;
+
+    /**
+     * Returns an array with all urls for a given domain
+     * 
+     * @param schemeAndHost the domain (protocol + host, like https://www.spam.com) to query for
+     */
+    getUrlsOfDomain(schemeAndHost: string): Promise<string[]>;
+
 
     /**
      * Returns all data stored in non-volatile storage as a JSON-compatible object
@@ -153,6 +167,19 @@ export class LocalStorage implements NonVolatileBrowserStorage {
         }
 
         return response;
+    }
+
+    async getAllDomains(): Promise<string[]> {
+        const urls: string[] = await this.getAllPageUrls();
+        const preResultSet: Set<string> = new Set<string>();
+        urls.forEach((url) => preResultSet.add(parseURL(url)[0]));
+        return Array.from(preResultSet);
+    }
+
+    async getUrlsOfDomain(schemeAndHost: string): Promise<string[]> {
+        const urls: string[] = await this.getAllPageUrls();
+        const filteredUrls = urls.filter((u) => parseURL(u)[0] === schemeAndHost);
+        return filteredUrls;
     }
 
     async getPageData(site: string): Promise<SiteData> {

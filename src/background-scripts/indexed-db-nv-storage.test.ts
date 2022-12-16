@@ -1,7 +1,7 @@
 import { DB_NAME, DB_VERSION, getIndexedDBStorage, IndexedDBStorage } from "./indexed-db-nv-storage";
 import "fake-indexeddb/auto";
 import { GlobalDictionaryData, SiteData } from "../utils/models";
-import { combineUrl } from "../utils/utils";
+import { combineUrl, parseURL } from "../utils/utils";
 import { getLocalStorage, LocalStorage } from "./non-volatile-browser-storage";
 
 
@@ -899,6 +899,133 @@ describe('IndexedDBStorage SiteDataStorage', () => {
         const keys = Object.keys(dataToStore);
         keys.forEach((x) => {
             expect(getResults).toContain(x);
+        });
+    });
+
+    test('Get All Site Domains', async () => {
+        dao = new IndexedDBStorage();
+        const internalDB: IDBDatabase = await dao.setUp();
+        expect(internalDB).not.toEqual(null);
+        let dataToStore = {
+            'https://www.articles.fake.net/articles/334567': { 
+                schemeAndHost: 'https://www.articles.fake.net',
+                urlPath: '/articles/334567',
+                wordEntries: [
+                    {
+                        word: 'comida',
+                        startOffset: 0,
+                        endOffset: 13,
+                        nodePath: [[9,6,3,0]]
+                    }
+                ], 
+                missingWords: ["foo", "bar"]
+            },
+            'https://www.articles.fake.net/articles/456701': {
+                schemeAndHost: 'https://www.articles.fake.net',
+                urlPath: '/articles/456701', 
+                wordEntries: [
+                    {
+                        word: 'manzana',
+                        startOffset: 33,
+                        endOffset: 44,
+                        nodePath: [[9,6,3,0], [10,6,3,0]]
+                    },
+                    {
+                        word: 'banana',
+                        startOffset: 45,
+                        endOffset: 12,
+                        nodePath: [[9,6,3,0], [9,7,3,0]]
+                    }
+                ], 
+                missingWords: []
+            },
+            'https://www.articles.net/articles/798054': {
+                schemeAndHost: 'https://www.articles.net',
+                urlPath: '/articles/798054', 
+                wordEntries: [
+                    {
+                        word: 'eucaristía',
+                        startOffset: 4,
+                        endOffset: 7,
+                        nodePath: [[9,6,3,0], [0,7,3,0]]
+                    },
+                ], 
+                missingWords: ['vino']
+            }
+        };
+        await dao.uploadExtensionData(dataToStore);
+
+        const getResults = await dao.getAllDomains();
+        expect(getResults.length).toBe(2);
+        const keys = Object.keys(dataToStore);
+        keys.forEach((x) => {
+            expect(getResults).toContain(parseURL(x)[0]);
+        });
+    });
+
+    test('Get All Sites for 1 Domain', async () => {
+        dao = new IndexedDBStorage();
+        const internalDB: IDBDatabase = await dao.setUp();
+        expect(internalDB).not.toEqual(null);
+        let dataToStore = {
+            'https://www.articles.fake.net/articles/334567': { 
+                schemeAndHost: 'https://www.articles.fake.net',
+                urlPath: '/articles/334567',
+                wordEntries: [
+                    {
+                        word: 'comida',
+                        startOffset: 0,
+                        endOffset: 13,
+                        nodePath: [[9,6,3,0]]
+                    }
+                ], 
+                missingWords: ["foo", "bar"]
+            },
+            'https://www.articles.fake.net/articles/456701': {
+                schemeAndHost: 'https://www.articles.fake.net',
+                urlPath: '/articles/456701', 
+                wordEntries: [
+                    {
+                        word: 'manzana',
+                        startOffset: 33,
+                        endOffset: 44,
+                        nodePath: [[9,6,3,0], [10,6,3,0]]
+                    },
+                    {
+                        word: 'banana',
+                        startOffset: 45,
+                        endOffset: 12,
+                        nodePath: [[9,6,3,0], [9,7,3,0]]
+                    }
+                ], 
+                missingWords: []
+            },
+            'https://www.articles.net/articles/798054': {
+                schemeAndHost: 'https://www.articles.net',
+                urlPath: '/articles/798054', 
+                wordEntries: [
+                    {
+                        word: 'eucaristía',
+                        startOffset: 4,
+                        endOffset: 7,
+                        nodePath: [[9,6,3,0], [0,7,3,0]]
+                    },
+                ], 
+                missingWords: ['vino']
+            }
+        };
+        await dao.uploadExtensionData(dataToStore);
+
+        const getResults = await dao.getUrlsOfDomain('https://www.articles.fake.net');
+        expect(getResults.length).toBe(2);
+        const keys = Object.keys(dataToStore);
+        keys.forEach((x) => {
+            const urlSplit = parseURL(x);
+            if (urlSplit[0] === 'https://www.articles.fake.net') {
+                expect(getResults).toContain(x);
+            } else {
+                expect(getResults).not.toContain(x);
+            }
         });
     });
 });

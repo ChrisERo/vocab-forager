@@ -148,6 +148,19 @@ describe('Type Checks', () => {
     });
 
     it.each([
+        [{isActivated: true}, false],
+        [{lang: 'Spanish'}, false],
+        [{dict: {name: 'spanishdict', url: 'https://www.test.com'}}, false],
+        [{schemeAndHost: 'https://www.biblegateway.com'}, true],
+        [{schemeAndHost: 'foo-bar'}, true],
+        [{schemeAndHost: null}, true],
+        [null, false],
+        [undefined, false],
+    ])('Is %p a GetUrlsOfDomainRequest', (object: any, isRequestType: boolean) => {
+        expect(bgcom.isGetUrlsOfDomainRequest(object)).toEqual(isRequestType);
+    });
+
+    it.each([
         [{data: "todo"}, false],
         [
             {
@@ -179,6 +192,13 @@ describe('Type Checks', () => {
             {
                 messageType: bgcom.BSMessageType.AddNewDictionary,
                 payload: {}
+            }, 
+            true
+        ],
+        [
+            {
+                messageType: bgcom.BSMessageType.GetAllDomains,
+                payload: null
             }, 
             true
         ],
