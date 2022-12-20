@@ -275,8 +275,12 @@ const previousOnMouseUp = document.onmouseup; // on mouse up value before extens
             for (let i = 0; i < data.missingWords.length; i++) {
                 missingWords.push(data.missingWords[i]);
             }
-            if (neededRehighlight) {
-                saveData(highlightManager, missingWords);
+            if (neededRehighlight || (
+                (data.missingWords.length !== 0 || data.wordEntries.length !== 0) && 
+                data.title === undefined && 
+                document.title !== '')
+                ) {
+                    saveData(highlightManager, missingWords);
             }
 
             document.onmouseup = (event: MouseEvent) => {
