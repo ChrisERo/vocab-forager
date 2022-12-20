@@ -21,7 +21,7 @@ import { Dictionary, DictionaryIdentifier, isDictionary, isDictionaryID, isSiteD
     ShowDeleteHighlightsCM,
     HideDeleteHighlightsCM,
     GetAllDomains,
-    GetURLSOfDomain,
+    GetSeeSiteData,
     GetAllExtensionData,
     LoadExtensionData
 }

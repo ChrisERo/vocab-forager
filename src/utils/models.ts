@@ -58,6 +58,8 @@ export interface SiteData {
     missingWords: string[];
     // style options
     highlightOptions?: HighlightOptions;
+    // title of website if one exists
+    title?: string;
 }
 
 export function isSiteData(data: any): data is SiteData {
@@ -179,3 +181,12 @@ export function getLanguages(dc: GlobalDictionaryData): string[] {
     let mapping: SubjectToDictsMapping = dc.languagesToResources;
     return Object.getOwnPropertyNames(mapping);
 }
+
+/**
+ * Object representing information on a website needed for see-sites page
+ */
+export interface SeeSiteData {
+    url: string,
+    title?: string,
+}
+

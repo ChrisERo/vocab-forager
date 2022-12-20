@@ -219,7 +219,7 @@ function convertSelectionToWord(select: Selection): Word | null {
 
 /**
  * Creates a SiteData based on words in a HighlightManager and a list of missing words and
- * saves the compount result into non-volatile storage record for this webpage.
+ * saves the content result into non-volatile storage record for this webpage.
  * 
  * @param hm contains list of highlighted elements to consider
  * @param missingWords contains list of words that should be in hm, but are not
@@ -233,6 +233,11 @@ function saveData(hm: HighlightsManager, missingWords: string[]): void {
     const styleOpt = hm.getStyleOptions();
     if (styleOpt) {
         data.highlightOptions = styleOpt;
+    }
+
+    const title = document.title;
+    if (title !== '') {
+        data.title = title;
     }
 
     let saveMessage: BSMessage = {
