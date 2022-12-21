@@ -24,13 +24,10 @@ function addURLOption(data: SeeSiteData): void {
     my_checkbox.setAttribute('name', data.url);
     formElement.append(my_checkbox);
 
-    const label = document.createElement('div');
+    const label = document.createElement('a');
     label.setAttribute('href', data.url);
     label.setAttribute('target', '_blank');
     label.textContent = data.title === undefined ? data.url : data.title;
-    label.addEventListener('click', () => { // Open url in new tab (or window depending on client config)
-        window.open(data.url, '_blank');
-    });
     formElement.append(label);
 
     URL_LIST_ELEMENT.appendChild(formElement);
