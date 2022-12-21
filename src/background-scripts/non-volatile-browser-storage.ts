@@ -40,8 +40,7 @@ export interface NonVolatileBrowserStorage {
 
     /**
      * Returns an array of all data pertinent to see-sites page associated with pages of a 
-     * single domain. This is currently simply the url of the page along with its title,
-     * if it exists
+     * single domain. This is the url of the page along with its title, if it exists
      * 
      * @param schemeAndHost the domain (protocol + host, like https://www.spam.com) to query for
      */
