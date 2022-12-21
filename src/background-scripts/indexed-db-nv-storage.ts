@@ -1,4 +1,4 @@
-import { GlobalDictionaryData, isSiteData, SiteData } from "../utils/models";
+import { GlobalDictionaryData, isSiteData, SeeSiteData, SiteData } from "../utils/models";
 import { combineUrl, parseURL } from "../utils/utils";
 import { LocalStorage, NonVolatileBrowserStorage } from "./non-volatile-browser-storage";
 
@@ -258,7 +258,7 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
         }
     }
 
-    getUrlsOfDomain(schemeAndHost: string): Promise<string[]> {
+    getSeeSiteDataOfDomain(schemeAndHost: string): Promise<SeeSiteData[]> {
         const thisDB = this.db
         if (thisDB !== null) {
             return new Promise((resolve, reject) => {
@@ -266,13 +266,28 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
                 const objectStore = readTransaction.objectStore(IndexedDBStorage.TABLE_NAME);
                 const osIndex = objectStore.index('schemeAndHost');
 
-                const request = osIndex.getAllKeys(schemeAndHost);
+                const request = osIndex.openCursor(schemeAndHost);
                 request.onerror = (err) => {
                     reject(`Unexpected error when getting all SiteData:` + err);
                 };
+
+                const result: SeeSiteData[] = [];
                 request.onsuccess = (event: any) => {
-                    const result = request.result as string[][]
-                    resolve(result.map((url) => combineUrl(url[0], url[1])));
+                    const cursor: IDBCursorWithValue | null = event.target.result;
+                    if (cursor) {
+                        const value = cursor.value as IDBSiteData;
+                        const valueToStore: SeeSiteData = {
+                            url: combineUrl(value.schemeAndHost, value.urlPath),
+                        };
+                        if (value.title !== undefined) {
+                            valueToStore.title = value.title;
+                        }
+
+                        result.push(valueToStore);
+                        cursor.continue();
+                    } else {
+                        resolve(result);
+                    }
                 };
             });
         } else {

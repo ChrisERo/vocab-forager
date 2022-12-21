@@ -1,4 +1,4 @@
-import {GlobalDictionaryData, isEmpty, SiteData} from "../utils/models"
+import {GlobalDictionaryData, isEmpty, SeeSiteData, SiteData} from "../utils/models"
 import { parseURL } from "../utils/utils";
 
 
@@ -39,12 +39,12 @@ export interface NonVolatileBrowserStorage {
     getAllDomains(): Promise<string[]>;
 
     /**
-     * Returns an array with all urls for a given domain
+     * Returns an array of all data pertinent to see-sites page associated with pages of a 
+     * single domain. This is the url of the page along with its title, if it exists
      * 
      * @param schemeAndHost the domain (protocol + host, like https://www.spam.com) to query for
      */
-    getUrlsOfDomain(schemeAndHost: string): Promise<string[]>;
-
+    getSeeSiteDataOfDomain(schemeAndHost: string): Promise<SeeSiteData[]>;
 
     /**
      * Returns all data stored in non-volatile storage as a JSON-compatible object
@@ -176,10 +176,19 @@ export class LocalStorage implements NonVolatileBrowserStorage {
         return Array.from(preResultSet);
     }
 
-    async getUrlsOfDomain(schemeAndHost: string): Promise<string[]> {
+    async getSeeSiteDataOfDomain(schemeAndHost: string): Promise<SeeSiteData[]> {
         const urls: string[] = await this.getAllPageUrls();
         const filteredUrls = urls.filter((u) => parseURL(u)[0] === schemeAndHost);
-        return filteredUrls;
+        const seeSiteData = filteredUrls.map(async (url) => {
+            const sd: SiteData = await this.getPageData(url);
+            const data: SeeSiteData = {url};
+            if (sd.title !== undefined) {
+                data.title = sd.title;
+            }
+            return data;
+        });
+
+        return (async () => await Promise.all(seeSiteData))();
     }
 
     async getPageData(site: string): Promise<SiteData> {

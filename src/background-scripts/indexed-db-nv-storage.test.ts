@@ -1,6 +1,6 @@
-import { DB_NAME, DB_VERSION, getIndexedDBStorage, IndexedDBStorage } from "./indexed-db-nv-storage";
+import { DB_NAME, DB_VERSION, getIndexedDBStorage, IDBSiteData, IndexedDBStorage } from "./indexed-db-nv-storage";
 import "fake-indexeddb/auto";
-import { GlobalDictionaryData, SiteData } from "../utils/models";
+import { GlobalDictionaryData, SeeSiteData, SiteData } from "../utils/models";
 import { combineUrl, parseURL } from "../utils/utils";
 import { getLocalStorage, LocalStorage } from "./non-volatile-browser-storage";
 
@@ -967,7 +967,7 @@ describe('IndexedDBStorage SiteDataStorage', () => {
         dao = new IndexedDBStorage();
         const internalDB: IDBDatabase = await dao.setUp();
         expect(internalDB).not.toEqual(null);
-        let dataToStore = {
+        let dataToStore: { [subject: string]: IDBSiteData} = {
             'https://www.articles.fake.net/articles/334567': { 
                 schemeAndHost: 'https://www.articles.fake.net',
                 urlPath: '/articles/334567',
@@ -984,6 +984,7 @@ describe('IndexedDBStorage SiteDataStorage', () => {
             'https://www.articles.fake.net/articles/456701': {
                 schemeAndHost: 'https://www.articles.fake.net',
                 urlPath: '/articles/456701', 
+                title: 'Test Article',
                 wordEntries: [
                     {
                         word: 'manzana',
@@ -1016,15 +1017,20 @@ describe('IndexedDBStorage SiteDataStorage', () => {
         };
         await dao.uploadExtensionData(dataToStore);
 
-        const getResults = await dao.getUrlsOfDomain('https://www.articles.fake.net');
+        const getResults = await dao.getSeeSiteDataOfDomain('https://www.articles.fake.net');
         expect(getResults.length).toBe(2);
+        
         const keys = Object.keys(dataToStore);
         keys.forEach((x) => {
             const urlSplit = parseURL(x);
             if (urlSplit[0] === 'https://www.articles.fake.net') {
-                expect(getResults).toContain(x);
-            } else {
-                expect(getResults).not.toContain(x);
+                const expectedResult: SeeSiteData = {url: x};
+                const rawData = dataToStore[x];
+                if (rawData.title !== undefined) {
+                    expectedResult.title = rawData.title;
+                }
+
+                expect(getResults).toContainEqual(expectedResult);
             }
         });
     });

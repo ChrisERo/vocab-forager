@@ -1,4 +1,5 @@
 import { BSMessage, BSMessageType } from "../utils/background-script-communication";
+import { SeeSiteData } from "../utils/models";
 import { loadBannerHtml } from "./fetch-banner";
 
 
@@ -11,25 +12,22 @@ const REFRESH_DOMAIN_BUTTON = document.getElementById('domains-button') as HTMLE
 /**
  * Appends checkbox and non-styled link to url as an option under list-of-urls div.
  *
- * @param url url for which to make checkbox
+ * @param data SeeSiteData used to create html element next to checkbox
  */
-function addURLOption(url: string): void {
+function addURLOption(data: SeeSiteData): void {
     const formElement = document.createElement('div');
     formElement.setAttribute('class', 'alt_form_element');
 
     const my_checkbox = document.createElement('input');
     my_checkbox.setAttribute('type', 'checkbox');
-    my_checkbox.setAttribute('id', url);
-    my_checkbox.setAttribute('name', url);
+    my_checkbox.setAttribute('id', data.url);
+    my_checkbox.setAttribute('name', data.url);
     formElement.append(my_checkbox);
 
-    const label = document.createElement('div');
-    label.setAttribute('href', url);
+    const label = document.createElement('a');
+    label.setAttribute('href', data.url);
     label.setAttribute('target', '_blank');
-    label.textContent = url;
-    label.addEventListener('click', () => { // Open url in new tab (or window depending on client config)
-        window.open(url, '_blank');
-    });
+    label.textContent = data.title === undefined ? data.url : data.title;
     formElement.append(label);
 
     URL_LIST_ELEMENT.appendChild(formElement);
@@ -41,13 +39,18 @@ function addURLOption(url: string): void {
  */
 function getSites(domain: string): void {
     const message: BSMessage = {
-        messageType: BSMessageType.GetURLSOfDomain,
+        messageType: BSMessageType.GetSeeSiteData,
         payload: {schemeAndHost: domain}
     }
-    chrome.runtime.sendMessage(message, (urls: string[]) => {
-        urls.sort();
-        for (let i = 0; i < urls.length; i++) {
-            addURLOption(urls[i]);
+    chrome.runtime.sendMessage(message, (data: SeeSiteData[]) => {
+        data.sort((a, b) => {
+            const titleA = a.title === undefined ? a.url : a.title;
+            const titleB = b.title === undefined ? b.url : b.title;
+            return titleA.localeCompare(titleB);
+        });
+
+        for (let i = 0; i < data.length; i++) {
+            addURLOption(data[i]);
         }
     });    
 }
