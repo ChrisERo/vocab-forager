@@ -226,7 +226,7 @@ async function openTab(url: string): Promise<void> {
         }
         case BSMessageType.GetAllExtensionData: {
             const globalD = browserStorage.getAllStorageData();
-            const siteD = siteDateStorage.getAllPageUrls();
+            const siteD = siteDateStorage.getAllStorageData();
             globalD.then((globalData) => {
                 siteD.then((siteData) => {
                     const response = {
