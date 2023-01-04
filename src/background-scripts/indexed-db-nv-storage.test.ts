@@ -783,6 +783,78 @@ describe('IndexedDBStorage SiteDataStorage', () => {
             .toEqual(dataToStore[1]);
     });
 
+    test('Remove all words of a SiteData entry', async () => {
+        dao = new IndexedDBStorage();
+        const internalDB: IDBDatabase = await dao.setUp();
+        expect(internalDB).not.toEqual(null);
+        let dataToStore: IDBSiteData[] = [
+            { 
+                schemeAndHost: 'https://www.articles.fake.net',
+                urlPath: '/articles/334567',
+                wordEntries: [
+                    {
+                        word: 'comida',
+                        startOffset: 0,
+                        endOffset: 13,
+                        nodePath: [[9,6,3,0]]
+                    }
+                ], 
+                missingWords: ["foo", "bar"],
+                title: 'Fake News Article #334567',
+            },
+            {
+                schemeAndHost: 'https://www.articles.fake.net',
+                urlPath: '/articles/456701', 
+                wordEntries: [
+                    {
+                        word: 'manzana',
+                        startOffset: 33,
+                        endOffset: 44,
+                        nodePath: [[9,6,3,0], [10,6,3,0]]
+                    },
+                    {
+                        word: 'banana',
+                        startOffset: 45,
+                        endOffset: 12,
+                        nodePath: [[9,6,3,0], [9,7,3,0]]
+                    }
+                ], 
+                missingWords: [],
+            }
+        ];
+        dataToStore.forEach(async (x) => {
+            await dao.storePageData(x, combineUrl(x.schemeAndHost, x.urlPath))
+        });
+        let getResults = await dao.getAllStorageData();
+        expect(Object.keys(getResults).length).toBe(2);
+
+        await dao.storePageData({wordEntries: [], missingWords: [], title: 'DeletePlease'}, 
+            'https://www.articles.fake.net/articles/456701');
+        getResults = await dao.getAllStorageData();
+        expect(Object.keys(getResults).length).toBe(1);
+        expect(getResults['https://www.articles.fake.net/articles/334567'])
+            .toEqual(dataToStore[0]);
+
+        await dao.storePageData({wordEntries: [], missingWords: [], title: 'DeletePlease'}, 
+            'https://www.articles.fake.net/articles/456701');
+        getResults = await dao.getAllStorageData();
+        expect(Object.keys(getResults).length).toBe(1);
+        expect(getResults['https://www.articles.fake.net/articles/334567'])
+            .toEqual(dataToStore[0]);
+
+        await dao.storePageData({wordEntries: [], missingWords: [], title: 'DeletePlease'}, 
+            'https://www.articles.fake.net/fake');
+        getResults = await dao.getAllStorageData();
+        expect(Object.keys(getResults).length).toBe(1);
+        expect(getResults['https://www.articles.fake.net/articles/334567'])
+            .toEqual(dataToStore[0]);
+
+        await dao.storePageData({wordEntries: [], missingWords: [], title: 'SecondDelete'}, 
+            'https://www.articles.fake.net/articles/334567');
+        getResults = await dao.getAllStorageData();
+        expect(Object.keys(getResults).length).toBe(0);
+    });
+
     test('Upload Extension Data', async () => {
         dao = new IndexedDBStorage();
         const internalDB: IDBDatabase = await dao.setUp();
