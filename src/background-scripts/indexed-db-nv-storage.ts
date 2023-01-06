@@ -1,4 +1,4 @@
-import { GlobalDictionaryData, isSiteData, SeeSiteData, SiteData } from "../utils/models";
+import { GlobalDictionaryData, isEmpty, isSiteData, SeeSiteData, SiteData } from "../utils/models";
 import { combineUrl, parseURL } from "../utils/utils";
 import { LocalStorage, NonVolatileBrowserStorage } from "./non-volatile-browser-storage";
 
@@ -124,7 +124,14 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
                 const writeTransaction = thisDB.transaction(IndexedDBStorage.TABLE_NAME, "readwrite");
                 const objectStore = writeTransaction.objectStore(IndexedDBStorage.TABLE_NAME);
     
-                const request = objectStore.put(siteDataToStore, [siteDataToStore.schemeAndHost, siteDataToStore.urlPath]);
+                let request: IDBRequest;
+                if (isEmpty(siteDataToStore)) {
+                    const schemePathSeparation: string[] = parseURL(url);
+                    request = objectStore.delete(schemePathSeparation);
+                }
+                else {
+                    request = objectStore.put(siteDataToStore, [siteDataToStore.schemeAndHost, siteDataToStore.urlPath]);
+                }
                 request.onerror = (err) => {
                     reject(`Unexpected error when saving ${url} ` + err);
                 };

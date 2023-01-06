@@ -52,7 +52,8 @@ export interface NonVolatileBrowserStorage {
     getAllStorageData(): Promise<any>;
 
     /**
-    * Saves page-specific metadata in non-volatile storage.
+    * Saves page-specific metadata in non-volatile storage. If the new SiteData object is
+    * empty (isEmpty returns true), then, if the entry already exists, it is to be deleted
     * 
     * @param siteData - metadata for particular web url
     * @param page - url corresponding to data from siteData
