@@ -34,9 +34,10 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
     private static readonly TRANSFORMS = [() => {}, IndexedDBStorage.v1Creation];
 
     private db: IDBDatabase | null = null;  // database connection object
+    private dbPromise: Promise<IDBDatabase> | null = null;
 
     setUp(oldStorage?: LocalStorage): Promise<IDBDatabase> {
-        return new Promise<IDBDatabase>((resolve, reject) => {
+        this.dbPromise = new Promise<IDBDatabase>((resolve, reject) => {
             const openRequest = indexedDB.open(DB_NAME, DB_VERSION);
             openRequest.onerror = function (event) {
               reject("Problem opening DB: " + event);
@@ -73,15 +74,17 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
                 resolve(this.db);
             };
         });
+
+        return this.dbPromise;
     }
     
     getPageData(url: string): Promise<SiteData> {
-        if (this.db !== null) {
+        const query = (db: IDBDatabase): Promise<SiteData> => {
             const urlList = parseURL(url);
             const schemeAndHost: string = urlList[0];
             const urlPath: string = urlList[1];
 
-            const getTransaction = this.db.transaction(IndexedDBStorage.TABLE_NAME, "readonly");
+            const getTransaction = db.transaction(IndexedDBStorage.TABLE_NAME, "readonly");
             const objectStore = getTransaction.objectStore(IndexedDBStorage.TABLE_NAME);
             const osIndex = objectStore.index('url');
             
@@ -90,7 +93,7 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
                 getRequest.onerror = (ex) =>  {
                     console.error(`Failed to get site data: ${ex}`)
                 };
-                getRequest.onsuccess = (event: any) => {  // TODO: make sure that null returned if nothing found
+                getRequest.onsuccess = (event: any) => {
                     let siteData: SiteData | undefined = event.target.result as (SiteData | undefined)
                     if (siteData === undefined) {
                         siteData = {
@@ -102,11 +105,9 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
                     resolve(siteData);
                 };
             });
-        } else {
-            return new Promise((_, reject) => {
-                reject('IndexedDB object not initialized');
-            });
-        }
+        };
+
+        return this.runQuery(query);
     }
 
      /**
@@ -117,11 +118,10 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
       * @param url url corresponding to siteData
       */
      storePageData(siteData: SiteData, url: string): Promise<void> {
-        const thisDB = this.db
-        if (thisDB !== null) {
+        const query = (db: IDBDatabase): Promise<void> => {
             return new Promise((resolve, reject) => {
                 const siteDataToStore = siteDataToIDBSiteData(siteData, url);
-                const writeTransaction = thisDB.transaction(IndexedDBStorage.TABLE_NAME, "readwrite");
+                const writeTransaction = db.transaction(IndexedDBStorage.TABLE_NAME, "readwrite");
                 const objectStore = writeTransaction.objectStore(IndexedDBStorage.TABLE_NAME);
     
                 let request: IDBRequest;
@@ -139,22 +139,19 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
                     resolve();
                 };
             });
-        } else {
-             return new Promise((resolve, reject) => {
-                reject('IndexedDB object not initialized');
-            });
-        }
+        };
+
+        return this.runQuery(query);
     }
 
     removePageData(url: string): Promise<void> {
-        const thisDB = this.db
-        if (thisDB !== null) {
+        const query = (db: IDBDatabase): Promise<void> => {
             return new Promise((resolve, reject) => {
                 const urlAsArray = parseURL(url);
                 const schemeAndHost = urlAsArray[0];
                 const urlPath = urlAsArray[1];
 
-                const writeTransaction = thisDB.transaction(IndexedDBStorage.TABLE_NAME, "readwrite");
+                const writeTransaction = db.transaction(IndexedDBStorage.TABLE_NAME, "readwrite");
                 const objectStore = writeTransaction.objectStore(IndexedDBStorage.TABLE_NAME);
                 const osIndex = objectStore.index('url');
     
@@ -166,23 +163,20 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
                     resolve();
                 };
             });
-        } else {
-             return new Promise((resolve, reject) => {
-                reject('IndexedDB object not initialized');
-            });
-        }
+        };
+
+        return this.runQuery(query);
     }
 
     /**
      * Returns all data stored in non-volatile storage as a JSON-compatible object
      */
     getAllStorageData(): Promise<SiteDataMap> {
-        const thisDB = this.db
-        if (thisDB !== null) {
+        const query = (db: IDBDatabase): Promise<SiteDataMap> => {
             return new Promise((resolve, reject) => {
-                const writeTransaction = thisDB.transaction(IndexedDBStorage.TABLE_NAME, 'readonly');
+                const writeTransaction = db.transaction(IndexedDBStorage.TABLE_NAME, 'readonly');
                 const objectStore = writeTransaction.objectStore(IndexedDBStorage.TABLE_NAME);
-
+    
                 const request = objectStore.getAll();
                 request.onerror = (err) => {
                     reject(`Unexpected error when getting all SiteData:` + err);
@@ -197,21 +191,18 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
                     resolve(result);
                 };
             });
-        } else {
-            return new Promise((_, reject) => {
-                reject('IndexedDB object not initialized');
-            });
-        }
+        };
+
+        return this.runQuery(query);
     }
 
     getAllPageUrls(): Promise<string[]> {
-        const thisDB = this.db
-        if (thisDB !== null) {
+        const query = (db: IDBDatabase): Promise<string[]> => {
             return new Promise((resolve, reject) => {
-                const writeTransaction = thisDB.transaction(IndexedDBStorage.TABLE_NAME, 'readonly');
+                const writeTransaction = db.transaction(IndexedDBStorage.TABLE_NAME, 'readonly');
                 const objectStore = writeTransaction.objectStore(IndexedDBStorage.TABLE_NAME);
                 const osIndex = objectStore.index('url');
-
+    
                 const request = osIndex.getAllKeys();
                 request.onerror = (err) => {
                     reject(`Unexpected error when getting all SiteData:` + err);
@@ -226,18 +217,15 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
                     resolve(result);
                 };
             });
-        } else {
-             return new Promise((_, reject) => {
-                reject('IndexedDB object not initialized');
-            });
-        }
+        };
+
+        return this.runQuery(query);
     }
 
     getAllDomains(): Promise<string[]> {
-        const thisDB = this.db
-        if (thisDB !== null) {
+        const query = (db: IDBDatabase): Promise<string[]> => {
             return new Promise((resolve, reject) => {
-                const readTransaction = thisDB.transaction(IndexedDBStorage.TABLE_NAME, 'readonly');
+                const readTransaction = db.transaction(IndexedDBStorage.TABLE_NAME, 'readonly');
                 const objectStore = readTransaction.objectStore(IndexedDBStorage.TABLE_NAME);
                 const osIndex = objectStore.index('schemeAndHost');
 
@@ -258,18 +246,15 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
                     }
                 };
             });
-        } else {
-             return new Promise((_, reject) => {
-                reject('IndexedDB object not initialized');
-            });
-        }
+        };
+
+        return this.runQuery(query);
     }
 
     getSeeSiteDataOfDomain(schemeAndHost: string): Promise<SeeSiteData[]> {
-        const thisDB = this.db
-        if (thisDB !== null) {
+        const query = (db: IDBDatabase): Promise<SeeSiteData[]> => {
             return new Promise((resolve, reject) => {
-                const readTransaction = thisDB.transaction(IndexedDBStorage.TABLE_NAME, 'readonly');
+                const readTransaction = db.transaction(IndexedDBStorage.TABLE_NAME, 'readonly');
                 const objectStore = readTransaction.objectStore(IndexedDBStorage.TABLE_NAME);
                 const osIndex = objectStore.index('schemeAndHost');
 
@@ -297,11 +282,9 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
                     }
                 };
             });
-        } else {
-             return new Promise((_, reject) => {
-                reject('IndexedDB object not initialized');
-            });
-        }
+        };
+
+        return this.runQuery(query);
     }
 
     /**
@@ -310,10 +293,9 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
      * @returns true if operations succeeded completely and false otherwise
      */
     uploadExtensionData(data: any): Promise<boolean> {
-        const thisDB = this.db
-        if (thisDB !== null) {
+        const query = (db: IDBDatabase): Promise<boolean> => {
             return new Promise((resolve) => {
-                const writeTransaction = thisDB.transaction(IndexedDBStorage.TABLE_NAME, "readwrite");
+                const writeTransaction = db.transaction(IndexedDBStorage.TABLE_NAME, "readwrite");
                 const objectStore = writeTransaction.objectStore(IndexedDBStorage.TABLE_NAME);
 
                 const request = objectStore.clear();
@@ -322,7 +304,7 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
                     resolve(false);
                 };
                 request.onsuccess = () => {
-                    const writeTransaction = thisDB.transaction(IndexedDBStorage.TABLE_NAME, "readwrite");
+                    const writeTransaction = db.transaction(IndexedDBStorage.TABLE_NAME, "readwrite");
                     const objectStore = writeTransaction.objectStore(IndexedDBStorage.TABLE_NAME);
                     for (let key in data) {
                         if (data.hasOwnProperty(key)) {
@@ -336,11 +318,9 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
                     resolve(true);
                 };
             });
-        } else {
-            return new Promise((_, reject) => {
-                reject('IndexedDB object not initialized');
-            });
-        }
+        };
+
+        return this.runQuery(query);
     }
 
     getCurrentActivation(): Promise<boolean> {
@@ -364,6 +344,18 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
      */
     getDB():  IDBDatabase | null {
         return this.db;
+    }
+
+    private runQuery<Type>(query: (a: IDBDatabase) => Promise<Type>): Promise<Type>  {
+        if (this.db !== null) {
+            return query(this.db);
+        } else {
+            if (this.dbPromise === null) {
+                throw Error('IndexedDBStorage does not store dictionary data');
+            } else {
+                return this.dbPromise.then((value) => query(value));
+            }
+        }
     }
 
     private static v1Creation(db: IDBDatabase): void {
