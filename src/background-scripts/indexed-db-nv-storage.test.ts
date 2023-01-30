@@ -5,6 +5,8 @@ import { combineUrl, parseURL } from "../utils/utils";
 import { getLocalStorage, LocalStorage } from "./non-volatile-browser-storage";
 
 
+type queryFunction = (a: IndexedDBStorage) => void;
+
 class MockLocalStorage implements chrome.storage.LocalStorageArea {
 
     private storage: {[key: string]: any};
@@ -1105,5 +1107,90 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                 expect(getResults).toContainEqual(expectedResult);
             }
         });
+    });
+
+    it.each([
+        [
+            'getAllDomains',
+            async (dao: IndexedDBStorage) => {
+                const domains = await dao.getAllDomains();
+                expect(domains.length).toBe(2);
+            }
+        ],
+        [
+            'getAllPageUrls',
+            async (dao: IndexedDBStorage) => {
+                const urls = await dao.getAllPageUrls();
+                expect(urls.length).toBe(3);
+            }
+        ],
+        [
+            'getAllStorageData',
+            async (dao: IndexedDBStorage) => {
+                const data = await dao.getAllStorageData();
+                expect(Object.keys(data)).toHaveLength(3);
+            }
+        ],
+    ])('%s async test', async (name: string, executeQuery: queryFunction) => {
+        //jest.setTimeout(10000);  // Does not work in in async tests
+        const dataToStore: any = {
+            'is_activated': true,
+            'https://www.articles.fake.net/articles/334567': { 
+                schemeAndHost: 'https://www.articles.fake.net',
+                urlPath: '/articles/334567',
+                wordEntries: [
+                    {
+                        word: 'comida',
+                        startOffset: 0,
+                        endOffset: 13,
+                        nodePath: [[9,6,3,0]]
+                    }
+                ], 
+                missingWords: ["foo", "bar"]
+            },
+            'https://www.articles.fake.net/articles/456701': {
+                schemeAndHost: 'https://www.articles.fake.net',
+                urlPath: '/articles/456701', 
+                wordEntries: [
+                    {
+                        word: 'manzana',
+                        startOffset: 33,
+                        endOffset: 44,
+                        nodePath: [[9,6,3,0], [10,6,3,0]]
+                    },
+                    {
+                        word: 'banana',
+                        startOffset: 45,
+                        endOffset: 12,
+                        nodePath: [[9,6,3,0], [9,7,3,0]]
+                    }
+                ], 
+                missingWords: []
+            },
+            'https://www.articles.net/articles/798054': {
+                schemeAndHost: 'https://www.articles.net',
+                urlPath: '/articles/798054', 
+                wordEntries: [
+                    {
+                        word: 'eucaristía',
+                        startOffset: 4,
+                        endOffset: 7,
+                        nodePath: [[9,6,3,0], [0,7,3,0]]
+                    },
+                ], 
+                missingWords: ['vino']
+            },
+            'dicts': {},
+        };
+
+        await chrome.storage.local.clear();
+        await chrome.storage.local.set(dataToStore);
+        dao = new IndexedDBStorage();
+        const localStorage: LocalStorage = getLocalStorage();
+        expect(dao.getDB()).toBeNull();
+        dao.setUpTestFunction(3750, localStorage);  // hope 3.75 second wait is enough time to have query execute before setUp completion
+        await executeQuery(dao);
+        expect(dao.getDB()).not.toBeNull();
+        dao.getDB()?.close();
     });
 });
