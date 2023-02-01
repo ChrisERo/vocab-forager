@@ -1131,6 +1131,66 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                 expect(Object.keys(data)).toHaveLength(3);
             }
         ],
+        [
+            'getPageData',
+            async (dao: IndexedDBStorage) => {
+                const url = 'https://www.articles.fake.net/articles/456701';
+                const wordEntriesExpected =  [
+                    {
+                        word: 'manzana',
+                        startOffset: 33,
+                        endOffset: 44,
+                        nodePath: [[9,6,3,0], [10,6,3,0]]
+                    },
+                    {
+                        word: 'banana',
+                        startOffset: 45,
+                        endOffset: 12,
+                        nodePath: [[9,6,3,0], [9,7,3,0]]
+                    }
+                ];
+                const storeData = await dao.getPageData(url);
+                expect(storeData.missingWords).toEqual([]);
+                expect(storeData.wordEntries).toEqual(wordEntriesExpected);
+
+            }
+        ],
+        [
+            'storePageData',
+            async (dao: IndexedDBStorage) => {
+                const data =  { 
+                    wordEntries: [
+                        {
+                            word: 'comida',
+                            startOffset: 0,
+                            endOffset: 13,
+                            nodePath: [[9,6,3,0]]
+                        }
+                    ], 
+                    missingWords: ["foo", "bar"]
+                };
+                await dao.storePageData(data,'https://www.foobar.com/yahoo');
+                const storeData = await dao.getPageData('https://www.foobar.com/yahoo');
+                expect(storeData).toEqual(data);
+                const sites = await dao.getAllPageUrls();
+                expect(sites).toHaveLength(4);
+            }
+        ],
+        [
+            'removePageData',
+            async (dao: IndexedDBStorage) => {
+                await dao.removePageData('https://www.articles.fake.net/articles/334567');
+                const storeData = await dao.getPageData('https://www.foobar.com/yahoo');
+                const emptySiteData: SiteData = {
+                    wordEntries: [],
+                    missingWords: []
+                };
+                expect(storeData).toEqual(emptySiteData);
+                const sites = await dao.getAllPageUrls();
+                expect(sites).toHaveLength(2);
+            }
+
+        ]
     ])('%s async test', async (name: string, executeQuery: queryFunction) => {
         //jest.setTimeout(10000);  // Does not work in in async tests
         const dataToStore: any = {
