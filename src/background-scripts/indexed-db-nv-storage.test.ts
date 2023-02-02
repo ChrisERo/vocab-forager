@@ -1189,7 +1189,44 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                 const sites = await dao.getAllPageUrls();
                 expect(sites).toHaveLength(2);
             }
+        ],
+        [
+            'getSeeSiteDataOfDomain',
+            async (dao: IndexedDBStorage) => {
+                let data: SeeSiteData[] = await dao.getSeeSiteDataOfDomain('https://www.articles.fake.net');
+                expect(data).toHaveLength(2);
+                data = await dao.getSeeSiteDataOfDomain('https://www.articles.net');
+                expect(data).toHaveLength(1);
+            }
+        ],
+        [
+            'uploadExtensionData',
+            async (dao: IndexedDBStorage) => {
+                const dataToStore = {
+                    'http://rettiwt.com/articles/334567': { 
+                        schemeAndHost: 'http://rettiwt.com',
+                        urlPath: '/articles/334567',
+                        wordEntries: [
+                            {
+                                word: 'comida',
+                                startOffset: 0,
+                                endOffset: 13,
+                                nodePath: [[9,6,3,0]]
+                            }
+                        ], 
+                        missingWords: ["foo", "bar"]
+                    },
+                };
+                const succeeded: boolean = await dao.uploadExtensionData(dataToStore);
+                expect(succeeded).toBeTruthy();
 
+                let data: SeeSiteData[] = await dao.getSeeSiteDataOfDomain('https://www.articles.fake.net');
+                expect(data).toHaveLength(0);
+                data = await dao.getSeeSiteDataOfDomain('https://www.articles.net');
+                expect(data).toHaveLength(0);
+                data = await dao.getSeeSiteDataOfDomain('http://rettiwt.com');
+                expect(data).toHaveLength(1);
+            }
         ]
     ])('%s async test', async (name: string, executeQuery: queryFunction) => {
         //jest.setTimeout(10000);  // Does not work in in async tests
