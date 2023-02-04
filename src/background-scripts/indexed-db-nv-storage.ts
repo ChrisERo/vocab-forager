@@ -81,7 +81,8 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
     /**
      * For testing use only! Executes {@link setUp} function, but with some delay
      * 
-     * @param oldStorage 
+     * @param waitTimeMS time in milliseconds to wait before calling {@link setUp}
+     * @param oldStorage LocalStorage object previously used to hold SiteData 
      */
     async setUpTestFunction(waitTimeMS: number, oldStorage?: LocalStorage): Promise<IDBDatabase> {
         this.dbPromise = new Promise<IDBDatabase>(async (resolve, reject) => {
