@@ -94,6 +94,7 @@ type StoredActivatedState = 1|0;  // type of data the represents data stored in 
 export class LocalStorage implements NonVolatileBrowserStorage {
     readonly isActivatedKey: string;
     readonly dictionaryKey: string;
+    readonly tabIdKey: string = 'tab_id';
 
     constructor(isActivatedKey: string, dictionaryKey: string) {
         this.isActivatedKey = isActivatedKey;
@@ -231,12 +232,22 @@ export class LocalStorage implements NonVolatileBrowserStorage {
         return this.getCurrentActivation();
     }
 
+    async getTabId(): Promise<number | null> {
+        const result: number | null = await this.getFromLS(this.tabIdKey);
+        return result;
+    }
+
+    async setTabId(tabId: number): Promise<void> {
+        return this.setInLS(this.tabIdKey, tabId);
+    }
+
     /**
      * @param key entry inside LocalStorage
      * @returns true if key corresponds to an entry for a URL and false otherwise
      */
     private isURL(key: string): boolean {
-        return key !== this.dictionaryKey && key !== this.isActivatedKey;
+        return key !== this.dictionaryKey && key !== this.isActivatedKey && 
+            key !== this.tabIdKey;
     }
 }
 
