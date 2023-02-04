@@ -10,7 +10,6 @@ const browserStorage: LocalStorage = getLocalStorage();
 const siteDateStorage: IndexedDBStorage = getIndexedDBStorage(browserStorage);
 const dictionaryManager: DictionaryManager = new DictionaryManager(browserStorage);
 const contextMenuManager: ContextMenuManager = new ContextMenuManager(browserStorage);
-let defineTabId: number | null = null;
 
 type sendResponseFunction = (response?: any) => void; 
 
@@ -31,30 +30,37 @@ function logUnexpected(key: string, value: any) {
  * 
  * @param url url in which to open new tab
  */
-function openNewDefineTab(url: string): void {
+function openNewDefineTab(url: string): Promise<void> {
     const message: chrome.tabs.CreateProperties = {
         active: true,
         url: url
     };
-    chrome.tabs.create(message).then((newTab) => {
-        if (newTab.id) {
-            defineTabId = newTab.id;
-        } else {
-            console.error(`Created new tab without id for url: ${url}`);
-        }
+
+    return  new Promise<void>(async (resolve, reject) => {
+        await chrome.tabs.create(message).then(async (newTab) => {
+            if (newTab.id) {
+                await browserStorage.setTabId(newTab.id);
+                resolve();
+            } else {
+                console.error(`Created new tab without id for url: ${url}`);
+                reject();
+            };
+        });
     });
 }
 
 
 /**
+ * Checks to see if there is a tab open in browser (session) with id equal to id.
  * 
  * @param id tab id to query
+ * @param expectedTabId tab id that id should match
  * @returns true if tab with id already exists and false otherwise
  */
-async function isTabCurrentlyOpen(id: number): Promise<boolean> {
+async function isTabCurrentlyOpen(id: number, expectedTabId: number): Promise<boolean> {
     try {
-        let t = await chrome.tabs.get(id);
-        return t.id === defineTabId;
+        const t = await chrome.tabs.get(id);
+        return t.id === expectedTabId;  // If need be, we can add checks on tab's URL
     } catch {  // Not present
         return false;
     }
@@ -67,14 +73,15 @@ async function isTabCurrentlyOpen(id: number): Promise<boolean> {
  * @param url url with which to open tab
  */
 async function openTab(url: string): Promise<void> {
-    if (defineTabId !== null && await isTabCurrentlyOpen(defineTabId)) {
+    const definedTabId = await browserStorage.getTabId();
+    if (definedTabId !== null && await isTabCurrentlyOpen(definedTabId, definedTabId)) {
         const updateMessage: chrome.tabs.UpdateProperties = {
             active: true,
             url: url
         }
-        chrome.tabs.update(defineTabId, updateMessage);
+        await chrome.tabs.update(definedTabId, updateMessage);
     } else {
-        openNewDefineTab(url);
+        await openNewDefineTab(url);
     }
 }
 
