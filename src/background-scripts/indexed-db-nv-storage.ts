@@ -4,7 +4,7 @@ import { LocalStorage, NonVolatileBrowserStorage } from "./non-volatile-browser-
 
 
 export const DB_NAME = 'vocab-forager';
-export const DB_VERSION = 1;
+export const DB_VERSION = 2;
 
 type SiteDataMap =  {[url: string]: SiteData}
 
@@ -29,9 +29,14 @@ function siteDataToIDBSiteData(siteData: SiteData, url: string): IDBSiteData {
  */ 
 export class IndexedDBStorage implements NonVolatileBrowserStorage {
     // name of table to use
-    public static readonly TABLE_NAME = 'site-data';
-    // index  mapping database version to trnasform function to move from previous version of table to said table
-    private static readonly TRANSFORMS = [() => {}, IndexedDBStorage.v1Creation];
+    public static readonly SITE_DATA_TABLE = 'site-data';
+    public static readonly LABEL_TABLE = 'label-data';
+    // index  mapping database version to transform function to move from previous version of table to said table
+    private static readonly TRANSFORMS = [
+        () => {}, // noop
+        IndexedDBStorage.v1Creation,
+        IndexedDBStorage.addSubjectTable
+    ];
 
     private db: IDBDatabase | null = null;  // database connection object
     private dbPromise: Promise<IDBDatabase> | null = null;
@@ -100,8 +105,8 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
             const schemeAndHost: string = urlList[0];
             const urlPath: string = urlList[1];
 
-            const getTransaction = db.transaction(IndexedDBStorage.TABLE_NAME, "readonly");
-            const objectStore = getTransaction.objectStore(IndexedDBStorage.TABLE_NAME);
+            const getTransaction = db.transaction(IndexedDBStorage.SITE_DATA_TABLE, "readonly");
+            const objectStore = getTransaction.objectStore(IndexedDBStorage.SITE_DATA_TABLE);
             const osIndex = objectStore.index('url');
             
             return new Promise((resolve) => {
@@ -137,8 +142,8 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
         const query = (db: IDBDatabase): Promise<void> => {
             return new Promise((resolve, reject) => {
                 const siteDataToStore = siteDataToIDBSiteData(siteData, url);
-                const writeTransaction = db.transaction(IndexedDBStorage.TABLE_NAME, "readwrite");
-                const objectStore = writeTransaction.objectStore(IndexedDBStorage.TABLE_NAME);
+                const writeTransaction = db.transaction(IndexedDBStorage.SITE_DATA_TABLE, "readwrite");
+                const objectStore = writeTransaction.objectStore(IndexedDBStorage.SITE_DATA_TABLE);
     
                 let request: IDBRequest;
                 if (isEmpty(siteDataToStore)) {
@@ -167,15 +172,30 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
                 const schemeAndHost = urlAsArray[0];
                 const urlPath = urlAsArray[1];
 
-                const writeTransaction = db.transaction(IndexedDBStorage.TABLE_NAME, "readwrite");
-                const objectStore = writeTransaction.objectStore(IndexedDBStorage.TABLE_NAME);
-                const osIndex = objectStore.index('url');
-    
-                const request = objectStore.delete([schemeAndHost, urlPath]);
-                request.onerror = (err) => {
+                const writeTransaction = db.transaction(
+                    [IndexedDBStorage.SITE_DATA_TABLE, IndexedDBStorage.LABEL_TABLE],
+                    "readwrite"
+                );
+
+                const objectStoreSiteData = writeTransaction.objectStore(IndexedDBStorage.SITE_DATA_TABLE);
+                const objectStoreLabels = writeTransaction.objectStore(IndexedDBStorage.LABEL_TABLE);
+                const labelIndex = objectStoreLabels.index('url');
+
+                objectStoreSiteData.delete([schemeAndHost, urlPath]);
+                const labelEntriesCursor = labelIndex.openKeyCursor(IDBKeyRange.only(urlAsArray));
+                labelEntriesCursor.onsuccess = () => {
+                    let cursor = labelEntriesCursor.result;
+                    if (cursor) {
+                        objectStoreLabels.delete(cursor.primaryKey);
+                        cursor.continue();
+                    }
+                };
+
+
+                writeTransaction.onerror = (err) => {
                     reject(`Unexpected error when saving ${url} ` + err);
                 };
-                request.onsuccess = () => {
+                writeTransaction.oncomplete = () => {
                     resolve();
                 };
             });
@@ -190,8 +210,8 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
     getAllStorageData(): Promise<SiteDataMap> {
         const query = (db: IDBDatabase): Promise<SiteDataMap> => {
             return new Promise((resolve, reject) => {
-                const writeTransaction = db.transaction(IndexedDBStorage.TABLE_NAME, 'readonly');
-                const objectStore = writeTransaction.objectStore(IndexedDBStorage.TABLE_NAME);
+                const writeTransaction = db.transaction(IndexedDBStorage.SITE_DATA_TABLE, 'readonly');
+                const objectStore = writeTransaction.objectStore(IndexedDBStorage.SITE_DATA_TABLE);
     
                 const request = objectStore.getAll();
                 request.onerror = (err) => {
@@ -215,8 +235,8 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
     getAllPageUrls(): Promise<string[]> {
         const query = (db: IDBDatabase): Promise<string[]> => {
             return new Promise((resolve, reject) => {
-                const writeTransaction = db.transaction(IndexedDBStorage.TABLE_NAME, 'readonly');
-                const objectStore = writeTransaction.objectStore(IndexedDBStorage.TABLE_NAME);
+                const writeTransaction = db.transaction(IndexedDBStorage.SITE_DATA_TABLE, 'readonly');
+                const objectStore = writeTransaction.objectStore(IndexedDBStorage.SITE_DATA_TABLE);
                 const osIndex = objectStore.index('url');
     
                 const request = osIndex.getAllKeys();
@@ -241,8 +261,8 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
     getAllDomains(): Promise<string[]> {
         const query = (db: IDBDatabase): Promise<string[]> => {
             return new Promise((resolve, reject) => {
-                const readTransaction = db.transaction(IndexedDBStorage.TABLE_NAME, 'readonly');
-                const objectStore = readTransaction.objectStore(IndexedDBStorage.TABLE_NAME);
+                const readTransaction = db.transaction(IndexedDBStorage.SITE_DATA_TABLE, 'readonly');
+                const objectStore = readTransaction.objectStore(IndexedDBStorage.SITE_DATA_TABLE);
                 const osIndex = objectStore.index('schemeAndHost');
 
                 // There is no function to just get all values of an index: 
@@ -270,8 +290,8 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
     getSeeSiteDataOfDomain(schemeAndHost: string): Promise<SeeSiteData[]> {
         const query = (db: IDBDatabase): Promise<SeeSiteData[]> => {
             return new Promise((resolve, reject) => {
-                const readTransaction = db.transaction(IndexedDBStorage.TABLE_NAME, 'readonly');
-                const objectStore = readTransaction.objectStore(IndexedDBStorage.TABLE_NAME);
+                const readTransaction = db.transaction(IndexedDBStorage.SITE_DATA_TABLE, 'readonly');
+                const objectStore = readTransaction.objectStore(IndexedDBStorage.SITE_DATA_TABLE);
                 const osIndex = objectStore.index('schemeAndHost');
 
                 const request = osIndex.openCursor(schemeAndHost);
@@ -311,8 +331,8 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
     uploadExtensionData(data: any): Promise<boolean> {
         const query = (db: IDBDatabase): Promise<boolean> => {
             return new Promise((resolve) => {
-                const writeTransaction = db.transaction(IndexedDBStorage.TABLE_NAME, "readwrite");
-                const objectStore = writeTransaction.objectStore(IndexedDBStorage.TABLE_NAME);
+                const writeTransaction = db.transaction(IndexedDBStorage.SITE_DATA_TABLE, "readwrite");
+                const objectStore = writeTransaction.objectStore(IndexedDBStorage.SITE_DATA_TABLE);
 
                 const request = objectStore.clear();
                 request.onerror = (err) => {
@@ -320,8 +340,8 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
                     resolve(false);
                 };
                 request.onsuccess = () => {
-                    const writeTransaction = db.transaction(IndexedDBStorage.TABLE_NAME, "readwrite");
-                    const objectStore = writeTransaction.objectStore(IndexedDBStorage.TABLE_NAME);
+                    const writeTransaction = db.transaction(IndexedDBStorage.SITE_DATA_TABLE, "readwrite");
+                    const objectStore = writeTransaction.objectStore(IndexedDBStorage.SITE_DATA_TABLE);
                     for (let key in data) {
                         if (data.hasOwnProperty(key)) {
                             const element = data[key];
@@ -374,19 +394,38 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
         }
     }
 
+    /**
+     * Creates an object store used to map URLs to the web data pertinent to that page.
+     * 
+     * @param db database connection object with which to create object stores
+     */
     private static v1Creation(db: IDBDatabase): void {
         // Create an objectStore for this database
-       const objectStore = db.createObjectStore(IndexedDBStorage.TABLE_NAME, { autoIncrement: true });
+        const objectStore = db.createObjectStore(IndexedDBStorage.SITE_DATA_TABLE, { autoIncrement: true });
 
-       // define what data items the objectStore will contain
-       objectStore.createIndex('url', ['schemeAndHost', 'urlPath'], { unique: true });
-       objectStore.createIndex('schemeAndHost', 'schemeAndHost', { unique: false });
-   }
+        // define what data items the objectStore will contain
+        objectStore.createIndex('url', ['schemeAndHost', 'urlPath'], { unique: true });
+        objectStore.createIndex('schemeAndHost', 'schemeAndHost', { unique: false });
+    }
+
+    /**
+     * Creates an object store containing mappings of subjects to URLs, where each entry
+     * corresponds of a single subject-url pairing
+     *
+     * @param db database connection object with which to create object stores
+     */
+    private static addSubjectTable(db: IDBDatabase): void {
+        const objectStore = db.createObjectStore(IndexedDBStorage.LABEL_TABLE,
+            { keyPath: ['label', 'schemeAndHost', 'urlPath'] }
+        );
+        objectStore.createIndex('url', ['schemeAndHost', 'urlPath'], { unique: false });
+        objectStore.createIndex('label', 'subject', { unique: false });
+    }
 }
 
 /**
  * Get IndexedDBStorage object and commence setting it up. 
- * 
+ *
  * @param ls NonVolatileBrowserStorage object from which to obtain previously-stored data
  * @returns IndexedDBStorage that will eventually complete calling its set up function
  */

@@ -188,10 +188,10 @@ describe('IndexedDBStorage SiteDataStorage', () => {
         expect(internalDB).toBe(dao.getDB());
         expect(internalDB.version).toBe(DB_VERSION);
         expect(internalDB.name).toBe(DB_NAME);
-        expect(internalDB.objectStoreNames).toContain(IndexedDBStorage.TABLE_NAME);
+        expect(internalDB.objectStoreNames).toContain(IndexedDBStorage.SITE_DATA_TABLE);
         
-        const transaction = internalDB.transaction(IndexedDBStorage.TABLE_NAME, 'readonly');
-        const objectStore = transaction.objectStore(IndexedDBStorage.TABLE_NAME);
+        const transaction = internalDB.transaction(IndexedDBStorage.SITE_DATA_TABLE, 'readonly');
+        const objectStore = transaction.objectStore(IndexedDBStorage.SITE_DATA_TABLE);
         expect(objectStore.indexNames).toContain('schemeAndHost');
         expect(objectStore.indexNames).toContain('url');
       });
@@ -525,8 +525,8 @@ describe('IndexedDBStorage SiteDataStorage', () => {
             await dao.storePageData(dataToStore, url);
 
             const getAllData: Promise<number> = new Promise((resolve, reject) => {
-                const transaction = internalDB.transaction(IndexedDBStorage.TABLE_NAME, 'readonly');
-                const objectStore = transaction.objectStore(IndexedDBStorage.TABLE_NAME);
+                const transaction = internalDB.transaction(IndexedDBStorage.SITE_DATA_TABLE, 'readonly');
+                const objectStore = transaction.objectStore(IndexedDBStorage.SITE_DATA_TABLE);
                 const getTodo = objectStore.getAll();
                 getTodo.onsuccess = (event: any) => {
                     resolve(getTodo.result.length)
@@ -544,8 +544,8 @@ describe('IndexedDBStorage SiteDataStorage', () => {
         };
 
         const getAllData: Promise<number> = new Promise((resolve, reject) => {
-            const transaction = internalDB.transaction(IndexedDBStorage.TABLE_NAME, 'readonly');
-            const objectStore = transaction.objectStore(IndexedDBStorage.TABLE_NAME);
+            const transaction = internalDB.transaction(IndexedDBStorage.SITE_DATA_TABLE, 'readonly');
+            const objectStore = transaction.objectStore(IndexedDBStorage.SITE_DATA_TABLE);
             const getTodo = objectStore.getAll();
             getTodo.onsuccess = (event: any) => {
                 resolve(getTodo.result.length);
@@ -673,8 +673,8 @@ describe('IndexedDBStorage SiteDataStorage', () => {
 
             // Want to test if change in count first
             const getAllData: Promise<number> = new Promise((resolve, reject) => {
-                const transaction = internalDB.transaction(IndexedDBStorage.TABLE_NAME, 'readonly');
-                const objectStore = transaction.objectStore(IndexedDBStorage.TABLE_NAME);
+                const transaction = internalDB.transaction(IndexedDBStorage.SITE_DATA_TABLE, 'readonly');
+                const objectStore = transaction.objectStore(IndexedDBStorage.SITE_DATA_TABLE);
                 const getTodo = objectStore.getAll();
                 getTodo.onsuccess = (event: any) => {
                     resolve(getTodo.result.length)
@@ -698,8 +698,8 @@ describe('IndexedDBStorage SiteDataStorage', () => {
         };
 
         const getAllData: Promise<number> = new Promise((resolve, reject) => {
-            const transaction = internalDB.transaction(IndexedDBStorage.TABLE_NAME, 'readonly');
-            const objectStore = transaction.objectStore(IndexedDBStorage.TABLE_NAME);
+            const transaction = internalDB.transaction(IndexedDBStorage.SITE_DATA_TABLE, 'readonly');
+            const objectStore = transaction.objectStore(IndexedDBStorage.SITE_DATA_TABLE);
             const getTodo = objectStore.getAll();
             getTodo.onsuccess = (event: any) => {
                 resolve(getTodo.result.length);
