@@ -113,7 +113,7 @@ describe('IndexedDBStorage Fails when required to', () => {
             expect(ex.message).toBe('Current Activation is not stored in IndexedDBStorage');
         }
       });
-      
+
     test('getCurrentActivation', async () => {
         const dao: IndexedDBStorage = new IndexedDBStorage();
         try {
@@ -128,12 +128,12 @@ describe('IndexedDBStorage Fails when required to', () => {
         const dao: IndexedDBStorage = new IndexedDBStorage();
         try {
             const globalDictData: GlobalDictionaryData = {
-                languagesToResources: { 
+                languagesToResources: {
                     'ESP': [
                         {
-                            name: 'Dict1', 
+                            name: 'Dict1',
                             url: 'http://www.dict1.com/{word}'
-                        }, 
+                        },
                         {
                             name: 'DRAE',
                             url: 'https://dle.rae.es/{word}'
@@ -141,11 +141,11 @@ describe('IndexedDBStorage Fails when required to', () => {
                     ],
                     'FRA': [
                         {
-                            name: 'WordReference', 
+                            name: 'WordReference',
                             url: 'https://www.wordreference.com/fren/{word}',
                         }
                     ]
-                }, 
+                },
                 currentDictionary: {language: 'ESP', index: 1}
             };
             dao.setDictionaryData(globalDictData);
@@ -153,7 +153,7 @@ describe('IndexedDBStorage Fails when required to', () => {
             expect(ex.message).toBe('IndexedDBStorage does not store dictionary data');
         }
       });
-      
+
     test('getDictionaryData', async () => {
         const dao: IndexedDBStorage = new IndexedDBStorage();
         try {
@@ -189,17 +189,24 @@ describe('IndexedDBStorage SiteDataStorage', () => {
         expect(internalDB.version).toBe(DB_VERSION);
         expect(internalDB.name).toBe(DB_NAME);
         expect(internalDB.objectStoreNames).toContain(IndexedDBStorage.SITE_DATA_TABLE);
-        
+
         const transaction = internalDB.transaction(IndexedDBStorage.SITE_DATA_TABLE, 'readonly');
         const objectStore = transaction.objectStore(IndexedDBStorage.SITE_DATA_TABLE);
         expect(objectStore.indexNames).toContain('schemeAndHost');
         expect(objectStore.indexNames).toContain('url');
+
+        const transaction2 = internalDB.transaction(IndexedDBStorage.LABEL_TABLE, 'readonly');
+        const objectStore2 = transaction2.objectStore(IndexedDBStorage.LABEL_TABLE);
+        expect(objectStore2.indexNames).toContain('label');
+        expect(objectStore2.indexNames).toContain('url');
+        expect(objectStore2.keyPath).toStrictEqual(['label', 'schemeAndHost', 'urlPath'])
+
       });
 
     test('Setup load localStorage', async () => {
         const dataToStore: any = {
             'is_activated': false,
-            'https://www.articles.fake.net/articles/334567': { 
+            'https://www.articles.fake.net/articles/334567': {
                 schemeAndHost: 'https://www.articles.fake.net',
                 urlPath: '/articles/334567',
                 wordEntries: [
@@ -209,12 +216,12 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                         endOffset: 13,
                         nodePath: [[9,6,3,0]]
                     }
-                ], 
+                ],
                 missingWords: ["foo", "bar"]
             },
             'https://www.articles.fake.net/articles/456701': {
                 schemeAndHost: 'https://www.articles.fake.net',
-                urlPath: '/articles/456701', 
+                urlPath: '/articles/456701',
                 wordEntries: [
                     {
                         word: 'manzana',
@@ -228,12 +235,12 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                         endOffset: 12,
                         nodePath: [[9,6,3,0], [9,7,3,0]]
                     }
-                ], 
+                ],
                 missingWords: []
             },
             'https://www.articles.net/articles/798054': {
                 schemeAndHost: 'https://www.articles.net',
-                urlPath: '/articles/798054', 
+                urlPath: '/articles/798054',
                 wordEntries: [
                     {
                         word: 'eucaristía',
@@ -241,7 +248,7 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                         endOffset: 7,
                         nodePath: [[9,6,3,0], [0,7,3,0]]
                     },
-                ], 
+                ],
                 missingWords: ['vino']
             },
             'dicts': {},
@@ -276,10 +283,10 @@ describe('IndexedDBStorage SiteDataStorage', () => {
         ],
         [  // Write new 2 new data points, same host, different paths
             [
-                "https://www.articles.com/article1", 
+                "https://www.articles.com/article1",
                 "https://www.articles.com/article2"],
             [
-                { 
+                {
                     wordEntries: [
                         {
                             word: 'comida',
@@ -287,10 +294,10 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                             endOffset: 13,
                             nodePath: [[9,6,3,0]]
                         }
-                    ], 
+                    ],
                     missingWords: ["foo", "bar"]
                 },
-                { 
+                {
                     wordEntries: [
                         {
                             word: 'manzana',
@@ -298,7 +305,7 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                             endOffset: 44,
                             nodePath: [[9,6,3,0], [10,6,3,0]]
                         }
-                    ], 
+                    ],
                     missingWords: []
                 }
             ],
@@ -306,10 +313,10 @@ describe('IndexedDBStorage SiteDataStorage', () => {
         ],
         [  // Write new 2 new data points, same host, different paths 2
             [
-                "https://www.articles.com", 
+                "https://www.articles.com",
                 "https://www.articles.com/article2"],
             [
-                { 
+                {
                     wordEntries: [
                         {
                             word: 'comida',
@@ -317,10 +324,10 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                             endOffset: 13,
                             nodePath: [[9,6,3,0]]
                         }
-                    ], 
+                    ],
                     missingWords: ["foo", "bar"]
                 },
-                { 
+                {
                     wordEntries: [
                         {
                             word: 'manzana',
@@ -328,7 +335,7 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                             endOffset: 44,
                             nodePath: [[9,6,3,0], [10,6,3,0]]
                         }
-                    ], 
+                    ],
                     missingWords: []
                 }
             ],
@@ -336,10 +343,10 @@ describe('IndexedDBStorage SiteDataStorage', () => {
         ],
         [  // Write new 2 new data points,different hosts
             [
-                "https://www.articles.com", 
+                "https://www.articles.com",
                 "https://www.real-articles.com/article2"],
             [
-                { 
+                {
                     wordEntries: [
                         {
                             word: 'comida',
@@ -347,10 +354,10 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                             endOffset: 13,
                             nodePath: [[9,6,3,0]]
                         }
-                    ], 
+                    ],
                     missingWords: ["foo", "bar"]
                 },
-                { 
+                {
                     wordEntries: [
                         {
                             word: 'manzana',
@@ -358,7 +365,7 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                             endOffset: 44,
                             nodePath: [[9,6,3,0], [10,6,3,0]]
                         }
-                    ], 
+                    ],
                     missingWords: []
                 }
             ],
@@ -366,10 +373,10 @@ describe('IndexedDBStorage SiteDataStorage', () => {
         ],
         [  // Update same article
             [
-                "https://www.articles.com/article1", 
+                "https://www.articles.com/article1",
                 "https://www.articles.com/article1"],
             [
-                { 
+                {
                     wordEntries: [
                         {
                             word: 'comida',
@@ -377,10 +384,10 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                             endOffset: 13,
                             nodePath: [[9,6,3,0]]
                         }
-                    ], 
+                    ],
                     missingWords: ["foo", "bar"]
                 },
-                { 
+                {
                     wordEntries: [
                         {
                             word: 'manzana',
@@ -388,7 +395,7 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                             endOffset: 44,
                             nodePath: [[9,6,3,0], [10,6,3,0]]
                         }
-                    ], 
+                    ],
                     missingWords: []
                 }
             ],
@@ -396,10 +403,10 @@ describe('IndexedDBStorage SiteDataStorage', () => {
         ],
         [  // Update same article 2
             [
-                "https://www.articles.com/article1", 
+                "https://www.articles.com/article1",
                 "https://www.articles.com/article1/"],
             [
-                { 
+                {
                     wordEntries: [
                         {
                             word: 'comida',
@@ -407,10 +414,10 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                             endOffset: 13,
                             nodePath: [[9,6,3,0]]
                         }
-                    ], 
+                    ],
                     missingWords: ["foo", "bar"]
                 },
-                { 
+                {
                     wordEntries: [
                         {
                             word: 'manzana',
@@ -418,7 +425,7 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                             endOffset: 44,
                             nodePath: [[9,6,3,0], [10,6,3,0]]
                         }
-                    ], 
+                    ],
                     missingWords: []
                 }
             ],
@@ -426,10 +433,10 @@ describe('IndexedDBStorage SiteDataStorage', () => {
         ],
         [  // Update same article no path 1
             [
-                "https://www.articles.com", 
+                "https://www.articles.com",
                 "https://www.articles.com"],
             [
-                { 
+                {
                     wordEntries: [
                         {
                             word: 'comida',
@@ -437,10 +444,10 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                             endOffset: 13,
                             nodePath: [[9,6,3,0]]
                         }
-                    ], 
+                    ],
                     missingWords: ["foo", "bar"]
                 },
-                { 
+                {
                     wordEntries: [
                         {
                             word: 'manzana',
@@ -448,7 +455,7 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                             endOffset: 44,
                             nodePath: [[9,6,3,0], [10,6,3,0]]
                         }
-                    ], 
+                    ],
                     missingWords: []
                 }
             ],
@@ -456,10 +463,10 @@ describe('IndexedDBStorage SiteDataStorage', () => {
         ],
         [  // Update same article no path 2
             [
-                "https://www.articles.com", 
+                "https://www.articles.com",
                 "https://www.articles.com/"],
             [
-                { 
+                {
                     wordEntries: [
                         {
                             word: 'comida',
@@ -467,10 +474,10 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                             endOffset: 13,
                             nodePath: [[9,6,3,0]]
                         }
-                    ], 
+                    ],
                     missingWords: ["foo", "bar"]
                 },
-                { 
+                {
                     wordEntries: [
                         {
                             word: 'manzana',
@@ -478,7 +485,7 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                             endOffset: 44,
                             nodePath: [[9,6,3,0], [10,6,3,0]]
                         }
-                    ], 
+                    ],
                     missingWords: []
                 }
             ],
@@ -486,10 +493,10 @@ describe('IndexedDBStorage SiteDataStorage', () => {
         ],
         [  // add 2 articles because different protocol
             [
-                "https://www.articles.com", 
+                "https://www.articles.com",
                 "http://www.articles.com"],
             [
-                { 
+                {
                     wordEntries: [
                         {
                             word: 'comida',
@@ -497,10 +504,10 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                             endOffset: 13,
                             nodePath: [[9,6,3,0]]
                         }
-                    ], 
+                    ],
                     missingWords: ["foo", "bar"]
                 },
-                { 
+                {
                     wordEntries: [
                         {
                             word: 'manzana',
@@ -508,7 +515,7 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                             endOffset: 44,
                             nodePath: [[9,6,3,0], [10,6,3,0]]
                         }
-                    ], 
+                    ],
                     missingWords: []
                 }
             ],
@@ -571,10 +578,10 @@ describe('IndexedDBStorage SiteDataStorage', () => {
         ],
         [  // Write new article then remove
             [
-                "https://www.articles.com/article1", 
+                "https://www.articles.com/article1",
                 "https://www.articles.com/article1"],
             [
-                { 
+                {
                     wordEntries: [
                         {
                             word: 'comida',
@@ -582,7 +589,7 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                             endOffset: 13,
                             nodePath: [[9,6,3,0]]
                         }
-                    ], 
+                    ],
                     missingWords: ["foo", "bar"]
                 },
                 null
@@ -591,12 +598,12 @@ describe('IndexedDBStorage SiteDataStorage', () => {
         ],
         [  // Write new 2 new articles and delete one of them
             [
-                "https://www.articles.com", 
+                "https://www.articles.com",
                 "https://www.articles.com/article2",
-                "https://www.articles.com", 
-            ],   
+                "https://www.articles.com",
+            ],
             [
-                { 
+                {
                     wordEntries: [
                         {
                             word: 'comida',
@@ -604,10 +611,10 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                             endOffset: 13,
                             nodePath: [[9,6,3,0]]
                         }
-                    ], 
+                    ],
                     missingWords: ["foo", "bar"]
                 },
-                { 
+                {
                     wordEntries: [
                         {
                             word: 'manzana',
@@ -615,21 +622,21 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                             endOffset: 44,
                             nodePath: [[9,6,3,0], [10,6,3,0]]
                         }
-                    ], 
+                    ],
                     missingWords: []
-                }, 
+                },
                 null
             ],
             [1, 2, 1, 1]
         ],
         [  // Update same article  then delete, then re-add
             [
-                "https://www.articles.com/article1", 
-                "https://www.articles.com/article1", 
+                "https://www.articles.com/article1",
+                "https://www.articles.com/article1",
                 "https://www.articles.com/article1",
                 "https://www.articles.com/article1/"],
             [
-                { 
+                {
                     wordEntries: [
                         {
                             word: 'comida',
@@ -637,12 +644,12 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                             endOffset: 13,
                             nodePath: [[9,6,3,0]]
                         }
-                    ], 
+                    ],
                     missingWords: ["foo", "bar"]
                 },
                 null,
                 null,
-                { 
+                {
                     wordEntries: [
                         {
                             word: 'manzana',
@@ -650,7 +657,7 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                             endOffset: 44,
                             nodePath: [[9,6,3,0], [10,6,3,0]]
                         }
-                    ], 
+                    ],
                     missingWords: []
                 }
             ],
@@ -718,7 +725,7 @@ describe('IndexedDBStorage SiteDataStorage', () => {
         expect(internalDB).not.toEqual(null);
 
         const url = 'https://www.fake-google.com';
-        const siteData =  { 
+        const siteData =  {
             wordEntries: [
                 {
                     word: 'comida',
@@ -726,7 +733,7 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                     endOffset: 13,
                     nodePath: [[9,6,3,0]]
                 }
-            ], 
+            ],
             missingWords: ["foo", "bar"]
         };
 
@@ -740,7 +747,7 @@ describe('IndexedDBStorage SiteDataStorage', () => {
         const internalDB: IDBDatabase = await dao.setUp();
         expect(internalDB).not.toEqual(null);
         let dataToStore = [
-            { 
+            {
                 schemeAndHost: 'https://www.articles.fake.net',
                 urlPath: '/articles/334567',
                 wordEntries: [
@@ -750,12 +757,12 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                         endOffset: 13,
                         nodePath: [[9,6,3,0]]
                     }
-                ], 
+                ],
                 missingWords: ["foo", "bar"]
             },
             {
                 schemeAndHost: 'https://www.articles.fake.net',
-                urlPath: '/articles/456701', 
+                urlPath: '/articles/456701',
                 wordEntries: [
                     {
                         word: 'manzana',
@@ -769,7 +776,7 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                         endOffset: 12,
                         nodePath: [[9,6,3,0], [9,7,3,0]]
                     }
-                ], 
+                ],
                 missingWords: []
             }
         ];
@@ -790,7 +797,7 @@ describe('IndexedDBStorage SiteDataStorage', () => {
         const internalDB: IDBDatabase = await dao.setUp();
         expect(internalDB).not.toEqual(null);
         let dataToStore: IDBSiteData[] = [
-            { 
+            {
                 schemeAndHost: 'https://www.articles.fake.net',
                 urlPath: '/articles/334567',
                 wordEntries: [
@@ -800,13 +807,13 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                         endOffset: 13,
                         nodePath: [[9,6,3,0]]
                     }
-                ], 
+                ],
                 missingWords: ["foo", "bar"],
                 title: 'Fake News Article #334567',
             },
             {
                 schemeAndHost: 'https://www.articles.fake.net',
-                urlPath: '/articles/456701', 
+                urlPath: '/articles/456701',
                 wordEntries: [
                     {
                         word: 'manzana',
@@ -820,7 +827,7 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                         endOffset: 12,
                         nodePath: [[9,6,3,0], [9,7,3,0]]
                     }
-                ], 
+                ],
                 missingWords: [],
             }
         ];
@@ -830,28 +837,28 @@ describe('IndexedDBStorage SiteDataStorage', () => {
         let getResults = await dao.getAllStorageData();
         expect(Object.keys(getResults).length).toBe(2);
 
-        await dao.storePageData({wordEntries: [], missingWords: [], title: 'DeletePlease'}, 
+        await dao.storePageData({wordEntries: [], missingWords: [], title: 'DeletePlease'},
             'https://www.articles.fake.net/articles/456701');
         getResults = await dao.getAllStorageData();
         expect(Object.keys(getResults).length).toBe(1);
         expect(getResults['https://www.articles.fake.net/articles/334567'])
             .toEqual(dataToStore[0]);
 
-        await dao.storePageData({wordEntries: [], missingWords: [], title: 'DeletePlease'}, 
+        await dao.storePageData({wordEntries: [], missingWords: [], title: 'DeletePlease'},
             'https://www.articles.fake.net/articles/456701');
         getResults = await dao.getAllStorageData();
         expect(Object.keys(getResults).length).toBe(1);
         expect(getResults['https://www.articles.fake.net/articles/334567'])
             .toEqual(dataToStore[0]);
 
-        await dao.storePageData({wordEntries: [], missingWords: [], title: 'DeletePlease'}, 
+        await dao.storePageData({wordEntries: [], missingWords: [], title: 'DeletePlease'},
             'https://www.articles.fake.net/fake');
         getResults = await dao.getAllStorageData();
         expect(Object.keys(getResults).length).toBe(1);
         expect(getResults['https://www.articles.fake.net/articles/334567'])
             .toEqual(dataToStore[0]);
 
-        await dao.storePageData({wordEntries: [], missingWords: [], title: 'SecondDelete'}, 
+        await dao.storePageData({wordEntries: [], missingWords: [], title: 'SecondDelete'},
             'https://www.articles.fake.net/articles/334567');
         getResults = await dao.getAllStorageData();
         expect(Object.keys(getResults).length).toBe(0);
@@ -862,7 +869,7 @@ describe('IndexedDBStorage SiteDataStorage', () => {
         const internalDB: IDBDatabase = await dao.setUp();
         expect(internalDB).not.toEqual(null);
         let dataToStore = {
-            'https://www.articles.fake.net/articles/334567': { 
+            'https://www.articles.fake.net/articles/334567': {
                 schemeAndHost: 'https://www.articles.fake.net',
                 urlPath: '/articles/334567',
                 wordEntries: [
@@ -872,12 +879,12 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                         endOffset: 13,
                         nodePath: [[9,6,3,0]]
                     }
-                ], 
+                ],
                 missingWords: ["foo", "bar"]
             },
             'https://www.articles.fake.net/articles/456701': {
                 schemeAndHost: 'https://www.articles.fake.net',
-                urlPath: '/articles/456701', 
+                urlPath: '/articles/456701',
                 wordEntries: [
                     {
                         word: 'manzana',
@@ -891,12 +898,12 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                         endOffset: 12,
                         nodePath: [[9,6,3,0], [9,7,3,0]]
                     }
-                ], 
+                ],
                 missingWords: []
             },
             'https://www.articles.net/articles/798054': {
                 schemeAndHost: 'https://www.articles.net',
-                urlPath: '/articles/798054', 
+                urlPath: '/articles/798054',
                 wordEntries: [
                     {
                         word: 'eucaristía',
@@ -904,7 +911,7 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                         endOffset: 7,
                         nodePath: [[9,6,3,0], [0,7,3,0]]
                     },
-                ], 
+                ],
                 missingWords: ['vino']
             }
         };
@@ -920,7 +927,7 @@ describe('IndexedDBStorage SiteDataStorage', () => {
         const internalDB: IDBDatabase = await dao.setUp();
         expect(internalDB).not.toEqual(null);
         let dataToStore = {
-            'https://www.articles.fake.net/articles/334567': { 
+            'https://www.articles.fake.net/articles/334567': {
                 schemeAndHost: 'https://www.articles.fake.net',
                 urlPath: '/articles/334567',
                 wordEntries: [
@@ -930,12 +937,12 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                         endOffset: 13,
                         nodePath: [[9,6,3,0]]
                     }
-                ], 
+                ],
                 missingWords: ["foo", "bar"]
             },
             'https://www.articles.fake.net/articles/456701': {
                 schemeAndHost: 'https://www.articles.fake.net',
-                urlPath: '/articles/456701', 
+                urlPath: '/articles/456701',
                 wordEntries: [
                     {
                         word: 'manzana',
@@ -949,12 +956,12 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                         endOffset: 12,
                         nodePath: [[9,6,3,0], [9,7,3,0]]
                     }
-                ], 
+                ],
                 missingWords: []
             },
             'https://www.articles.net/articles/798054': {
                 schemeAndHost: 'https://www.articles.net',
-                urlPath: '/articles/798054', 
+                urlPath: '/articles/798054',
                 wordEntries: [
                     {
                         word: 'eucaristía',
@@ -962,7 +969,7 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                         endOffset: 7,
                         nodePath: [[9,6,3,0], [0,7,3,0]]
                     },
-                ], 
+                ],
                 missingWords: ['vino']
             }
         };
@@ -981,7 +988,7 @@ describe('IndexedDBStorage SiteDataStorage', () => {
         const internalDB: IDBDatabase = await dao.setUp();
         expect(internalDB).not.toEqual(null);
         let dataToStore = {
-            'https://www.articles.fake.net/articles/334567': { 
+            'https://www.articles.fake.net/articles/334567': {
                 schemeAndHost: 'https://www.articles.fake.net',
                 urlPath: '/articles/334567',
                 wordEntries: [
@@ -991,12 +998,12 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                         endOffset: 13,
                         nodePath: [[9,6,3,0]]
                     }
-                ], 
+                ],
                 missingWords: ["foo", "bar"]
             },
             'https://www.articles.fake.net/articles/456701': {
                 schemeAndHost: 'https://www.articles.fake.net',
-                urlPath: '/articles/456701', 
+                urlPath: '/articles/456701',
                 wordEntries: [
                     {
                         word: 'manzana',
@@ -1010,12 +1017,12 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                         endOffset: 12,
                         nodePath: [[9,6,3,0], [9,7,3,0]]
                     }
-                ], 
+                ],
                 missingWords: []
             },
             'https://www.articles.net/articles/798054': {
                 schemeAndHost: 'https://www.articles.net',
-                urlPath: '/articles/798054', 
+                urlPath: '/articles/798054',
                 wordEntries: [
                     {
                         word: 'eucaristía',
@@ -1023,7 +1030,7 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                         endOffset: 7,
                         nodePath: [[9,6,3,0], [0,7,3,0]]
                     },
-                ], 
+                ],
                 missingWords: ['vino']
             }
         };
@@ -1042,7 +1049,7 @@ describe('IndexedDBStorage SiteDataStorage', () => {
         const internalDB: IDBDatabase = await dao.setUp();
         expect(internalDB).not.toEqual(null);
         let dataToStore: { [subject: string]: IDBSiteData} = {
-            'https://www.articles.fake.net/articles/334567': { 
+            'https://www.articles.fake.net/articles/334567': {
                 schemeAndHost: 'https://www.articles.fake.net',
                 urlPath: '/articles/334567',
                 wordEntries: [
@@ -1052,12 +1059,12 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                         endOffset: 13,
                         nodePath: [[9,6,3,0]]
                     }
-                ], 
+                ],
                 missingWords: ["foo", "bar"]
             },
             'https://www.articles.fake.net/articles/456701': {
                 schemeAndHost: 'https://www.articles.fake.net',
-                urlPath: '/articles/456701', 
+                urlPath: '/articles/456701',
                 title: 'Test Article',
                 wordEntries: [
                     {
@@ -1072,12 +1079,12 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                         endOffset: 12,
                         nodePath: [[9,6,3,0], [9,7,3,0]]
                     }
-                ], 
+                ],
                 missingWords: []
             },
             'https://www.articles.net/articles/798054': {
                 schemeAndHost: 'https://www.articles.net',
-                urlPath: '/articles/798054', 
+                urlPath: '/articles/798054',
                 wordEntries: [
                     {
                         word: 'eucaristía',
@@ -1085,7 +1092,7 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                         endOffset: 7,
                         nodePath: [[9,6,3,0], [0,7,3,0]]
                     },
-                ], 
+                ],
                 missingWords: ['vino']
             }
         };
@@ -1093,7 +1100,7 @@ describe('IndexedDBStorage SiteDataStorage', () => {
 
         const getResults = await dao.getSeeSiteDataOfDomain('https://www.articles.fake.net');
         expect(getResults.length).toBe(2);
-        
+
         const keys = Object.keys(dataToStore);
         keys.forEach((x) => {
             const urlSplit = parseURL(x);
@@ -1106,7 +1113,149 @@ describe('IndexedDBStorage SiteDataStorage', () => {
 
                 expect(getResults).toContainEqual(expectedResult);
             }
-        });
+       });
+    });
+
+    it.each([
+        [
+            'Add Label for existing site',
+            ['addLabel'],
+            [['https://www.articles.fake.net/articles/334567', "News"]],
+            [[1,1]]
+        ],
+        [
+            'Add Multiple Labels',
+            ['addLabel', 'addLabel', 'addLabel', 'addLabel'],
+            [
+                ['https://www.articles.fake.net/articles/334567', "News"],
+                ['https://www.articles.fake.net/articles/334567', "Lies"],
+                ['https://www.articles.net/articles/798054', 'News'],
+                ['https://www.articles.net/articles/798054', 'Facts']
+            ],
+            [[1,1], [2, 1], [1, 2], [2,1]]
+        ],
+        [
+            'Remove Label for existing site',
+            ['addLabel', 'removeLabel'],
+            [
+                ['https://www.articles.fake.net/articles/334567', "News"],
+                ['https://www.articles.fake.net/articles/334567', "News"]
+            ],
+            [[1,1],[0,0]]
+        ],
+        [
+            'Multiple Remove Label Operations',
+            ['addLabel', 'addLabel', 'addLabel', 'addLabel',
+            'removeLabel', 'removeLabel', 'addLabel', 'removeLabel', 'removeLabel'],
+            [
+                ['https://www.articles.fake.net/articles/334567', "News"],
+                ['https://www.articles.fake.net/articles/334567', "Lies"],
+                ['https://www.articles.net/articles/798054', 'News'],
+                ['https://www.articles.net/articles/798054', 'Facts'],
+                ['https://www.articles.net/articles/798054', 'Facts'],
+                ['https://www.articles.net/articles/798054', 'News'],
+                ['https://www.articles.net/articles/798054', 'Sports'],
+                ['https://www.articles.fake.net/articles/334567', "Lies"],
+                ['https://www.articles.fake.net/articles/334567', "News"],
+            ],
+            [[1,1], [2, 1], [1, 2], [2,1],
+             [1,0], [0, 1], [1, 1], [1, 0], [0, 0]]
+        ],
+        // TODO: Add tests for removing non-existant entries (url or subject) and adding subjects for fake urls
+    ])('Test Label Actions: %s', async (_description: string, actions: string[],
+            paramsArray: any[], expectedArray: any[]) => {
+        const dataToStore: any = {
+            'is_activated': true,
+            'https://www.articles.fake.net/articles/334567': {
+                schemeAndHost: 'https://www.articles.fake.net',
+                urlPath: '/articles/334567',
+                wordEntries: [
+                    {
+                        word: 'comida',
+                        startOffset: 0,
+                        endOffset: 13,
+                        nodePath: [[9,6,3,0]]
+                    }
+                ],
+                missingWords: ["foo", "bar"]
+            },
+            'https://www.articles.fake.net/articles/456701': {
+                schemeAndHost: 'https://www.articles.fake.net',
+                urlPath: '/articles/456701',
+                wordEntries: [
+                    {
+                        word: 'manzana',
+                        startOffset: 33,
+                        endOffset: 44,
+                        nodePath: [[9,6,3,0], [10,6,3,0]]
+                    },
+                    {
+                        word: 'banana',
+                        startOffset: 45,
+                        endOffset: 12,
+                        nodePath: [[9,6,3,0], [9,7,3,0]]
+                    }
+                ],
+                missingWords: []
+            },
+            'https://www.articles.net/articles/798054': {
+                schemeAndHost: 'https://www.articles.net',
+                urlPath: '/articles/798054',
+                wordEntries: [
+                    {
+                        word: 'eucaristía',
+                        startOffset: 4,
+                        endOffset: 7,
+                        nodePath: [[9,6,3,0], [0,7,3,0]]
+                    },
+                ],
+                missingWords: ['vino']
+            },
+            'dicts': {},
+        };
+
+        await chrome.storage.local.clear();
+        await chrome.storage.local.set(dataToStore);
+        dao = new IndexedDBStorage();
+        const localStorage: LocalStorage = getLocalStorage();
+        expect(dao.getDB()).toBeNull();
+        await dao.setUp(localStorage);
+
+        for (let i = 0; i < actions.length; i++) {
+            switch (actions[i]) {
+                case "addLabel":
+                    const params: [string, string] = paramsArray[i] as [string, string];
+                    await dao.addLabelEntry(params[0], params[1]);
+
+                    const expected: [number, number] = expectedArray[i] as [number, number];
+                    const urlLabels: string[] = await dao.getLabelsOfSpecificSite(params[0]);
+                    expect(urlLabels).toContain(params[1]);
+                    expect(urlLabels).toHaveLength(expected[0]);
+                    const labelURLs = await dao.getURLsOfSpecificLabels(params[1]);
+                    expect(labelURLs).toContain(params[0]);
+                    expect(labelURLs).toHaveLength(expected[1]);
+                    break;
+                case "removeLabel":
+                    const params2: [string, string] = paramsArray[i] as [string, string];
+                    await dao.removeLabelEntry(params2[0], params2[1]);
+
+                    const expected2: [number, number] = expectedArray[i] as [number, number];
+                    const urlLabels2: string[] = await dao.getLabelsOfSpecificSite(params2[0]);
+                    expect(urlLabels2).not.toContain(params2[1]);
+                    expect(urlLabels2).toHaveLength(expected2[0]);
+                    const labelURLs2 = await dao.getURLsOfSpecificLabels(params2[1]);
+                    expect(labelURLs2).not.toContain(params2[0]);
+                    expect(labelURLs2).toHaveLength(expected2[1]);
+
+                    break;
+                case "removeURL":
+                    break;
+                default:
+                    throw new Error('Unexpected action ' + actions[i]);
+
+            }
+        }
+
     });
 
     it.each([
@@ -1158,7 +1307,7 @@ describe('IndexedDBStorage SiteDataStorage', () => {
         [
             'storePageData',
             async (dao: IndexedDBStorage) => {
-                const data =  { 
+                const data =  {
                     wordEntries: [
                         {
                             word: 'comida',
@@ -1166,7 +1315,7 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                             endOffset: 13,
                             nodePath: [[9,6,3,0]]
                         }
-                    ], 
+                    ],
                     missingWords: ["foo", "bar"]
                 };
                 await dao.storePageData(data,'https://www.foobar.com/yahoo');
@@ -1203,7 +1352,7 @@ describe('IndexedDBStorage SiteDataStorage', () => {
             'uploadExtensionData',
             async (dao: IndexedDBStorage) => {
                 const dataToStore = {
-                    'http://rettiwt.com/articles/334567': { 
+                    'http://rettiwt.com/articles/334567': {
                         schemeAndHost: 'http://rettiwt.com',
                         urlPath: '/articles/334567',
                         wordEntries: [
@@ -1213,7 +1362,7 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                                 endOffset: 13,
                                 nodePath: [[9,6,3,0]]
                             }
-                        ], 
+                        ],
                         missingWords: ["foo", "bar"]
                     },
                 };
@@ -1232,7 +1381,7 @@ describe('IndexedDBStorage SiteDataStorage', () => {
         //jest.setTimeout(10000);  // Does not work in in async tests
         const dataToStore: any = {
             'is_activated': true,
-            'https://www.articles.fake.net/articles/334567': { 
+            'https://www.articles.fake.net/articles/334567': {
                 schemeAndHost: 'https://www.articles.fake.net',
                 urlPath: '/articles/334567',
                 wordEntries: [
@@ -1242,12 +1391,12 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                         endOffset: 13,
                         nodePath: [[9,6,3,0]]
                     }
-                ], 
+                ],
                 missingWords: ["foo", "bar"]
             },
             'https://www.articles.fake.net/articles/456701': {
                 schemeAndHost: 'https://www.articles.fake.net',
-                urlPath: '/articles/456701', 
+                urlPath: '/articles/456701',
                 wordEntries: [
                     {
                         word: 'manzana',
@@ -1261,12 +1410,12 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                         endOffset: 12,
                         nodePath: [[9,6,3,0], [9,7,3,0]]
                     }
-                ], 
+                ],
                 missingWords: []
             },
             'https://www.articles.net/articles/798054': {
                 schemeAndHost: 'https://www.articles.net',
-                urlPath: '/articles/798054', 
+                urlPath: '/articles/798054',
                 wordEntries: [
                     {
                         word: 'eucaristía',
@@ -1274,7 +1423,7 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                         endOffset: 7,
                         nodePath: [[9,6,3,0], [0,7,3,0]]
                     },
-                ], 
+                ],
                 missingWords: ['vino']
             },
             'dicts': {},

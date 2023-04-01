@@ -184,7 +184,12 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
                 const writeTransaction = db.transaction(IndexedDBStorage.LABEL_TABLE, "readwrite");
                 const objectStore = writeTransaction.objectStore(IndexedDBStorage.LABEL_TABLE);
 
-                const request = objectStore.put('E', [label, schemePathSeparation[0], schemePathSeparation[1]]);
+                const obj = {
+                    'label': label,
+                    'schemeAndHost': schemePathSeparation[0],
+                    'urlPath': schemePathSeparation[1],
+                };
+                const request = objectStore.put(obj);
                 request.onerror = (err) => {
                     reject(`Unexpected error when saving ${url} ` + err);
                 };
@@ -538,6 +543,7 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
      * @param db database connection object with which to create object stores
      */
     private static v1Creation(db: IDBDatabase): void {
+        console.log('Adding siteData table');
         // Create an objectStore for this database
         const objectStore = db.createObjectStore(IndexedDBStorage.SITE_DATA_TABLE, { autoIncrement: true });
 
@@ -553,11 +559,12 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
      * @param db database connection object with which to create object stores
      */
     private static addSubjectTable(db: IDBDatabase): void {
+        console.log('Adding label table');
         const objectStore = db.createObjectStore(IndexedDBStorage.LABEL_TABLE,
             { keyPath: ['label', 'schemeAndHost', 'urlPath'] }
         );
         objectStore.createIndex('url', ['schemeAndHost', 'urlPath'], { unique: false });
-        objectStore.createIndex('label', 'subject', { unique: false });
+        objectStore.createIndex('label', 'label', { unique: false });
     }
 }
 
