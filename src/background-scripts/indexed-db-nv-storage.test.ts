@@ -1161,7 +1161,18 @@ describe('IndexedDBStorage SiteDataStorage', () => {
             [[1,1], [2, 1], [1, 2], [2,1],
              [1,0], [0, 1], [1, 1], [1, 0], [0, 0]]
         ],
-        // TODO: Add tests for removing non-existant entries (url or subject) and adding subjects for fake urls
+        [  // TODO: Add tests for removing non-existant entries (url or subject) and adding subjects for fake urls
+            'Remove URLs',
+            ['addLabel', 'addLabel', 'addLabel', 'addLabel', 'removeURL'],
+            [
+                ['https://www.articles.fake.net/articles/334567', "News"],
+                ['https://www.articles.fake.net/articles/334567', "Lies"],
+                ['https://www.articles.net/articles/798054', 'News'],
+                ['https://www.articles.net/articles/798054', 'Facts'],
+                'https://www.articles.fake.net/articles/334567',
+            ],
+            [[1,1], [2, 1], [1, 2], [2,1], null]
+        ],
     ])('Test Label Actions: %s', async (_description: string, actions: string[],
             paramsArray: any[], expectedArray: any[]) => {
         const dataToStore: any = {
@@ -1246,9 +1257,27 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                     const labelURLs2 = await dao.getURLsOfSpecificLabels(params2[1]);
                     expect(labelURLs2).not.toContain(params2[0]);
                     expect(labelURLs2).toHaveLength(expected2[1]);
-
                     break;
                 case "removeURL":
+                    const params3: string = paramsArray[i] as string;
+                    const oldSiteLabels: string[] = await dao.getLabelsOfSpecificSite(params3);
+                    const promiseLabelsToOldLabelsLength = oldSiteLabels.map(async label => {
+                        const urls = await dao.getURLsOfSpecificLabels(label);
+                        return urls.length;
+                    });
+                    const labelsToOldLabelsLength =
+                        await Promise.all(promiseLabelsToOldLabelsLength);
+
+                    await dao.removePageData(params3);
+
+                    const labels = await dao.getLabelsOfSpecificSite(params3);
+                    expect(labels).toHaveLength(0);
+                    for (let i = 0; i < oldSiteLabels.length; i++) {
+                        const label = oldSiteLabels[i];
+                        const urls = await dao.getURLsOfSpecificLabels(label);
+                        const oldLen = labelsToOldLabelsLength[i];
+                        expect(urls).toHaveLength(Math.max(0, oldLen - 1));
+                    }
                     break;
                 default:
                     throw new Error('Unexpected action ' + actions[i]);
