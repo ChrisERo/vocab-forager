@@ -1161,7 +1161,7 @@ describe('IndexedDBStorage SiteDataStorage', () => {
             [[1,1], [2, 1], [1, 2], [2,1],
              [1,0], [0, 1], [1, 1], [1, 0], [0, 0]]
         ],
-        [  // TODO: Add tests for removing non-existant entries (url or subject) and adding subjects for fake urls
+        [
             'Remove URLs',
             ['addLabel', 'addLabel', 'addLabel', 'addLabel', 'removeURL'],
             [
@@ -1172,6 +1172,49 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                 'https://www.articles.fake.net/articles/334567',
             ],
             [[1,1], [2, 1], [1, 2], [2,1], null]
+        ],
+        [
+            'Remove label entries that do not exist',
+            ['addLabel', 'addLabel', 'addLabel', 'addLabel',
+            'removeLabel', 'removeLabel', 'removeLabel', 'removeLabel'],
+            [
+                ['https://www.articles.fake.net/articles/334567', "News"],
+                ['https://www.articles.fake.net/articles/334567', "Lies"],
+                ['https://www.articles.net/articles/798054', 'News'],
+                ['https://www.articles.net/articles/798054', 'Facts'],
+                ['https://www.articles.fake.net/articles/334567', 'ImaginaryLabel'],
+                ['https://www.articles.fake.net/articles/334567', 'Facts'],
+                ['https://www.articles.fake.net', 'Lies'],
+                ['https://www.articles.net/articles/798054', 'Facts'],
+            ],
+            [[1,1], [2, 1], [1, 2], [2,1], [2, 0], [2, 1], [0, 1], [1, 0]]
+        ],
+        [
+            'Add invalid label entries',
+            ['addLabel', 'addLabel', 'addLabel', 'addLabel', 'addLabel', 'addLabel'],
+            [
+                ['https://www.articles.fake.net/articles/334567', "News"],
+                ['https://www.articles.fake.net/articles/334567', "Lies"],
+                ['https://www.articles.net/articles/798054', 'News'],
+                ['https://www.articles.net/articles/798054', 'Facts'],
+                ['https://www.articles.net/articles/798054', ''],
+                ['https://www.articles.net/articles/798054', '   '],
+                ['https://www.articles.net/articles/798054', ' \t\n\r'],
+            ],
+            [[1,1], [2, 1], [1, 2], [2,1], [2, 0], [2, 0]]
+        ],
+        [
+            'Add label entries or fake URLs',
+            ['addLabel', 'addLabel', 'addLabel', 'addLabel', 'addLabel', 'addLabel'],
+            [
+                ['https://www.articles.fake.net/articles/334567', "News"],
+                ['https://www.articles.fake.net/articles/334567', "Lies"],
+                ['https://www.articles.net/articles/798054', 'News'],
+                ['https://www.articles.net/articles/798054', 'Facts'],
+                ['https://www.planetpizza.com', 'Food'],
+                ['https://www.planetpizza.com', 'Facts'],
+            ],
+            [[1,1], [2, 1], [1, 2], [2,1], [0, 0], [0, 1]]
         ],
     ])('Test Label Actions: %s', async (_description: string, actions: string[],
             paramsArray: any[], expectedArray: any[]) => {
@@ -1240,10 +1283,15 @@ describe('IndexedDBStorage SiteDataStorage', () => {
 
                     const expected: [number, number] = expectedArray[i] as [number, number];
                     const urlLabels: string[] = await dao.getLabelsOfSpecificSite(params[0]);
-                    expect(urlLabels).toContain(params[1]);
-                    expect(urlLabels).toHaveLength(expected[0]);
                     const labelURLs = await dao.getURLsOfSpecificLabels(params[1]);
-                    expect(labelURLs).toContain(params[0]);
+                    if (params[1].trim().length > 0 && dataToStore[params[0]] !== undefined) {
+                        expect(urlLabels).toContain(params[1]);
+                        expect(labelURLs).toContain(params[0]);
+                    } else {
+                        expect(urlLabels).not.toContain(params[1]);
+                        expect(labelURLs).not.toContain(params[0]);
+                    }
+                    expect(urlLabels).toHaveLength(expected[0]);
                     expect(labelURLs).toHaveLength(expected[1]);
                     break;
                 case "removeLabel":

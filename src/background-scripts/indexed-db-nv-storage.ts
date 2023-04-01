@@ -171,13 +171,21 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
      * @param label string representing a label
      * @returns empty promise
      */
-    addLabelEntry(url: string, label: string): Promise<void> {
-        label = label.trim();
+    addLabelEntry(url: string, labelTemp: string): Promise<void> {
+        const label = labelTemp.trim();
         const query = (db: IDBDatabase): Promise<void> => {
-            return new Promise((resolve, reject) => {
+            return new Promise(async (resolve, reject) => {
                 if (label.length === 0) {
-                    console.log(`Attempted to add empty subject to ${url}`);
+                    console.log(`Attempted to add empty label [${labelTemp}] to ${url}`);
                     resolve();
+                    return;
+                }
+                const siteData = await this.getPageData(url);
+                if (siteData.wordEntries.length === 0 &&
+                    siteData.missingWords.length === 0) {
+                    console.log(`Cannot add label entry ${label} ${url} since no site data is present`);
+                    resolve();
+                    return;
                 }
 
                 const schemePathSeparation: string[] = parseURL(url);
