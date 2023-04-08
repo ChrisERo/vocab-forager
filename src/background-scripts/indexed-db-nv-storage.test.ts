@@ -1174,6 +1174,25 @@ describe('IndexedDBStorage SiteDataStorage', () => {
             [[1,1], [2, 1], [1, 2], [2,1], null]
         ],
         [
+            'Get ALl Labels',
+            ['getAllLabels', 'addLabel', 'addLabel', 'addLabel', 'addLabel', 'getAllLabels',
+            'removeURL', 'getAllLabels', 'removeLabel', 'getAllLabels'],
+            [
+                null,
+                ['https://www.articles.fake.net/articles/334567', "News"],
+                ['https://www.articles.fake.net/articles/334567', "Lies"],
+                ['https://www.articles.net/articles/798054', 'News'],
+                ['https://www.articles.net/articles/798054', 'Facts'],
+                null,
+                'https://www.articles.fake.net/articles/334567',
+                null,
+                ['https://www.articles.net/articles/798054', 'Facts'],
+                null,
+            ],
+            [[], [1,1], [2, 1], [1, 2], [2,1], ['News', 'Lies', 'Facts'], null,
+            ['News', 'Facts'], [1, 0], ['News']]
+        ],
+        [
             'Remove label entries that do not exist',
             ['addLabel', 'addLabel', 'addLabel', 'addLabel',
             'removeLabel', 'removeLabel', 'removeLabel', 'removeLabel'],
@@ -1326,6 +1345,13 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                         const oldLen = labelsToOldLabelsLength[i];
                         expect(urls).toHaveLength(Math.max(0, oldLen - 1));
                     }
+                    break;
+                case 'getAllLabels':
+                    const allLabels: string[] = await dao.getAllLabels();
+                    const expected4: string[] = expectedArray[i] as string[];
+                    expect(allLabels).toHaveLength(expected4.length);
+                    expect(allLabels).toEqual(expect.arrayContaining(expected4));
+                    expect(expected4).toEqual(expect.arrayContaining(allLabels));
                     break;
                 default:
                     throw new Error('Unexpected action ' + actions[i]);

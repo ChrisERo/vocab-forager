@@ -163,6 +163,40 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
     }
 
     /**
+     * Returns a list containing each label used to classify a site stored by extension
+     *
+     * @returns a list of strings, each representing a unique label used to mark at least
+     * one of the sites for which we have SiteData for.
+     */
+    getAllLabels(): Promise<string[]> {
+        const query = (db: IDBDatabase): Promise<string[]> => {
+            return new Promise((resolve, reject) => {
+                const readTransaction = db.transaction(IndexedDBStorage.LABEL_TABLE, 'readonly');
+                const objectStore = readTransaction.objectStore(IndexedDBStorage.LABEL_TABLE);
+                const osIndex = objectStore.index('label');
+
+                const request = osIndex.openKeyCursor();
+                request.onerror = (err) => {
+                    reject(`Unexpected error when getting all SiteData:` + err);
+                };
+                const result: Set<string> = new Set<string>();
+                request.onsuccess = (event: any) => {
+                    let cursor: IDBCursor | null = event.target.result;
+                    if (cursor) {
+                        result.add(cursor.key as string);
+                        cursor.continue();
+                    } else {
+                        resolve(Array.from(result));
+                    }
+                };
+            });
+        };
+
+        return this.runQuery(query);
+    }
+
+
+    /**
      * Adds entry in IndexedDB associating specified url with a label. If label is only
      * filled with empty spaces or is empty, this is a noop, but a console log is
      * recorded.
