@@ -233,7 +233,10 @@ async function openTab(url: string): Promise<void> {
         }
         case BSMessageType.GetURLsForLabel: {
             if (isGetDataForLabelRequest(request.payload)) {
-                siteDateStorage.getURLsOfSpecificLabels(request.payload.label).then((response) => sendResponse(response));
+                siteDateStorage.getURLsOfSpecificLabels(request.payload.label).then((urls: string[]) => {
+                    const siteData = urls.map(url => siteDateStorage.getPageData(url));
+                    Promise.all(siteData).then(response => sendResponse(response));
+                });
             } else {
                 logUnexpected('payload', request.payload);
             }

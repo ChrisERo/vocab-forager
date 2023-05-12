@@ -56,18 +56,61 @@
             background-color: rgb(145, 30, 9);
             color: white;
         }
+        #mod-site-data {
+            background-color: rgb(32, 116, 67);
+            color: white;
+        }
+        .word-grid {
+            display: grid;
+            grid-template-columns: auto auto auto;
+            padding: 3px;
+        }
     </style>
 </head>
 <body>
     <div id="banner_anchor"></div>
     <div class="form">
         <div style="text-align: center;">
-            <h2>See or Delete Websites</h2>
+            <h2>Review or Edit Site Data</h2>
+        </div>
+        <div class="search-section">
+            <div id="labels-div">
+                <label for="labels">Label Search: </label>
+                <input id="labels-input", list="labels" name="labels">
+                <datalist id="labels"></datalist>
+            </div>
+            <div>
+                <label for="domains">Domain Search: </label>
+                <input id="domains-input" list="domains" name="domains">
+                <datalist id="domains"></datalist>
+            </div>
         </div>
         <div id=list-of-urls></div>
-        <div id=list-of-domains></div>
+        <div class="site-data-section">
+            <div>
+                <h2 id="site-name-header"></h2>
+            </div>
+            <div>
+                <div>Present Words</div>
+                <div id="present-words" class="site-data-section word-grid"></div>
+            </div>
+            <div>
+                <div>Missing Words</div>
+                <div id="missing-words" class="site-data-section word-grid"></div>
+            </div>
+            <div>
+                <div>Labels</div>
+                <div id="labels" class="site-data-section word-grid"></div>
+                <div>
+                    <input id="new-label-input", list="labels">
+                </div>
+            </div>
+            <div></div>
+        </div>
         <div style="text-align: center;">
+            <p class="boton" id="search"></p>
             <p class="boton" id="delete-sites">Delete Selected Sites</p>
+            <p class="boton" id="mod-site-data">Modify Site Data</p>
             <p class="boton" id="domains-button">Return to Domains</p>
         </div>
     </div>
