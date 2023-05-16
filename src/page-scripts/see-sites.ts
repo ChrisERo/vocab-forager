@@ -1,7 +1,7 @@
 import { BSMessage, BSMessageType } from "../utils/background-script-communication";
 import { SeeSiteData, SiteData } from "../utils/models";
 import { loadBannerHtml } from "./fetch-banner";
-import {setUpEditPage as setUpEditPageMode} from "./edit-site-data";
+import {clearEditPageComponents, setUpEditPage as setUpEditPageMode} from "./edit-site-data";
 
 
 const DOMAIN_LIST_ELEMENT = document.getElementById('domains') as HTMLDataListElement;
@@ -11,7 +11,7 @@ const URL_LIST_ELEMENT =  document.getElementById('list-of-urls') as HTMLElement
 const SEARCH = document.getElementById('search') as HTMLElement;
 const DELETE_BUTTON = document.getElementById('delete-sites') as HTMLElement;
 const REFRESH_PAGE_BUTTON = document.getElementById('domains-button') as HTMLElement;
-const MODIFY_SITE_DATA_BUTTON = document.getElementById('mod-site-data-button') as HTMLElement;
+const MODIFY_SITE_DATA_BUTTON = document.getElementById('mod-site-data') as HTMLElement;
 
 const DOMAIN_INPUT = document.getElementById('domain-input') as HTMLInputElement;
 const LABEL_INPUT = document.getElementById('label-input') as HTMLInputElement;
@@ -44,7 +44,7 @@ function addURLOption(data: SeeSiteData): void {
 /**
  * Queries non-volatile storage of add-on for all SiteData per request provided by
  * background script for specific request passed in.
- * presents them in web-app with the option of either deleting them, editting them, or
+ * presents them in web-app with the option of either deleting them, editing them, or
  * opening the url.
  */
 function getSites(message: BSMessage): void {
@@ -131,7 +131,7 @@ function setUpPageInit() {
     REFRESH_PAGE_BUTTON.style.display = 'none';
     MODIFY_SITE_DATA_BUTTON.style.display = 'none';
     SEARCH.style.display = 'in-block';
-    clearEditPageData();
+    clearEditPageComponents();
 
     getSpecificGroupingClass(BSMessageType.GetAllDomains, DOMAIN_LIST_ELEMENT);
     getSpecificGroupingClass(BSMessageType.GetAllLabels, LABEL_LIST_ELEMENT);
@@ -193,12 +193,8 @@ MODIFY_SITE_DATA_BUTTON.addEventListener('click', () => {
     REFRESH_PAGE_BUTTON.style.display = 'none';
     MODIFY_SITE_DATA_BUTTON.style.display = 'none';
 
-    setUpEditPageMode(url, pageData, labelData, setUpPageInit);
+    setUpEditPageMode(url, pageData, labelData);
 })
 
 // Delete all urls that were checked by user from non-volatile storage
 REFRESH_PAGE_BUTTON.addEventListener('click', setUpPageInit);
-function clearEditPageData() {
-    throw new Error("Function not implemented.");
-}
-

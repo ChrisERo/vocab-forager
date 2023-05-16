@@ -76,12 +76,12 @@
         <div class="search-section">
             <div id="labels-div">
                 <label for="labels">Label Search: </label>
-                <input id="labels-input", list="labels" name="labels">
+                <input id="label-input" list="labels" name="labels" size="64">
                 <datalist id="labels"></datalist>
             </div>
             <div>
                 <label for="domains">Domain Search: </label>
-                <input id="domains-input" list="domains" name="domains">
+                <input id="domain-input" list="domains" name="domains" size="256">
                 <datalist id="domains"></datalist>
             </div>
         </div>
@@ -90,25 +90,22 @@
             <div>
                 <h2 id="site-name-header"></h2>
             </div>
-            <div>
+            <div id="present-words-section">
                 <div>Present Words</div>
                 <div id="present-words" class="site-data-section word-grid"></div>
             </div>
-            <div>
+            <div id="missing-words-section">
                 <div>Missing Words</div>
                 <div id="missing-words" class="site-data-section word-grid"></div>
             </div>
-            <div>
+            <div id="labels-section">
                 <div>Labels</div>
                 <div id="labels" class="site-data-section word-grid"></div>
-                <div>
-                    <input id="new-label-input", list="labels">
-                </div>
             </div>
             <div></div>
         </div>
         <div style="text-align: center;">
-            <p class="boton" id="search"></p>
+            <p class="boton" id="search">Search</p>
             <p class="boton" id="delete-sites">Delete Selected Sites</p>
             <p class="boton" id="mod-site-data">Modify Site Data</p>
             <p class="boton" id="domains-button">Return to Domains</p>

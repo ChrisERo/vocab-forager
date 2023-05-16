@@ -262,6 +262,7 @@ async function openTab(url: string): Promise<void> {
         }
         case BSMessageType.GetAllLabels: {
             siteDateStorage.getAllLabels().then((response) => sendResponse(response));
+            break;
         }
         case BSMessageType.GetSeeSiteData: {
             if (isGetUrlsOfDomainRequest(request.payload)) {

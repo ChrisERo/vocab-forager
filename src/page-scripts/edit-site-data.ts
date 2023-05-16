@@ -7,8 +7,18 @@ const LABELS_LIST_SECTION = document.getElementById('labels') as HTMLDivElement;
 const MISSING_WORDS_LIST_SECTION = document.getElementById('missing-words') as HTMLDivElement;
 const PRESENT_WORDS_LIST_SECTION = document.getElementById('present-words') as HTMLDivElement;
 
+const LABELS_SECTION = document.getElementById('labels-section') as HTMLDivElement;
+const MISSING_WORDS_SECTION = document.getElementById('missing-words-section') as HTMLDivElement;
+const PRESENT_WORDS_SECTION = document.getElementById('present-words-section') as HTMLDivElement;
+
+
+
 export function setUpEditPage(url: string, siteDataPromise: Promise<SiteData>,
     labelsPromise: Promise<string[]>): void {
+        LABELS_SECTION.style.display = 'in-block';
+        PRESENT_WORDS_SECTION.style.display = 'in-block';
+        MISSING_WORDS_SECTION.style.display = 'in-block';
+
         populateLabelsData(url, labelsPromise);
         populateSiteData(url, siteDataPromise);
 }
@@ -18,6 +28,9 @@ export function clearEditPageComponents(): void {
     LABELS_LIST_SECTION.innerHTML = '';
     PRESENT_WORDS_LIST_SECTION.innerHTML = '';
     MISSING_WORDS_LIST_SECTION.innerHTML = '';
+    LABELS_SECTION.style.display = 'none';
+    PRESENT_WORDS_SECTION.style.display = 'none';
+    MISSING_WORDS_SECTION.style.display = 'none';
 }
 
 async function populateLabelsData(url: string,
