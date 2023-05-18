@@ -65,6 +65,9 @@
             grid-template-columns: auto auto auto;
             padding: 3px;
         }
+        input {
+            width: 16em;
+        }
     </style>
 </head>
 <body>
@@ -76,12 +79,12 @@
         <div class="search-section">
             <div id="labels-div">
                 <label for="labels">Label Search: </label>
-                <input id="label-input" list="labels" name="labels" size="64">
+                <input id="label-input" list="labels" name="labels">
                 <datalist id="labels"></datalist>
             </div>
             <div>
                 <label for="domains">Domain Search: </label>
-                <input id="domain-input" list="domains" name="domains" size="256">
+                <input id="domain-input" list="domains" name="domains">
                 <datalist id="domains"></datalist>
             </div>
         </div>
