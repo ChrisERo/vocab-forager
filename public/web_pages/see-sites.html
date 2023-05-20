@@ -65,12 +65,19 @@
             grid-template-columns: 8em 8em 8em;
             padding: 3px;
         }
+        .word-item {
+            margin-top: 5px;
+            margin-bottom: 5px;
+        }
         .word-item:hover {
             background-color: rgb(14, 104, 163);
         }
         .word-item p {
             display: inline-block;
             padding: 5px;
+            margin-top: 2px;
+            margin-bottom: 2px;
+
         }
         .delete-x {
             color: #FF0000;
@@ -110,12 +117,12 @@
         <div class="search-section">
             <div id="labels-div">
                 <label for="labels">Label Search: </label>
-                <input id="label-input" list="labels" name="labels" type="text" class="text-input">
+                <input id="label-input" list="labels" name="labels" type="text" class="text-input" autocomplete="off">
                 <datalist id="labels"></datalist>
             </div>
             <div id="domains-div">
                 <label for="domains">Domain Search: </label>
-                <input id="domain-input" list="domains" name="domains" type="text" class="text-input">
+                <input id="domain-input" list="domains" name="domains" type="text" class="text-input" autocomplete="off">
                 <datalist id="domains"></datalist>
             </div>
         </div>
