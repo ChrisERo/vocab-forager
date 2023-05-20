@@ -17,12 +17,12 @@
             margin-right: 0px;
             height: 14pt;
         }
-        .alt_form_element {
+        .alt-form-element {
             margin-bottom: 10px;
             font-size: 10pt;
             width: 100%;
         }
-        .alt_form_element div {
+        .alt-form-element div {
             overflow: hidden;
             white-space: nowrap;
             text-overflow: ellipsis;
@@ -30,10 +30,10 @@
             width: 93%;
             height: 12pt;
         }
-        .alt_form_element a:hover {
+        .alt-form-element a:hover {
             cursor: pointer;
         }
-        .alt_form_element a {
+        .alt-form-element a {
             overflow: hidden;
             white-space: nowrap;
             text-overflow: ellipsis;
@@ -43,7 +43,7 @@
             color: white;
             text-decoration: none;
         }
-        .alt_form_element div:hover{
+        .alt-form-element div:hover{
             cursor: pointer;
         }
         #list-of-urls {
@@ -62,11 +62,29 @@
         }
         .word-grid {
             display: grid;
-            grid-template-columns: auto auto auto;
+            grid-template-columns: 8em 8em 8em;
             padding: 3px;
         }
-        input {
+        .word-item:hover {
+            background-color: rgb(14, 104, 163);
+        }
+        .word-item p {
+            display: inline-block;
+            padding: 5px;
+        }
+        .delete-x {
+            color: #FF0000;
+        }
+        .delete-x:hover {
+            cursor: pointer;
+        }
+        .text-input {
             width: 16em;
+        }
+        label {
+            margin: 15px;
+            display: inline-block;
+            width: 175px;
         }
     </style>
 </head>
@@ -79,12 +97,12 @@
         <div class="search-section">
             <div id="labels-div">
                 <label for="labels">Label Search: </label>
-                <input id="label-input" list="labels" name="labels">
+                <input id="label-input" list="labels" name="labels" type="text" class="text-input">
                 <datalist id="labels"></datalist>
             </div>
-            <div>
+            <div id="domains-div">
                 <label for="domains">Domain Search: </label>
-                <input id="domain-input" list="domains" name="domains">
+                <input id="domain-input" list="domains" name="domains" type="text" class="text-input">
                 <datalist id="domains"></datalist>
             </div>
         </div>

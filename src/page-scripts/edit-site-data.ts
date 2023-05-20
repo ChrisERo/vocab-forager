@@ -15,9 +15,9 @@ const PRESENT_WORDS_SECTION = document.getElementById('present-words-section') a
 
 export function setUpEditPage(url: string, siteDataPromise: Promise<SiteData>,
     labelsPromise: Promise<string[]>): void {
-        LABELS_SECTION.style.display = 'in-block';
-        PRESENT_WORDS_SECTION.style.display = 'in-block';
-        MISSING_WORDS_SECTION.style.display = 'in-block';
+        LABELS_SECTION.style.display = 'inline-block';
+        PRESENT_WORDS_SECTION.style.display = 'inline-block';
+        MISSING_WORDS_SECTION.style.display = 'inline-block';
 
         populateLabelsData(url, labelsPromise);
         populateSiteData(url, siteDataPromise);
@@ -88,12 +88,12 @@ async function populateSiteData(url: string,
 
         const missingWordEntires: string[] = siteData.missingWords;
         const presentWordEntries: string[] = siteData.wordEntries.map((w) => w.word);
-        createTextEntries(missingWordEntires, 'missing-words', siteData, (sd: SiteData, i) => {
-            sd.missingWords.splice(i, 1);
-            saveSiteData(url, sd);
-        });
         createTextEntries(presentWordEntries, 'present-words', siteData, (sd: SiteData, i) => {
             sd.wordEntries.splice(i, 1);
+            saveSiteData(url, sd);
+        });
+        createTextEntries(missingWordEntires, 'missing-words', siteData, (sd: SiteData, i) => {
+            sd.missingWords.splice(i, 1);
             saveSiteData(url, sd);
         });
 }
@@ -115,10 +115,12 @@ function createTextEntries<T>(textList: string[], divListElementSectionId: strin
         for (let i = 0; i < textList.length; i++) {
             const content = textList[i];
 
-            const containerElement  = document.createElement('div');
+            const containerElement = document.createElement('p');
+            containerElement.setAttribute('class', 'word-item');
+
             const closeButton = document.createElement('p');
             closeButton.textContent = 'X';
-            closeButton.setAttribute('color', '#FF0000');
+            closeButton.setAttribute('class', 'delete-x');
             containerElement.append(closeButton);
 
             const text = document.createElement('p');  // TODO: make this input? or editable some other way

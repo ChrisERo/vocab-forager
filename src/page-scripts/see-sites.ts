@@ -15,6 +15,9 @@ const MODIFY_SITE_DATA_BUTTON = document.getElementById('mod-site-data') as HTML
 
 const DOMAIN_INPUT = document.getElementById('domain-input') as HTMLInputElement;
 const LABEL_INPUT = document.getElementById('label-input') as HTMLInputElement;
+const DOMAIN_INPUT_SECTION = document.getElementById('domains-div') as HTMLInputElement;
+const LABEL_INPUT_SECTION = document.getElementById('labels-div') as HTMLInputElement;
+
 
 
 /**
@@ -24,7 +27,7 @@ const LABEL_INPUT = document.getElementById('label-input') as HTMLInputElement;
  */
 function addURLOption(data: SeeSiteData): void {
     const formElement = document.createElement('div');
-    formElement.setAttribute('class', 'alt_form_element');
+    formElement.setAttribute('class', 'alt-form-element');
 
     const my_checkbox = document.createElement('input');
     my_checkbox.setAttribute('type', 'checkbox');
@@ -94,10 +97,17 @@ function addDomainOption(grouping: string, dataListElement: HTMLDataListElement)
 }
 
 function selectOption() {
+    // Change buttons displayed
     DELETE_BUTTON.style.display = 'inline-block';
     REFRESH_PAGE_BUTTON.style.display = 'inline-block';
     MODIFY_SITE_DATA_BUTTON.style.display = 'inline-block';
     SEARCH.style.display = 'none';
+
+    // Hide non-button attributes and remove some state
+    DOMAIN_INPUT_SECTION.style.display = 'none';
+    DOMAIN_LIST_ELEMENT.innerHTML = '';
+    LABEL_INPUT_SECTION.style.display = 'none';
+    LABEL_LIST_ELEMENT.innerHTML = '';
 
     const message = getSiteSearchInput();
     getSites(message);
@@ -126,11 +136,14 @@ function getSpecificGroupingClass(messageType: BSMessageType, listElement: HTMLD
 }
 
 function setUpPageInit() {
+    DOMAIN_INPUT_SECTION.style.display = 'inline-block';
+    LABEL_INPUT_SECTION.style.display = 'inline-block';
+
     URL_LIST_ELEMENT.innerHTML = '';
     DELETE_BUTTON.style.display = 'none';
     REFRESH_PAGE_BUTTON.style.display = 'none';
     MODIFY_SITE_DATA_BUTTON.style.display = 'none';
-    SEARCH.style.display = 'in-block';
+    SEARCH.style.display = 'inline-block';
     clearEditPageComponents();
 
     getSpecificGroupingClass(BSMessageType.GetAllDomains, DOMAIN_LIST_ELEMENT);
@@ -182,7 +195,9 @@ MODIFY_SITE_DATA_BUTTON.addEventListener('click', () => {
     const url = checkBoxes[0].id;
     const request = {
         messageType: BSMessageType.GetPageData,
-        url: url,
+        payload: {
+            url: url
+        }
     };
     const pageData: Promise<SiteData> = chrome.runtime.sendMessage(request);
     request.messageType = BSMessageType.GetLabelsForSite;
@@ -192,6 +207,7 @@ MODIFY_SITE_DATA_BUTTON.addEventListener('click', () => {
     DELETE_BUTTON.style.display = 'none';
     REFRESH_PAGE_BUTTON.style.display = 'none';
     MODIFY_SITE_DATA_BUTTON.style.display = 'none';
+    (document.getElementById('list-of-urls') as HTMLElement).innerHTML = '';
 
     setUpEditPageMode(url, pageData, labelData);
 })
