@@ -3,7 +3,7 @@ import { SiteData } from "../utils/models";
 
 
 const SITE_NAME_HEADER= document.getElementById('site-name-header') as HTMLElement;
-const LABELS_LIST_SECTION = document.getElementById('labels') as HTMLDivElement;
+const LABELS_LIST_SECTION = document.getElementById('labels-list-section') as HTMLDivElement;
 const MISSING_WORDS_LIST_SECTION = document.getElementById('missing-words') as HTMLDivElement;
 const PRESENT_WORDS_LIST_SECTION = document.getElementById('present-words') as HTMLDivElement;
 
@@ -48,37 +48,46 @@ async function populateLabelsData(url: string,
             };
             chrome.runtime.sendMessage(removeMsg);
         };
-        createTextEntries(labels, 'labels', labels, labelsRemoveFunction);
+        createTextEntries(labels, 'labels-list-section', labels, labelsRemoveFunction);
+        addPlusSignToLabelsSection(labels, url, labelsRemoveFunction);
+}
 
-        const containerElement  = document.createElement('div');
-        const addButton = document.createElement('p');
-        addButton.textContent = '+';
-        addButton.setAttribute('color', '#00FF00');
-        addButton.addEventListener('click', () => {
-            const inputElement = document.getElementById('new-label-id') as HTMLInputElement;
-            const content = inputElement.value.trim();  // TODO: add more validation
-            if (content.length === 0) {
-                return;
+function addPlusSignToLabelsSection(labels: string[], url: string,
+    labelsRemoveFunction: (x: string[], y: number) => void) {
+    const containerElement = document.createElement('div');
+    containerElement.setAttribute('class', 'word-item')
+
+    const addButton = document.createElement('p');
+    addButton.textContent = '+';
+    addButton.setAttribute('class', 'add-element-plus add-element-item');
+    addButton.addEventListener('click', () => {
+        const inputElement = document.getElementById('new-label-id') as HTMLInputElement;
+        const content = inputElement.value.trim();  // TODO: add more validation
+        if (content.length === 0 || content.length > 24) {
+            return;
+        }
+
+        labels.push(content);
+        const addMsg: BSMessage = {
+            messageType: BSMessageType.AddLabelEntry,
+            payload: {
+                url: url,
+                label: content
             }
-            createTextEntries([content], 'labels', labels, labelsRemoveFunction);
+        };
+        chrome.runtime.sendMessage(addMsg);
+        createTextEntries(labels, 'labels-list-section', labels, labelsRemoveFunction);
+        addPlusSignToLabelsSection(labels, url, labelsRemoveFunction);
+    });
+    containerElement.append(addButton);
 
-            labels.push(content);
-            const addMsg: BSMessage = {
-                messageType: BSMessageType.AddLabelEntry,
-                payload: {
-                    url: url,
-                    label: content
-                }
-            };
-            chrome.runtime.sendMessage(addMsg);
-        });
-        containerElement.append(addButton);
-
-        const text = document.createElement('input');
-        text.setAttribute('id', 'new-label-id');
-        text.setAttribute('type', 'text');
-        text.setAttribute('name', 'new-label-name');
-        containerElement.append(text);
+    const text = document.createElement('input');
+    text.setAttribute('id', 'new-label-id');
+    text.setAttribute('type', 'text');
+    text.setAttribute('name', 'new-label-name');
+    text.setAttribute('class', 'add-element-item');
+    containerElement.append(text);
+    LABELS_LIST_SECTION.append(containerElement);
 }
 
 async function populateSiteData(url: string,
@@ -112,6 +121,7 @@ function saveSiteData(url: string, siteData: SiteData): void {
 function createTextEntries<T>(textList: string[], divListElementSectionId: string,
     data: T, removeMetaFunction: (x: T, y: number) => void ): void {
         const divListSection = document.getElementById(divListElementSectionId) as HTMLDivElement;
+        divListSection.innerHTML = '';
         for (let i = 0; i < textList.length; i++) {
             const content = textList[i];
 

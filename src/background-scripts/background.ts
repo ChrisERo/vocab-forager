@@ -2,7 +2,7 @@ import { DictionaryManager } from "./dictionary";
 import { getLocalStorage, LocalStorage, NonVolatileBrowserStorage } from "./non-volatile-browser-storage";
 import {ContextMenuManager} from "./contextmenu"
 import { BSMessagePayload, BSMessageType, isLabelEntryModRequest, isAddNewDictRequest, isBsMessage, isDictsOfLangRequest, isGetDataForLabelRequest, isGetDataForPageRequest, isGetUrlsOfDomainRequest, isLoadExtensionDataRequest, isPageDataPair, isSearchRequest, isSetActivationRequest, isUpdateDictionaryRequest } from "../utils/background-script-communication";
-import { Dictionary, DictionaryIdentifier, isDictionaryID, SiteData } from "../utils/models";
+import { Dictionary, DictionaryIdentifier, isDictionaryID, SeeSiteData, SiteData } from "../utils/models";
 import { isNewActivatedState } from "../utils/content-script-communication";
 import { getIndexedDBStorage, IndexedDBStorage } from "./indexed-db-nv-storage";
 
@@ -234,8 +234,18 @@ async function openTab(url: string): Promise<void> {
         case BSMessageType.GetURLsForLabel: {
             if (isGetDataForLabelRequest(request.payload)) {
                 siteDateStorage.getURLsOfSpecificLabels(request.payload.label).then((urls: string[]) => {
-                    const siteData = urls.map(url => siteDateStorage.getPageData(url));
-                    Promise.all(siteData).then(response => sendResponse(response));
+                    const siteDataPromises = urls.map(url => siteDateStorage.getPageData(url));
+                    Promise.all(siteDataPromises).then(siteData => {
+                        const seeSiteDataOutput: SeeSiteData[] = [];
+                        for (let i = 0; i < urls.length; i++) {
+                            const data: SeeSiteData = {
+                                url: urls[i],
+                                title: siteData[i].title
+                            };
+                            seeSiteDataOutput.push(data);
+                        }
+                        sendResponse(seeSiteDataOutput);
+                    });
                 });
             } else {
                 logUnexpected('payload', request.payload);

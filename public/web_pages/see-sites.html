@@ -78,6 +78,19 @@
         .delete-x:hover {
             cursor: pointer;
         }
+        .add-element-item {
+            display: inline-block;
+        }
+        input.add-element-item {
+            width: 8em;
+        }
+        .add-element-plus {
+            margin-right: 8px;
+            color: #40FF00;
+        }
+        .add-element-plus:hover {
+            cursor: pointer;
+        }
         .text-input {
             width: 16em;
         }
@@ -111,6 +124,10 @@
             <div>
                 <h2 id="site-name-header"></h2>
             </div>
+            <div id="labels-section">
+                <div>Labels</div>
+                <div id="labels-list-section" class="site-data-section word-grid"></div>
+            </div>
             <div id="present-words-section">
                 <div>Present Words</div>
                 <div id="present-words" class="site-data-section word-grid"></div>
@@ -119,11 +136,6 @@
                 <div>Missing Words</div>
                 <div id="missing-words" class="site-data-section word-grid"></div>
             </div>
-            <div id="labels-section">
-                <div>Labels</div>
-                <div id="labels" class="site-data-section word-grid"></div>
-            </div>
-            <div></div>
         </div>
         <div style="text-align: center;">
             <p class="boton" id="search">Search</p>
