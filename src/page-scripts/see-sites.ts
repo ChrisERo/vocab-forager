@@ -209,6 +209,7 @@ MODIFY_SITE_DATA_BUTTON.addEventListener('click', () => {
     MODIFY_SITE_DATA_BUTTON.style.display = 'none';
     (document.getElementById('list-of-urls') as HTMLElement).innerHTML = '';
 
+    REFRESH_PAGE_BUTTON.style.display = 'inline-block';
     setUpEditPageMode(url, pageData, labelData);
 })
 
