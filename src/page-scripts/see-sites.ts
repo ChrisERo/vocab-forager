@@ -181,9 +181,8 @@ DELETE_BUTTON.addEventListener('click', () => {
             }
         };
         chrome.runtime.sendMessage(removeMsg);
+        checkBoxes[i].parentElement?.remove();
     }
-
-    setUpPageInit();
 });
 
 MODIFY_SITE_DATA_BUTTON.addEventListener('click', () => {
