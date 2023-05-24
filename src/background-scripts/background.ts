@@ -298,12 +298,14 @@ async function openTab(url: string): Promise<void> {
         }
         case BSMessageType.LoadExtensionData: {
             if (isLoadExtensionDataRequest(request.payload)) {
+                // Upload data to localStorage
                 const onlyGlobalData:{[key: string]: any} = {};
                 onlyGlobalData[browserStorage.isActivatedKey] = request.payload.data[browserStorage.isActivatedKey];
                 onlyGlobalData[browserStorage.dictionaryKey] = request.payload.data[browserStorage.dictionaryKey];
                 browserStorage.uploadExtensionData(onlyGlobalData).then((response) =>
                     contextMenuManager.updateContextMenuBasedOnActivation(response)
                 );
+                // Upload data to IndexedDB
                 siteDateStorage.uploadExtensionData(request.payload.data);
             } else {
                 logUnexpected('payload', request.payload);
