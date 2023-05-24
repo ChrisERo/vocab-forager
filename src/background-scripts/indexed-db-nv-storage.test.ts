@@ -780,9 +780,10 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                 missingWords: []
             }
         ];
-        dataToStore.forEach(async (x) => {
+        const ps = dataToStore.map(async (x) => {
             await dao.storePageData(x, combineUrl(x.schemeAndHost, x.urlPath))
         });
+        await Promise.all(ps);
 
         const getResults = await dao.getAllStorageData();
         expect(Object.keys(getResults).length).toBe(2);
@@ -790,6 +791,63 @@ describe('IndexedDBStorage SiteDataStorage', () => {
             .toEqual(dataToStore[0]);
         expect(getResults['https://www.articles.fake.net/articles/456701'])
             .toEqual(dataToStore[1]);
+    });
+
+    test('Get All Site Data with Labels', async () => {
+        dao = new IndexedDBStorage();
+        const internalDB: IDBDatabase = await dao.setUp();
+        expect(internalDB).not.toEqual(null);
+        let dataToStore = [
+            {
+                schemeAndHost: 'https://www.articles.fake.net',
+                urlPath: '/articles/334567',
+                wordEntries: [
+                    {
+                        word: 'comida',
+                        startOffset: 0,
+                        endOffset: 13,
+                        nodePath: [[9,6,3,0]]
+                    }
+                ],
+                missingWords: ["foo", "bar"]
+            },
+            {
+                schemeAndHost: 'https://www.articles.fake.net',
+                urlPath: '/articles/456701',
+                wordEntries: [
+                    {
+                        word: 'manzana',
+                        startOffset: 33,
+                        endOffset: 44,
+                        nodePath: [[9,6,3,0], [10,6,3,0]]
+                    },
+                    {
+                        word: 'banana',
+                        startOffset: 45,
+                        endOffset: 12,
+                        nodePath: [[9,6,3,0], [9,7,3,0]]
+                    }
+                ],
+                missingWords: []
+            }
+        ];
+        const ps = dataToStore.map(async (x) => {
+            const url = combineUrl(x.schemeAndHost, x.urlPath);
+            await dao.storePageData(x, url);
+            await dao.addLabelEntry(url, x.wordEntries[0].word);
+            if (x.wordEntries.length > 1) {
+                await dao.addLabelEntry(url, x.wordEntries[1].word);
+            }
+        });
+        await Promise.all(ps);
+
+        const getResults = await dao.getAllStorageData();
+        expect(Object.keys(getResults).length).toBe(2);
+
+        expect(getResults['https://www.articles.fake.net/articles/334567'])
+            .toEqual({...dataToStore[0], labels: ['comida']});
+        expect(getResults['https://www.articles.fake.net/articles/456701'])
+            .toEqual({...dataToStore[1], labels: ['banana', 'manzana']});
     });
 
     test('Remove all words of a SiteData entry', async () => {
@@ -902,6 +960,66 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                 missingWords: []
             },
             'https://www.articles.net/articles/798054': {
+                schemeAndHost: 'https://www.articles.net',
+                urlPath: '/articles/798054',
+                wordEntries: [
+                    {
+                        word: 'eucaristía',
+                        startOffset: 4,
+                        endOffset: 7,
+                        nodePath: [[9,6,3,0], [0,7,3,0]]
+                    },
+                ],
+                missingWords: ['vino']
+            }
+        };
+
+        await dao.uploadExtensionData(dataToStore);
+        const getResults = await dao.getAllStorageData();
+        expect(Object.keys(getResults).length).toBe(3);
+        expect(getResults).toEqual(dataToStore);
+    });
+
+    test('Upload Extension Data With Labels', async () => {
+        dao = new IndexedDBStorage();
+        const internalDB: IDBDatabase = await dao.setUp();
+        expect(internalDB).not.toEqual(null);
+        let dataToStore = {
+            'https://www.articles.fake.net/articles/334567': {
+                schemeAndHost: 'https://www.articles.fake.net',
+                urlPath: '/articles/334567',
+                wordEntries: [
+                    {
+                        word: 'comida',
+                        startOffset: 0,
+                        endOffset: 13,
+                        nodePath: [[9,6,3,0]]
+                    }
+                ],
+                missingWords: ["foo", "bar"]
+            },
+            'https://www.articles.fake.net/articles/456701': {
+                schemeAndHost: 'https://www.articles.fake.net',
+                urlPath: '/articles/456701',
+                wordEntries: [
+                    {
+                        word: 'manzana',
+                        startOffset: 33,
+                        endOffset: 44,
+                        nodePath: [[9,6,3,0], [10,6,3,0]]
+                    },
+                    {
+                        word: 'banana',
+                        startOffset: 45,
+                        endOffset: 12,
+                        nodePath: [[9,6,3,0], [9,7,3,0]]
+                    }
+                ],
+                missingWords: [],
+                labels: ['comida', 'frutas',],
+            },
+            'https://www.articles.net/articles/798054': {
+                labels: ['luterano'],
                 schemeAndHost: 'https://www.articles.net',
                 urlPath: '/articles/798054',
                 wordEntries: [

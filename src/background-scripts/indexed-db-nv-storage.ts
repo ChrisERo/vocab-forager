@@ -11,6 +11,7 @@ type SiteDataMap =  {[url: string]: SiteData}
 export interface IDBSiteData extends SiteData {
     schemeAndHost: string;
     urlPath: string;
+    labels?: string[];
 }
 
 function siteDataToIDBSiteData(siteData: SiteData, url: string): IDBSiteData {
@@ -405,11 +406,15 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
                 request.onsuccess = (event: any) => {
                     const rawData = event.target.result as IDBSiteData[];
                     const result:  {[subject: string]: SiteData} = {};
-                    rawData.forEach((x) => {
+                    const rawDataPromises = rawData.map(async (x) => {
                         const url = combineUrl(x.schemeAndHost, x.urlPath);
+                        const labels: string[] = await this.getLabelsOfSpecificSite(url);
+                        if (labels.length !== 0) {
+                            x.labels = labels;
+                        }
                         result[url] = x;
                     });
-                    resolve(result);
+                    Promise.all(rawDataPromises).then(() => resolve(result));
                 };
             });
         };
@@ -509,6 +514,7 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
     }
 
     /**
+     * Clears all site data from IndexedDB and proceeds to write all data provided by user
      *
      * @param data
      * @returns true if operations succeeded completely and false otherwise
@@ -516,28 +522,42 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
     uploadExtensionData(data: any): Promise<boolean> {
         const query = (db: IDBDatabase): Promise<boolean> => {
             return new Promise((resolve) => {
-                const writeTransaction = db.transaction(IndexedDBStorage.SITE_DATA_TABLE, "readwrite");
-                const objectStore = writeTransaction.objectStore(IndexedDBStorage.SITE_DATA_TABLE);
-
-                const request = objectStore.clear();
-                request.onerror = (err) => {
+                const writeTransaction = db.transaction([IndexedDBStorage.SITE_DATA_TABLE, IndexedDBStorage.LABEL_TABLE], "readwrite");
+                writeTransaction.onerror = (err) => {
                     console.error(`Unexpected error when deleting all SiteData:` + err);
                     resolve(false);
                 };
-                request.onsuccess = () => {
-                    const writeTransaction = db.transaction(IndexedDBStorage.SITE_DATA_TABLE, "readwrite");
-                    const objectStore = writeTransaction.objectStore(IndexedDBStorage.SITE_DATA_TABLE);
+                writeTransaction.oncomplete = () => {
+                    const writeTransaction = db.transaction([IndexedDBStorage.SITE_DATA_TABLE, IndexedDBStorage.LABEL_TABLE], "readwrite");
+                    const siteDataObjectStore = writeTransaction.objectStore(IndexedDBStorage.SITE_DATA_TABLE);
+                    const labelObjectStore = writeTransaction.objectStore(IndexedDBStorage.LABEL_TABLE);
                     for (let key in data) {
                         if (data.hasOwnProperty(key)) {
                             const element = data[key];
                             if (isSiteData(element)) {
                                 const elementToStore = siteDataToIDBSiteData(element, key);
-                                objectStore.put(elementToStore, [elementToStore.schemeAndHost, elementToStore.urlPath]);
+                                if (elementToStore.labels !== undefined) {
+                                    const labels = elementToStore.labels;
+                                    for (let i = 0; i < labels.length; i++) {
+                                        const labelDataEntry = {
+                                            'label': labels[i],
+                                            'schemeAndHost': elementToStore.schemeAndHost,
+                                            'urlPath': elementToStore.urlPath
+                                        }
+                                        labelObjectStore.put(labelDataEntry);
+                                    }
+                                }
+                                siteDataObjectStore.put(elementToStore, [elementToStore.schemeAndHost, elementToStore.urlPath]);
                             }
                         }
                     }
                     resolve(true);
                 };
+
+                let objectStore = writeTransaction.objectStore(IndexedDBStorage.SITE_DATA_TABLE);
+                objectStore.clear();
+                objectStore = writeTransaction.objectStore(IndexedDBStorage.LABEL_TABLE);
+                objectStore.clear();
             });
         };
 
