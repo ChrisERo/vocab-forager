@@ -110,6 +110,8 @@ function selectOption() {
     LABEL_LIST_ELEMENT.innerHTML = '';
 
     const message = getSiteSearchInput();
+    DOMAIN_INPUT.value = '';
+    LABEL_INPUT.value = '';
     getSites(message);
 }
 
