@@ -141,13 +141,13 @@ function getSpecificGroupingClass(messageType: BSMessageType, listElement: HTMLD
 function setUpPageInit() {
     DOMAIN_INPUT_SECTION.style.display = 'inline-block';
     LABEL_INPUT_SECTION.style.display = 'inline-block';
+    SEARCH.style.display = 'inline-block';
 
     ERROR_MESSAGE.innerHTML = '';
     URL_LIST_ELEMENT.innerHTML = '';
     DELETE_BUTTON.style.display = 'none';
     REFRESH_PAGE_BUTTON.style.display = 'none';
     MODIFY_SITE_DATA_BUTTON.style.display = 'none';
-    SEARCH.style.display = 'inline-block';
     clearEditPageComponents();
 
     getSpecificGroupingClass(BSMessageType.GetAllDomains, DOMAIN_LIST_ELEMENT);
