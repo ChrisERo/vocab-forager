@@ -3,7 +3,8 @@ import { Dictionary, DictionaryIdentifier, isDictionary, isDictionaryID, isSiteD
 /**
  * Types of messages that can be sent to background script listener for processing
  */
- export enum BSMessageType {
+
+export enum BSMessageType {
     DictsOfLang,
     GetCurrentDictionary,
     SetCurrentDictionary,
@@ -23,7 +24,12 @@ import { Dictionary, DictionaryIdentifier, isDictionary, isDictionaryID, isSiteD
     GetAllDomains,
     GetSeeSiteData,
     GetAllExtensionData,
-    LoadExtensionData
+    LoadExtensionData,
+    GetLabelsForSite,
+    GetURLsForLabel,
+    AddLabelEntry,
+    RemoveLabelEntry,
+    GetAllLabels
 }
 
 /**
@@ -39,6 +45,32 @@ import { Dictionary, DictionaryIdentifier, isDictionary, isDictionaryID, isSiteD
  export function isSetActivationRequest(mssg: any): mssg is SetActivationRequest {
     let temp = mssg as SetActivationRequest;
     return temp != null && temp.isActivated !== undefined;
+}
+
+/**
+ * Request to get site-related data for a particular label.
+ */
+export interface GetDataForLabel {
+    label: string;
+}
+
+export function isGetDataForLabelRequest(mssg: any): mssg is  GetDataForLabel {
+    let temp = mssg as GetDataForLabel;
+    return temp != null && temp.label !== undefined;
+
+}
+
+/**
+ * Request for performing operation on particular site-label pair
+ */
+export interface LabelEntryModRequest {
+    label: string;
+    url: string;
+}
+
+export function isLabelEntryModRequest(mssg: any): mssg is  LabelEntryModRequest {
+    let temp = mssg as LabelEntryModRequest;
+    return temp != null && temp.label !== undefined && temp.url !== undefined;
 }
 
 /**
@@ -167,7 +199,8 @@ export function isGetUrlsOfDomainRequest(mssg: any): mssg is GetAllURLsOfDomainR
 
 export type BSMessagePayload = DictsOfLangRequest|SearchRequest|DictionaryIdentifier|
     PageDataPair|SetActivationRequest|GetDataForPage|UpdateDictionaryRequest|
-    AddNewDictRequest|LoadExtensionDataRequest|GetAllURLsOfDomainRequest|null;
+    AddNewDictRequest|LoadExtensionDataRequest|GetAllURLsOfDomainRequest|
+    LabelEntryModRequest|GetDataForLabel|null;
 
 /**
  * Message that can be sent to background script listener

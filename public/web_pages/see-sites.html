@@ -17,12 +17,12 @@
             margin-right: 0px;
             height: 14pt;
         }
-        .alt_form_element {
+        .alt-form-element {
             margin-bottom: 10px;
             font-size: 10pt;
             width: 100%;
         }
-        .alt_form_element div {
+        .alt-form-element div {
             overflow: hidden;
             white-space: nowrap;
             text-overflow: ellipsis;
@@ -30,10 +30,10 @@
             width: 93%;
             height: 12pt;
         }
-        .alt_form_element a:hover {
+        .alt-form-element a:hover {
             cursor: pointer;
         }
-        .alt_form_element a {
+        .alt-form-element a {
             overflow: hidden;
             white-space: nowrap;
             text-overflow: ellipsis;
@@ -43,7 +43,7 @@
             color: white;
             text-decoration: none;
         }
-        .alt_form_element div:hover{
+        .alt-form-element div:hover{
             cursor: pointer;
         }
         #list-of-urls {
@@ -56,18 +56,101 @@
             background-color: rgb(145, 30, 9);
             color: white;
         }
+        #mod-site-data {
+            background-color: rgb(32, 116, 67);
+            color: white;
+        }
+        .word-grid {
+            display: grid;
+            grid-template-columns: 8em 8em 8em;
+            padding: 3px;
+        }
+        .word-item {
+            margin-top: 5px;
+            margin-bottom: 5px;
+        }
+        .word-item:hover {
+            background-color: rgb(14, 104, 163);
+        }
+        .word-item p {
+            display: inline-block;
+            padding: 5px;
+            margin-top: 2px;
+            margin-bottom: 2px;
+
+        }
+        .delete-x {
+            color: #FF0000;
+        }
+        .delete-x:hover {
+            cursor: pointer;
+        }
+        .add-element-item {
+            display: inline-block;
+        }
+        input.add-element-item {
+            width: 8em;
+        }
+        .add-element-plus {
+            margin-right: 8px;
+            color: #40FF00;
+        }
+        .add-element-plus:hover {
+            cursor: pointer;
+        }
+        .text-input {
+            width: 16em;
+        }
+        label {
+            margin: 15px;
+            display: inline-block;
+            width: 175px;
+        }
+        #site-name-header {
+            text-align: center;;
+        }
     </style>
 </head>
 <body>
     <div id="banner_anchor"></div>
     <div class="form">
         <div style="text-align: center;">
-            <h2>See or Delete Websites</h2>
+            <h2>Review or Edit Site Data</h2>
+        </div>
+        <div class="search-section">
+            <div id="labels-div">
+                <label for="labels">Label Search: </label>
+                <input id="label-input" list="labels" name="labels" type="text" class="text-input" autocomplete="off">
+                <datalist id="labels"></datalist>
+            </div>
+            <div id="domains-div">
+                <label for="domains">Domain Search: </label>
+                <input id="domain-input" list="domains" name="domains" type="text" class="text-input" autocomplete="off">
+                <datalist id="domains"></datalist>
+            </div>
         </div>
         <div id=list-of-urls></div>
-        <div id=list-of-domains></div>
+        <div class="site-data-section">
+            <div>
+                <h2 id="site-name-header"></h2>
+            </div>
+            <div id="labels-section">
+                <div>Labels</div>
+                <div id="labels-list-section" class="site-data-section word-grid"></div>
+            </div>
+            <div id="present-words-section">
+                <div>Present Words</div>
+                <div id="present-words" class="site-data-section word-grid"></div>
+            </div>
+            <div id="missing-words-section">
+                <div>Missing Words</div>
+                <div id="missing-words" class="site-data-section word-grid"></div>
+            </div>
+        </div>
         <div style="text-align: center;">
+            <p class="boton" id="search">Search</p>
             <p class="boton" id="delete-sites">Delete Selected Sites</p>
+            <p class="boton" id="mod-site-data">Modify Site Data</p>
             <p class="boton" id="domains-button">Return to Domains</p>
         </div>
     </div>

@@ -1,8 +1,8 @@
 import { DictionaryManager } from "./dictionary";
 import { getLocalStorage, LocalStorage, NonVolatileBrowserStorage } from "./non-volatile-browser-storage";
 import {ContextMenuManager} from "./contextmenu"
-import { BSMessageType, isAddNewDictRequest, isBsMessage, isDictsOfLangRequest, isGetDataForPageRequest, isGetUrlsOfDomainRequest, isLoadExtensionDataRequest, isPageDataPair, isSearchRequest, isSetActivationRequest, isUpdateDictionaryRequest } from "../utils/background-script-communication";
-import { Dictionary, DictionaryIdentifier, isDictionaryID, SiteData } from "../utils/models";
+import { BSMessagePayload, BSMessageType, isLabelEntryModRequest, isAddNewDictRequest, isBsMessage, isDictsOfLangRequest, isGetDataForLabelRequest, isGetDataForPageRequest, isGetUrlsOfDomainRequest, isLoadExtensionDataRequest, isPageDataPair, isSearchRequest, isSetActivationRequest, isUpdateDictionaryRequest } from "../utils/background-script-communication";
+import { Dictionary, DictionaryIdentifier, isDictionaryID, SeeSiteData, SiteData } from "../utils/models";
 import { isNewActivatedState } from "../utils/content-script-communication";
 import { getIndexedDBStorage, IndexedDBStorage } from "./indexed-db-nv-storage";
 
@@ -11,14 +11,14 @@ const siteDateStorage: IndexedDBStorage = getIndexedDBStorage(browserStorage);
 const dictionaryManager: DictionaryManager = new DictionaryManager(browserStorage);
 const contextMenuManager: ContextMenuManager = new ContextMenuManager(browserStorage);
 
-type sendResponseFunction = (response?: any) => void; 
+type sendResponseFunction = (response?: any) => void;
 
 
 /**
  * Logs that an unexpected value was asociated with a particular key
- * 
- * @param key 
- * @param value 
+ *
+ * @param key
+ * @param value
  */
 function logUnexpected(key: string, value: any) {
     console.error(`unexpected ${key}: ${JSON.stringify(value)}`);
@@ -26,8 +26,8 @@ function logUnexpected(key: string, value: any) {
 
 /**
  * Creates a new, active tab with specified url and and stores tab's id for future
- * searches 
- * 
+ * searches
+ *
  * @param url url in which to open new tab
  */
 function openNewDefineTab(url: string): Promise<void> {
@@ -52,7 +52,7 @@ function openNewDefineTab(url: string): Promise<void> {
 
 /**
  * Checks to see if there is a tab open in browser (session) with id equal to id.
- * 
+ *
  * @param id tab id to query
  * @param expectedTabId tab id that id should match
  * @returns true if tab with id already exists and false otherwise
@@ -69,7 +69,7 @@ async function isTabCurrentlyOpen(id: number, expectedTabId: number): Promise<bo
 /**
  * Opens either an existing tab with id defineTabId if one exists. If this id is null or
  * no such tab exists, opens new tab and stores its id in defineTabId variable
- * 
+ *
  * @param url url with which to open tab
  */
 async function openTab(url: string): Promise<void> {
@@ -86,13 +86,13 @@ async function openTab(url: string): Promise<void> {
 }
 
 /**
- * Listens for calls to functions from any of the 
+ * Listens for calls to functions from any of the
  * background scripts and executes them.
- * 
+ *
  * Using a listener per background script caused errors, in particular
  * when loading popup menu for the first time.
  */
- function handler(request: any, _: chrome.runtime.MessageSender, sendResponse: sendResponseFunction): boolean {    
+ function handler(request: any, _: chrome.runtime.MessageSender, sendResponse: sendResponseFunction): boolean {
     if (!isBsMessage(request)) {
        logUnexpected("request structure", request);
        return false;
@@ -223,6 +223,57 @@ async function openTab(url: string): Promise<void> {
             siteDateStorage.getAllDomains().then((response) => sendResponse(response));
             break;
         }
+        case BSMessageType.GetLabelsForSite: {
+            if (isGetDataForPageRequest(request.payload)) {
+                siteDateStorage.getLabelsOfSpecificSite(request.payload.url).then((response) => sendResponse(response));
+            } else {
+                logUnexpected('payload', request.payload);
+            }
+            break;
+        }
+        case BSMessageType.GetURLsForLabel: {
+            if (isGetDataForLabelRequest(request.payload)) {
+                siteDateStorage.getURLsOfSpecificLabels(request.payload.label).then((urls: string[]) => {
+                    const siteDataPromises = urls.map(url => siteDateStorage.getPageData(url));
+                    Promise.all(siteDataPromises).then(siteData => {
+                        const seeSiteDataOutput: SeeSiteData[] = [];
+                        for (let i = 0; i < urls.length; i++) {
+                            const data: SeeSiteData = {
+                                url: urls[i],
+                                title: siteData[i].title
+                            };
+                            seeSiteDataOutput.push(data);
+                        }
+                        sendResponse(seeSiteDataOutput);
+                    });
+                });
+            } else {
+                logUnexpected('payload', request.payload);
+            }
+            break;
+        }
+        case BSMessageType.AddLabelEntry: {
+            if (isLabelEntryModRequest(request.payload)) {
+                siteDateStorage.addLabelEntry(request.payload.url, request.payload.label)
+                    .then(() => sendResponse());
+            } else {
+                logUnexpected('payload', request.payload);
+            }
+            break;
+        }
+        case BSMessageType.RemoveLabelEntry: {
+            if (isLabelEntryModRequest(request.payload)) {
+                siteDateStorage.removeLabelEntry(request.payload.url, request.payload.label)
+                    .then(() => sendResponse());
+            } else {
+                logUnexpected('payload', request.payload);
+            }
+            break;
+        }
+        case BSMessageType.GetAllLabels: {
+            siteDateStorage.getAllLabels().then((response) => sendResponse(response));
+            break;
+        }
         case BSMessageType.GetSeeSiteData: {
             if (isGetUrlsOfDomainRequest(request.payload)) {
                 siteDateStorage.getSeeSiteDataOfDomain(request.payload.schemeAndHost).then((response) => sendResponse(response));
@@ -247,12 +298,14 @@ async function openTab(url: string): Promise<void> {
         }
         case BSMessageType.LoadExtensionData: {
             if (isLoadExtensionDataRequest(request.payload)) {
+                // Upload data to localStorage
                 const onlyGlobalData:{[key: string]: any} = {};
                 onlyGlobalData[browserStorage.isActivatedKey] = request.payload.data[browserStorage.isActivatedKey];
                 onlyGlobalData[browserStorage.dictionaryKey] = request.payload.data[browserStorage.dictionaryKey];
                 browserStorage.uploadExtensionData(onlyGlobalData).then((response) =>
                     contextMenuManager.updateContextMenuBasedOnActivation(response)
                 );
+                // Upload data to IndexedDB
                 siteDateStorage.uploadExtensionData(request.payload.data);
             } else {
                 logUnexpected('payload', request.payload);
@@ -270,4 +323,3 @@ async function openTab(url: string): Promise<void> {
 
 contextMenuManager.setUpContextMenus();
 chrome.runtime.onMessage.addListener(handler);
-
