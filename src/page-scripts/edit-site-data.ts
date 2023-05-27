@@ -93,7 +93,8 @@ function addPlusSignToLabelsSection(labels: string[], url: string,
 async function populateSiteData(url: string,
     siteDataPromise: Promise<SiteData>): Promise<void> {
         const siteData = await siteDataPromise;
-        SITE_NAME_HEADER.innerHTML = siteData.title === undefined ? url : siteData.title;
+        const headerText = siteData.title === undefined ? url : siteData.title;
+        SITE_NAME_HEADER.innerHTML = `<a target="_blank" href=${url}>${headerText}</a>`;
 
         const missingWordEntires: string[] = siteData.missingWords;
         const presentWordEntries: string[] = siteData.wordEntries.map((w) => w.word);
