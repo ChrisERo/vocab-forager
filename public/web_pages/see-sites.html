@@ -107,7 +107,29 @@
             width: 175px;
         }
         #site-name-header {
-            text-align: center;;
+            text-align: center;
+            max-width: 32em;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+        #site-name-header a {
+            color: #FFF;
+        }
+        .error-message {
+            text-align: center;
+            background-color: #FF0000;
+            color: #FFF;
+            margin-top: 30pt;
+        }
+        .sitedata-section {
+            margin-bottom: 30pt;
+            width: 100%;
+            border-top: solid #00FFFF;
+        }
+        .sitedata-section .title {
+            font-size: 20pt;
+            padding-left: 8px;
         }
     </style>
 </head>
@@ -130,27 +152,28 @@
             </div>
         </div>
         <div id=list-of-urls></div>
+        <div class=error-message id=error-message></div>
         <div class="site-data-section">
             <div>
                 <h2 id="site-name-header"></h2>
             </div>
-            <div id="labels-section">
-                <div>Labels</div>
+            <div class="sitedata-section" id="labels-section">
+                <div class="title">Labels</div>
                 <div id="labels-list-section" class="site-data-section word-grid"></div>
             </div>
-            <div id="present-words-section">
-                <div>Present Words</div>
+            <div class="sitedata-section" id="present-words-section">
+                <div class="title">Present Words</div>
                 <div id="present-words" class="site-data-section word-grid"></div>
             </div>
-            <div id="missing-words-section">
-                <div>Missing Words</div>
+            <div class="sitedata-section" id="missing-words-section">
+                <div class="title">Missing Words</div>
                 <div id="missing-words" class="site-data-section word-grid"></div>
             </div>
         </div>
         <div style="text-align: center;">
             <p class="boton" id="search">Search</p>
             <p class="boton" id="delete-sites">Delete Selected Sites</p>
-            <p class="boton" id="mod-site-data">Modify Site Data</p>
+            <p class="boton" id="mod-site-data">Site Data</p>
             <p class="boton" id="domains-button">Return to Domains</p>
         </div>
     </div>
