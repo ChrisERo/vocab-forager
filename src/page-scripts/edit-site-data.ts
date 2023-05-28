@@ -1,3 +1,4 @@
+import { QuizManager } from "../content-scripts/quiz";
 import { BSMessage, BSMessageType } from "../utils/background-script-communication";
 import { SiteData } from "../utils/models";
 
@@ -11,6 +12,7 @@ const LABELS_SECTION = document.getElementById('labels-section') as HTMLDivEleme
 const MISSING_WORDS_SECTION = document.getElementById('missing-words-section') as HTMLDivElement;
 const PRESENT_WORDS_SECTION = document.getElementById('present-words-section') as HTMLDivElement;
 
+export const QUIZ_BUTTON = document.getElementById('quiz-button') as HTMLElement;
 
 
 export function setUpEditPage(url: string, siteDataPromise: Promise<SiteData>,
@@ -18,7 +20,7 @@ export function setUpEditPage(url: string, siteDataPromise: Promise<SiteData>,
         LABELS_SECTION.style.display = 'inline-block';
         PRESENT_WORDS_SECTION.style.display = 'inline-block';
         MISSING_WORDS_SECTION.style.display = 'inline-block';
-
+        QUIZ_BUTTON.style.display = 'inline-block';
         populateLabelsData(url, labelsPromise);
         populateSiteData(url, siteDataPromise);
 }
@@ -31,6 +33,7 @@ export function clearEditPageComponents(): void {
     LABELS_SECTION.style.display = 'none';
     PRESENT_WORDS_SECTION.style.display = 'none';
     MISSING_WORDS_SECTION.style.display = 'none';
+    QUIZ_BUTTON.style.display = 'none';
 }
 
 async function populateLabelsData(url: string,
@@ -93,7 +96,8 @@ function addPlusSignToLabelsSection(labels: string[], url: string,
 async function populateSiteData(url: string,
     siteDataPromise: Promise<SiteData>): Promise<void> {
         const siteData = await siteDataPromise;
-        SITE_NAME_HEADER.innerHTML = siteData.title === undefined ? url : siteData.title;
+        const headerText = siteData.title === undefined ? url : siteData.title;
+        SITE_NAME_HEADER.innerHTML = `<a target="_blank" href=${url}>${headerText}</a>`;
 
         const missingWordEntires: string[] = siteData.missingWords;
         const presentWordEntries: string[] = siteData.wordEntries.map((w) => w.word);
@@ -104,6 +108,11 @@ async function populateSiteData(url: string,
         createTextEntries(missingWordEntires, 'missing-words', siteData, (sd: SiteData, i) => {
             sd.missingWords.splice(i, 1);
             saveSiteData(url, sd);
+        });
+
+        const quizzer = new QuizManager();
+        QUIZ_BUTTON.addEventListener('click', () => {
+            quizzer.loadQuizHTML(siteData);
         });
 }
 

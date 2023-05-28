@@ -3,6 +3,7 @@ import { SeeSiteData, SiteData } from "../utils/models";
 import { loadBannerHtml } from "./fetch-banner";
 import {clearEditPageComponents, setUpEditPage as setUpEditPageMode} from "./edit-site-data";
 
+const ERROR_MESSAGE = document.getElementById('error-message') as HTMLElement
 
 const DOMAIN_LIST_ELEMENT = document.getElementById('domains') as HTMLDataListElement;
 const LABEL_LIST_ELEMENT = document.getElementById('labels') as HTMLDataListElement;
@@ -110,6 +111,8 @@ function selectOption() {
     LABEL_LIST_ELEMENT.innerHTML = '';
 
     const message = getSiteSearchInput();
+    DOMAIN_INPUT.value = '';
+    LABEL_INPUT.value = '';
     getSites(message);
 }
 
@@ -138,12 +141,13 @@ function getSpecificGroupingClass(messageType: BSMessageType, listElement: HTMLD
 function setUpPageInit() {
     DOMAIN_INPUT_SECTION.style.display = 'inline-block';
     LABEL_INPUT_SECTION.style.display = 'inline-block';
+    SEARCH.style.display = 'inline-block';
 
+    ERROR_MESSAGE.innerHTML = '';
     URL_LIST_ELEMENT.innerHTML = '';
     DELETE_BUTTON.style.display = 'none';
     REFRESH_PAGE_BUTTON.style.display = 'none';
     MODIFY_SITE_DATA_BUTTON.style.display = 'none';
-    SEARCH.style.display = 'inline-block';
     clearEditPageComponents();
 
     getSpecificGroupingClass(BSMessageType.GetAllDomains, DOMAIN_LIST_ELEMENT);
@@ -183,14 +187,25 @@ DELETE_BUTTON.addEventListener('click', () => {
         chrome.runtime.sendMessage(removeMsg);
         checkBoxes[i].parentElement?.remove();
     }
+    ERROR_MESSAGE.innerHTML = '';
+    const checkBoxesRemaining = document.querySelectorAll('input[type=checkbox]');
+    if (checkBoxesRemaining.length === 0) {
+        setUpPageInit();
+    }
 });
 
 MODIFY_SITE_DATA_BUTTON.addEventListener('click', () => {
     const checkBoxes = document.querySelectorAll('input[type=checkbox]:checked');
     if (checkBoxes.length !== 1) {
-        const errMsg = `Multiple boxes have been checked ${checkBoxes.length}`;
+        const errMsg = `${checkBoxes.length} sites selected, can only select 1 site to review`;
         console.error(errMsg);
+        // Add error message
+        ERROR_MESSAGE.innerHTML = errMsg;
+        return;
     }
+
+
+    ERROR_MESSAGE.innerHTML = '';
     const url = checkBoxes[0].id;
     const request = {
         messageType: BSMessageType.GetPageData,
