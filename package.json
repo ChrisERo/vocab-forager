@@ -1,6 +1,6 @@
 {
   "name": "vocab-forager",
-  "version": "2.0.7",
+  "version": "2.1.0",
   "description": "VocabForager is a browser extension built for people building their vocabulary for one, or several, languages.",
   "main": "index.js",
   "scripts": {
