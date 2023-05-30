@@ -34,7 +34,7 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
     public static readonly LABEL_TABLE = 'label-data';
     // index  mapping database version to transform function to move from previous version of table to said table
     private static readonly TRANSFORMS = [
-        () => {}, // noop
+        () => {console.error("SHOULD NOT BE HERE");}, // noop
         IndexedDBStorage.v1Creation,
         IndexedDBStorage.addSubjectTable
     ];
@@ -54,7 +54,9 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
                 shouldPullSiteDataFromLS = event.oldVersion <= 0;
 
                 const db: IDBDatabase = event.target.result;
-                for (let i = Math.max(0, event.oldVersion); i <= event.newVersion; i++) {
+                // Only perform transformations asociated with newer versions (older transforms not needed)
+                for (let i = Math.max(0, event.oldVersion) + 1; i <= event.newVersion; i++) {
+                    console.log(`Performing IndexedDB Transform ${i}`);
                     const func = IndexedDBStorage.TRANSFORMS[i];
                     func(db);  // Will likely need changing for future, but fine for now
                 }
