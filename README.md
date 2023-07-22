@@ -23,16 +23,6 @@ dictionary.
 To delete a highlight mark, simply hover over the selection in question and access the
 add-on's context menu and click the _Delete Highlight_ option.
 
-## Dictionaries
-
-Users can add dictionaries by clicking the _New Dictionary_ button in the add-on's
-popup and filling in the required data in the New Dictionary page. Note what the tooltip
-for the _URL Regex_ states; users must provide the URL for searching the text "{word}",
-e.g.  __https://www.spanishdict.com/translate/{word}__
-
-To select a dictionary, enter the extension's popup and choose the appropriate language and
-dictionary. This will apply to all webpages opened by the user.
-
 ## Quiz
 
 Once a user has some text highlighted in a web page, they can quiz themselves on the highlighted vocabulary. To do this, simply select the
@@ -53,5 +43,10 @@ After doing this, the extension can be installed onto Chrome (or some other Chro
 navigating to `Extensions > Manage Extensions > Load unpacked` and selecting the extension packaged extension
 
 ## Important Notes
-VocabForager tries to load previous marks after webpage has been loaded. Text
+- VocabForager tries to load previous marks after webpage has been loaded. Text
 that appears on a webpage after page is initially loaded may not get re-highlighted.
+- VocabForager can only use online dictionaries if the URL contains the word being searched
+and all word searches on the online dictionary have the same structure (see the [manual](./docs/user-manual.md)
+for more information. ONline dictionaries that do not follow this convention are not usable.
+The vast majority of online-dictionaries we have encountered follow these conventions, so we
+do not expect this to be a hinderance for users.
