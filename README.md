@@ -6,13 +6,6 @@ any online dictionary of their choice. Marks are persisted across page visits, g
 users a chance to refresh their lexicon both by rereading the text and by quizzing
 themselves.
 
-## Activate Addon
-
-To activate VocabForager, either use the extension's context menu or the toggle button in
-its popup. This will make highlights visible in all webpages and allow user to add/remove
-highlights to/from the page. The same mechanisms can be used to deactivate the extension,
-causing the opposite effect(s).
-
 ## Highlighting
 
 To highlight parts of a webpage, simply highlight the word(s) you wish to highlight and a

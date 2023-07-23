@@ -32,6 +32,9 @@ After creating a new dictionary, It can be used by selecting it in the popup. As
 the image above, for instance, the current dictionary selected is "WordReference",
 which is registered under the language "Español". At this point, clicking on a highlighted
 word, for example "caldo", would display the web-page (https://www.wordreference.com/definicion/caldo)[https://www.wordreference.com/definicion/caldo].
+Note that once a dictionary is selected from the extension popup, it is used to "define"
+the highlighted-text across all web-pages opened in your browser, not just the tab you
+are on.
 
 If, you wish to remove a dictionary or modify it, say the name has a typo or its URL has
 changed, You would first open the VocabForager main page using te popup and clicking "More Options"
@@ -39,3 +42,24 @@ and then click on the Edit/Delete Dictionary button. This will present you with 
 comboboxes where you select the language and name of a dictionary. The delete button will
 remove the dictionary from VocabForager while the Edit button will show you a page similar to
 the New Dictionary page, where your changes can be made and saved.
+
+## Activate Addon
+
+One dictionaries have been configured, you are almost ready to start using VocabForager and
+highlighting words in webpages; you just need to turn the feature on :).
+
+One can "activate" VocabForager in one of 2 ways:
+1. Switching the popup's toggle button on, the one with the Activation label as shown above.
+2. Pressing the extension's Activate context-menu option as shown below:
+
+<div style="width:50%; height:50%">
+    ![Context Menu options for VocabForager](./assets/context-menu.png "Context Menu")
+</div>
+
+Doing this will allow you to start marking text using VocabForager, looking up
+definitions. Previous marks would also become visible and can be deleted when extension is
+activated.
+
+Deactivating the extension, which can be done by the two aforementioned means, remove
+VocabForager marks (and the ability to create/remove them) from all webpages. It is again
+worth noting that this feature (activating/deactivating) is a global to all browser tabs.
