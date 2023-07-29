@@ -9,8 +9,8 @@ one made for a particular dialect, like [DEM](https://dem.colmex.mx/). If the re
 different first-language, or if they are learning, they can use some translator, like
 [SpanishDict](https://www.spanishdict.com) or (Google Translate)[https://translate.google.com/].
 
-To add dictionaries by clicking the _New Dictionary_ button in the add-on's
-popup and filling in the required data in the New Dictionary page (as shown below).
+Add dictionaries by clicking the _New Dictionary_ button in the add-on's popup and filling
+in the required data in the New Dictionary page (as shown below).
 
 <div style="width:50%; height:50%">
     ![Popup highlighting New Dictionary button and New Dictionary Page Open](./assets/dict-pg.png "New Dictionary Page")
@@ -24,7 +24,7 @@ would be English.
 - _URL Regex_: This setting specifies how to search for text using a specific dictionary.
 The user must provide a pattern (regex) that word searches for a particular word would take,
 where the portion of the URL containing the searched word will be replaced with **{word}**.
-For instance, the URL Regex using [WordReference]((https://www.wordreference.com/definicion/)
+For instance, the URL Regex using [WordReference](https://www.wordreference.com/definicion/)
 would look like **https://www.wordreference.com/definicion/{word}**; The URL for the word "caldo" for this
 website is [https://www.wordreference.com/definicion/caldo](https://www.wordreference.com/definicion/caldo).
 
@@ -50,7 +50,7 @@ highlighting words in webpages; you just need to turn the feature on :).
 
 One can "activate" VocabForager in one of 2 ways:
 1. Switching the popup's toggle button on, the one with the Activation label as shown above.
-2. Pressing the extension's Activate context-menu option as shown below:
+2. Pressing the extension's Activate context menu option as shown below:
 
 <div style="width:50%; height:50%">
     ![Context Menu options for VocabForager](./assets/context-menu.png "Context Menu")
@@ -63,3 +63,35 @@ activated.
 Deactivating the extension, which can be done by the two aforementioned means, remove
 VocabForager marks (and the ability to create/remove them) from all webpages. It is again
 worth noting that this feature (activating/deactivating) is a global to all browser tabs.
+
+## Highlighting & Undoing
+
+Once VocabForager has been activated, you can begin highlighting words (or phrases) from a
+webpage. All one needs to do is **select** the desired text with the mouse/cursor. This
+is usually done by holding onto the mouse's left button and dragging it until all desired
+characters/letters are covered; if just highlighting a single word, simply double-clicking
+on said word should do the trick. Once this is done, the selected text should be
+surrounded by a yellow background and be the color black. Selecting the
+"Change Highlight Style" context menu option (shown above) will change all highlight marks
+to have dark blue backgrounds and white text. Future clicks on this menu option simply
+oscillate between these two settings (nominally thought of as light and dark modes).
+
+When hovering over highlighted text, the user can now look up the definition of said word
+using the configured dictionary. This can be done simply by clicking on the highlighted text
+block. Hovering over the highlight mark should create an aqua border around the text that
+leaves as soon as the mouse is taken elsewhere.
+
+Note that highlights persist across browser sessions. So if you go to a different web page
+from your current tab, or even close the browser, and navigate back to the previous page,
+the text you had previously highlighted should still be highlighted (after about a second
+or two).
+
+To delete a highlight mark, simply hover over the selected text and click on VocabForager's
+_Delete Highlight_ context menu option, as shown below.
+
+# TODO: Add images for all that is discussed in Highlighting section
+
+## Quiz
+
+## Revisiting Previous Sites.
+### Labels

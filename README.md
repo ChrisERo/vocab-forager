@@ -6,16 +6,6 @@ any online dictionary of their choice. Marks are persisted across page visits, g
 users a chance to refresh their lexicon both by rereading the text and by quizzing
 themselves.
 
-## Highlighting
-
-To highlight parts of a webpage, simply highlight the word(s) you wish to highlight and a
-yellow highlight mark will appear over the selected block of text. Clicking on this text
-opens a new tab where the selections definition will appear in the currently selected
-dictionary.
-
-To delete a highlight mark, simply hover over the selection in question and access the
-add-on's context menu and click the _Delete Highlight_ option.
-
 ## Quiz
 
 Once a user has some text highlighted in a web page, they can quiz themselves on the highlighted vocabulary. To do this, simply select the
