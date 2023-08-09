@@ -12,9 +12,7 @@ different first-language, or if they are learning, they can use some translator,
 Add dictionaries by clicking the _New Dictionary_ button in the add-on's popup and filling
 in the required data in the New Dictionary page (as shown below).
 
-<div style="width:50%; height:50%">
-    ![Popup highlighting New Dictionary button and New Dictionary Page Open](./assets/dict-pg.png "New Dictionary Page")
-</div>
+![Popup highlighting New Dictionary button and New Dictionary Page Open](./assets/dict-pg.png "New Dictionary Page")
 
 To define a new dictionary, the following 3 fields are required:
 - Name: a unique name by which to identify your dictionary in VocabForager
@@ -52,9 +50,7 @@ One can "activate" VocabForager in one of 2 ways:
 1. Switching the popup's toggle button on, the one with the Activation label as shown above.
 2. Pressing the extension's Activate context menu option as shown below:
 
-<div style="width:50%; height:50%">
-    ![Context Menu options for VocabForager](./assets/context-menu.png "Context Menu")
-</div>
+![Context Menu options for VocabForager](./assets/context-menu.png "Context Menu")
 
 Doing this will allow you to start marking text using VocabForager, looking up
 definitions. Previous marks would also become visible and can be deleted when extension is
@@ -76,10 +72,8 @@ surrounded by a yellow background and be the color black. Selecting the
 to have dark blue backgrounds and white text. Future clicks on this menu option simply
 oscillate between these two settings (nominally thought of as light and dark modes).
 
-<div style="width:50%; height:50%">
-    ![Normal highlight](./assets/normal-mode-highlight.png "Normal Highlight")
-    ![Dark mode highlight](./assets/dark-mode-highlight.png "Dark Mode Highlight")
-</div>
+![Normal highlight](./assets/normal-mode-highlight.png "Normal Highlight")
+![Dark mode highlight](./assets/dark-mode-highlight.png "Dark Mode Highlight")
 
 When hovering over highlighted text, the user can now look up the definition of said word
 using the configured dictionary. This can be done simply by clicking on the highlighted text
@@ -94,15 +88,11 @@ or two).
 To delete a highlight mark, simply hover over the selected text and click on VocabForager's
 _Delete Highlight_ context menu option, as shown below.
 
-<div style="width:50%; height:50%">
-    ![Context Menu with Delete Option](./assets/delete-context-menu.png "Delete Option")
-</div>
+![Context Menu with Delete Option](./assets/delete-context-menu.png "Delete Option")
 
 ## Quiz
 
-<div style="width:50%; height:50%">
-    ![Quiz](./assets/quiz.png "Quiz")
-</div>
+![Quiz](./assets/quiz.png "Quiz")
 
 When revisiting a web page, you can quiz yourself on the words/phrases you've highlighted
 by clicking the "Quiz" option. A popup will then appear on the page with highlighted text
@@ -115,9 +105,8 @@ top right of the popup.
 
 
 ## Main Menu
-<div style="width:50%; height:50%">
-    ![Main Menu](./assets/main-menu.png "Main Menu")
-</div>
+
+![Main Menu](./assets/main-menu.png "Main Menu")
 
 To navigate to VocabForager's Main Menu, click on the "More Options" button in the
 extension's popup. From here, you can create, edit, or delete your dictionaries, as
