@@ -6,24 +6,21 @@ any online dictionary of their choice. Marks are persisted across page visits, g
 users a chance to refresh their lexicon both by rereading the text and by quizzing
 themselves.
 
-## Quiz
-
-Once a user has some text highlighted in a web page, they can quiz themselves on the highlighted vocabulary. To do this, simply select the
-Quiz option in the context menu; a blue modal with a highlighted word in the middle should appear. In the quiz, users can search the definition of the
-current text by simply clicking on it (like highlighted text in a web page). Make sure that VocabForager is activated before selecting the Quiz option, otherwise
-nothing will happen.
+For more information on how to use VocabForager, please read the [User Manual](./docs/user-manual.md).
 
 ## Installation
 The standard way of installing this extension is through the
 [Chrome Web Store](https://chrome.google.com/webstore/detail/vocabforager/balmgepggidbdfihlbiknlabfnhbahpf).
 
-Alternatively, one can download this repository and "build" the extension locally using npm:
+If this proves difficult, one can download this repository and "build" the extension locally using npm.
 ```console
 npm install  # downloads all dependencies that source code depends on
 npm run build-prod  # compiles source code and bundles code and assets into extension directory
 ```
 After doing this, the extension can be installed onto Chrome (or some other Chromium-based browser) by
-navigating to `Extensions > Manage Extensions > Load unpacked` and selecting the extension packaged extension
+navigating to `Extensions > Manage Extensions > Load unpacked` and selecting the extension
+packaged extension. The exact steps may vary depending on the browser, but the steps the
+general steps should be the same.
 
 ## Important Notes
 - VocabForager tries to load previous marks after webpage has been loaded. Text
