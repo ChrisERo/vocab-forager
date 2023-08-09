@@ -76,6 +76,11 @@ surrounded by a yellow background and be the color black. Selecting the
 to have dark blue backgrounds and white text. Future clicks on this menu option simply
 oscillate between these two settings (nominally thought of as light and dark modes).
 
+<div style="width:50%; height:50%">
+    ![Normal highlight](./assets/normal-mode-highlight.png "Normal Highlight")
+    ![Dark mode highlight](./assets/dark-mode-highlight.png "Dark Mode Highlight")
+</div>
+
 When hovering over highlighted text, the user can now look up the definition of said word
 using the configured dictionary. This can be done simply by clicking on the highlighted text
 block. Hovering over the highlight mark should create an aqua border around the text that
@@ -89,9 +94,50 @@ or two).
 To delete a highlight mark, simply hover over the selected text and click on VocabForager's
 _Delete Highlight_ context menu option, as shown below.
 
-# TODO: Add images for all that is discussed in Highlighting section
+<div style="width:50%; height:50%">
+    ![Context Menu with Delete Option](./assets/delete-context-menu.png "Delete Option")
+</div>
 
 ## Quiz
 
-## Revisiting Previous Sites.
-### Labels
+<div style="width:50%; height:50%">
+    ![Quiz](./assets/quiz.png "Quiz")
+</div>
+
+When revisiting a web page, you can quiz yourself on the words/phrases you've highlighted
+by clicking the "Quiz" option. A popup will then appear on the page with highlighted text
+in the middle. After making a guess as to what the text means, clicking it would open up
+a dictionary tab as if you clicked on the highlight in the actual webpage. Once you've
+finished guessing, move onto the next word by clicking the "Next" button. After doing this for
+all highlighted text, the quiz will reset, after shuffling the words of course to hamper
+memorizing patterns instead of word definitions. To leave the quiz, click the "X" on the
+top right of the popup.
+
+
+## Main Menu
+<div style="width:50%; height:50%">
+    ![Main Menu](./assets/main-menu.png "Main Menu")
+</div>
+
+To navigate to VocabForager's Main Menu, click on the "More Options" button in the
+extension's popup. From here, you can create, edit, or delete your dictionaries, as
+described above, but you can also perform other tasks, as described below.
+
+### Revisiting Previous Sites.
+#### Domain
+#### Labels
+### Importing/Exporting Data
+If, for whatever reason, you stop using your current browser or you get a new device, the content
+you have in VocabForager, all your dictionaries and webpage data, will be lost. To
+transfer these over, you would need to perform the following:
+
+1. Install VocabForager on your new browser either on whatever device you decide to use
+moving forward.
+2. Click the "Export Extension Data" from the Main Menu in your old browser. This will
+create a file named `vocabForagerData.json` inside your Downloads folder.
+3. If moving to a new device, transfer this file over.
+4. In your new browser's instance of VocabForager, click the "Import Extension Data"
+option in the Main Menu. Select the file created in step 2 when prompted.
+
+Congratulations! You have successfully migrated your VocabForager data over to your new
+browser.
