@@ -147,9 +147,10 @@ for the page.
 
 ![Site List](./assets/site-data-page.png "Site Data Page")
 
-One important note for is that labels can only be made if they following these constraits:
+One important note for is that labels can only be made if they following these
+constraints:
 - Must contain at least one non-space character
--
+- Must be less than or equal to **64** characters
 
 ### Importing/Exporting Data
 If, for whatever reason, you stop using your current browser or you get a new device, the content
