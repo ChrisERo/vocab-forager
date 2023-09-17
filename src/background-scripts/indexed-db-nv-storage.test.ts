@@ -1,4 +1,4 @@
-import { DB_NAME, DB_VERSION, getIndexedDBStorage, IDBSiteData, IndexedDBStorage } from "./indexed-db-nv-storage";
+import { DB_NAME, DB_VERSION, getIndexedDBStorage, IDBSiteData, IndexedDBStorage, MAX_LABEL_LENGTH } from "./indexed-db-nv-storage";
 import "fake-indexeddb/auto";
 import { GlobalDictionaryData, SeeSiteData, SiteData } from "../utils/models";
 import { combineUrl, parseURL } from "../utils/utils";
@@ -1292,7 +1292,7 @@ describe('IndexedDBStorage SiteDataStorage', () => {
             [[1,1], [2, 1], [1, 2], [2,1], null]
         ],
         [
-            'Get ALl Labels',
+            'Get ALL Labels',
             ['getAllLabels', 'addLabel', 'addLabel', 'addLabel', 'addLabel', 'getAllLabels',
             'removeURL', 'getAllLabels', 'removeLabel', 'getAllLabels'],
             [
@@ -1328,7 +1328,7 @@ describe('IndexedDBStorage SiteDataStorage', () => {
         ],
         [
             'Add invalid label entries',
-            ['addLabel', 'addLabel', 'addLabel', 'addLabel', 'addLabel', 'addLabel'],
+            ['addLabel', 'addLabel', 'addLabel', 'addLabel', 'addLabel', 'addLabel', 'addLabel', 'addLabel', 'addLabel'],
             [
                 ['https://www.articles.fake.net/articles/334567', "News"],
                 ['https://www.articles.fake.net/articles/334567', "Lies"],
@@ -1337,8 +1337,11 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                 ['https://www.articles.net/articles/798054', ''],
                 ['https://www.articles.net/articles/798054', '   '],
                 ['https://www.articles.net/articles/798054', ' \t\n\r'],
+                ['https://www.articles.net/articles/798054', 'qwertyuiopasdfghjklzxcvbnmqwertyuiopasdfghjklzxcvbnm1234567890-+='],
+                ['https://www.articles.net/articles/798054', 'qwertyuiopasdfghjklzxcvbnmqwertyuiopasdfghjklzxcvbnm1234567890-+'],
+
             ],
-            [[1,1], [2, 1], [1, 2], [2,1], [2, 0], [2, 0]]
+            [[1,1], [2, 1], [1, 2], [2,1], [2, 0], [2, 0], [2, 0], [2, 0], [3, 1]]
         ],
         [
             'Add label entries or fake URLs',
@@ -1355,6 +1358,11 @@ describe('IndexedDBStorage SiteDataStorage', () => {
         ],
     ])('Test Label Actions: %s', async (_description: string, actions: string[],
             paramsArray: any[], expectedArray: any[]) => {
+        // Check Test Parameters
+        expect(actions.length).toBe(paramsArray.length);
+        expect(paramsArray.length).toBe(expectedArray.length);
+
+        // Set Up Test and Run
         const dataToStore: any = {
             'is_activated': true,
             'https://www.articles.fake.net/articles/334567': {
@@ -1421,7 +1429,7 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                     const expected: [number, number] = expectedArray[i] as [number, number];
                     const urlLabels: string[] = await dao.getLabelsOfSpecificSite(params[0]);
                     const labelURLs = await dao.getURLsOfSpecificLabels(params[1]);
-                    if (params[1].trim().length > 0 && dataToStore[params[0]] !== undefined) {
+                    if (params[1].trim().length > 0 && params[1].trim().length <= MAX_LABEL_LENGTH && dataToStore[params[0]] !== undefined) {
                         expect(urlLabels).toContain(params[1]);
                         expect(labelURLs).toContain(params[0]);
                     } else {
