@@ -6,6 +6,8 @@ import { LocalStorage, NonVolatileBrowserStorage } from "./non-volatile-browser-
 export const DB_NAME = 'vocab-forager';
 export const DB_VERSION = 2;
 
+export const MAX_LABEL_LENGTH = 64;
+
 type SiteDataMap =  {[url: string]: SiteData}
 
 export interface IDBSiteData extends SiteData {
@@ -212,8 +214,8 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
         const label = labelTemp.trim();
         const query = (db: IDBDatabase): Promise<void> => {
             return new Promise(async (resolve, reject) => {
-                if (label.length === 0) {
-                    console.log(`Attempted to add empty label [${labelTemp}] to ${url}`);
+                if (label.length === 0 || label.length > MAX_LABEL_LENGTH) {
+                    console.log(`Attempted to add label [${labelTemp}] to ${url}, it has either 0 or more than ${MAX_LABEL_LENGTH} characters`);
                     resolve();
                     return;
                 }
