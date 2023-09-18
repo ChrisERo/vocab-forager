@@ -112,18 +112,18 @@ To navigate to VocabForager's Main Menu, click on the "More Options" button in t
 extension's popup. From here, you can create, edit, or delete your dictionaries, as
 described above, but you can also perform other tasks, as described below.
 
-### Revisiting Previous Sites.
+### Revisiting Previous Sites
 
-The "See Highlighted Sites" takes the user to a page where they can see all websites with
-text highlighted through VocabForager. One could either search by website (e.g. google.com,
-en.wikipedia.org, etc.) or by a user-defined label given to one or several different
-webpages.
+The "See Highlighted Sites" takes the user to a page where all websites with
+text highlighted through VocabForager are visible. One could either search by domain
+(e.g. google.com, en.wikipedia.org, etc.) or by a user-defined label given to one or
+several different webpages.
 
 ![See Highlighted Sites page](./assets/site-data-main.png "Site Data Main Page")
 
-All webpages with highlights are associated with a "domain", which is the in actuality the
-domain plus internet protocol used to access the page (e.g. https://google.com or https://www.duolingo.com),
-**Labels**, on the other hand are defined by the user in a page's site data page (described later).
+All webpages with highlights are associated with a "domain", which is in actuality the
+domain plus internet protocol used to access the page (e.g. https://google.com or https://www.duolingo.com).
+**Labels**, on the other hand, are a string of text defined by the user in a page's site data page (described later).
 
 Each search mode has its own separate search bar. Clicking it will yield a list of
 possible values (that have matching entries). Note that only one of these two search criteria
@@ -132,7 +132,9 @@ can be used
 ![See Highlighted Sites page with domain data](./assets/site-data-options.png "Site Data Main Page with domain options")
 
 Choosing one of these search criteria and clicking the search button takes the user to a
-page listing all matching webpages. From here, users have multiple options:
+page listing all matching webpages. In the example below, the user searched for all
+webpages with the domain https://es.wikipedia.org, the Spanish verson of Wikipedia. From
+here, users have multiple options:
 
 - Revisit a site by clicking the webpage's title (or URL) directly
 - Select multiple sites by clicking the adjacent check mark and deleting their data
@@ -140,28 +142,28 @@ page listing all matching webpages. From here, users have multiple options:
 
 ![Site List](./assets/search-results.png "Search Results Page")
 
-Performing the last of these results would provide you a page showing the site's data.
+Performing the last of these results would provide a page showing the site's data.
 From here, one can remove words from the page's vocabulary list, quiz one's self on the
-page's highlighted text (see previous section), and add/remove labels used for searching
+page's vocabulary (see previous section), and add/remove labels used for searching
 for the page.
 
 ![Site List](./assets/site-data-page.png "Site Data Page")
 
-One important note for is that labels can only be made if they following these
-constraints:
+One important note is that labels can only be made if they following these constraints:
 - Must contain at least one non-space character
 - Must be less than or equal to **64** characters
 
 ### Importing/Exporting Data
-If, for whatever reason, you stop using your current browser or you get a new device, the content
-you have in VocabForager, all your dictionaries and webpage data, will be lost. To
-transfer these over, you would need to perform the following:
+If, for whatever reason, you stop using your current browser or you get a new device,
+the content you have in VocabForager, all your dictionaries and webpage data, will be
+lost. To transfer these over, you would need to perform the following:
 
 1. Install VocabForager on your new browser either on whatever device you decide to use
 moving forward.
 2. Click the "Export Extension Data" from the Main Menu in your old browser. This will
-create a file named `vocabForagerData.json` inside your Downloads folder.
-3. If moving to a new device, transfer this file over.
+create a file named something like `vocabForagerData.json` inside your Downloads folder.
+3. If moving to a new device, transfer this file over. This can be done via tools like a
+USB flash drive or some cloud storage service.
 4. In your new browser's instance of VocabForager, click the "Import Extension Data"
 option in the Main Menu. Select the file created in step 2 when prompted.
 
