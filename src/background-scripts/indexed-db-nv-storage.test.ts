@@ -12,10 +12,20 @@ class MockLocalStorage implements chrome.storage.LocalStorageArea {
     private storage: {[key: string]: any};
     QUOTA_BYTES: number;
 
+    onChanged: chrome.storage.StorageAreaChangedEvent;
+
     constructor() {
         this.storage = {};
         this.QUOTA_BYTES = -1;
+        this.onChanged = {} as chrome.storage.StorageAreaChangedEvent;
     }
+    setAccessLevel(accessOptions: { accessLevel: "TRUSTED_AND_UNTRUSTED_CONTEXTS" | "TRUSTED_CONTEXTS"; }): Promise<void>;
+    setAccessLevel(accessOptions: { accessLevel: "TRUSTED_AND_UNTRUSTED_CONTEXTS" | "TRUSTED_CONTEXTS"; }, callback: () => void): void;
+    setAccessLevel(accessOptions: unknown, callback?: unknown): void | Promise<void> {
+        throw new Error("Method not implemented.");
+    }
+
+
 
     getBytesInUse(callback: (bytesInUse: number) => void): void;
     getBytesInUse(keys?: string | string[] | null | undefined): Promise<number>;
