@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "clean": "rm -rf extension extension.zip",
-    "test": "jest",
+    "test": "jest --coverage",
     "build-dev": "webpack --env mode=development --config webpack/webpack.config.js",
     "build-prod": "webpack --env mode=production --config webpack/webpack.config.js",
     "build-prod-zip": "npm run clean && npm run build-prod && zip -r extension.zip extension"
