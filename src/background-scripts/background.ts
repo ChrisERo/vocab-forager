@@ -7,7 +7,6 @@ import { isNewActivatedState } from "../utils/content-script-communication";
 import { getIndexedDBStorage, IndexedDBStorage } from "./indexed-db-nv-storage";
 
 const browserStorage: LocalStorage = getLocalStorage();
-const siteDateStorage: IndexedDBStorage = getIndexedDBStorage(browserStorage);
 const dictionaryManager: DictionaryManager = new DictionaryManager(browserStorage);
 const contextMenuManager: ContextMenuManager = new ContextMenuManager(browserStorage);
 
@@ -92,234 +91,237 @@ async function openTab(url: string): Promise<void> {
  * Using a listener per background script caused errors, in particular
  * when loading popup menu for the first time.
  */
- function handler(request: any, _: chrome.runtime.MessageSender, sendResponse: sendResponseFunction): boolean {
-    if (!isBsMessage(request)) {
-       logUnexpected("request structure", request);
-       return false;
-    }
+function makeHandler(siteDateStorage: Readonly<IndexedDBStorage>): (message: any, sender: chrome.runtime.MessageSender, sendResponse: (response?: any) => void) => void {
+    return (request: any, _: chrome.runtime.MessageSender, sendResponse: sendResponseFunction): boolean => {
+        if (!isBsMessage(request)) {
+        logUnexpected("request structure", request);
+        return false;
+        }
 
-    console.log(`REQUEST TO BACKGROUND MADE: ${request.messageType}`);
+        console.log(`REQUEST TO BACKGROUND MADE: ${request.messageType}`);
 
-    switch (request.messageType) {
-        case BSMessageType.DictsOfLang: {
-            if (isDictsOfLangRequest(request.payload)) {
-                dictionaryManager
-                    .getDictionariesOfLanguage(request.payload.language)
-                    .then((response) => sendResponse(response));
-            } else {
-                logUnexpected('payload', request.payload);
+        switch (request.messageType) {
+            case BSMessageType.DictsOfLang: {
+                if (isDictsOfLangRequest(request.payload)) {
+                    dictionaryManager
+                        .getDictionariesOfLanguage(request.payload.language)
+                        .then((response) => sendResponse(response));
+                } else {
+                    logUnexpected('payload', request.payload);
+                }
+                break;
             }
-            break;
-        }
-        case BSMessageType.GetCurrentDictionary: {
-            dictionaryManager.getCurrentDictionaryId().then((response) => sendResponse(response));
-            break;
-        }
-        case BSMessageType.GetLanguages : {
-            dictionaryManager.getLanguages().then((response) => sendResponse(response));
-            break;
-        }
-        case BSMessageType.SetCurrentDictionary: {
-            if (isDictionaryID(request.payload)) {
-                dictionaryManager.setcurrentDictinoary(request.payload).then(() => sendResponse());
-            } else {
-                logUnexpected('payload', request.payload);
+            case BSMessageType.GetCurrentDictionary: {
+                dictionaryManager.getCurrentDictionaryId().then((response) => sendResponse(response));
+                break;
             }
-            break;
-        }
-        case BSMessageType.GetExistingDictionary : {
-            if (isDictionaryID(request.payload)) {
-                dictionaryManager.getDictionaryFromIdentifier(request.payload).then((response) => sendResponse(response));
-            } else {
-                logUnexpected('payload', request.payload);
+            case BSMessageType.GetLanguages : {
+                dictionaryManager.getLanguages().then((response) => sendResponse(response));
+                break;
             }
-            break;
-        }
-        case BSMessageType.UpdateExistingDictionary: {
-            if (isUpdateDictionaryRequest(request.payload)) {
-                let data: Dictionary = request.payload.content;
-                let index: DictionaryIdentifier = request.payload.index;
-                let language: string = request.payload.language;
-                dictionaryManager.modifyExistingDictionary(index, language, data).then(() => sendResponse());
-            } else {
-                logUnexpected('payload', request.payload);
+            case BSMessageType.SetCurrentDictionary: {
+                if (isDictionaryID(request.payload)) {
+                    dictionaryManager.setcurrentDictinoary(request.payload).then(() => sendResponse());
+                } else {
+                    logUnexpected('payload', request.payload);
+                }
+                break;
             }
-            break;
-        }
-        case BSMessageType.AddNewDictionary: {
-            if (isAddNewDictRequest(request.payload)) {
-                const dict: Dictionary = request.payload.dict;
-                const langauge: string = request.payload.lang;
-                dictionaryManager.addDictionary(dict, langauge).then(() => sendResponse());
+            case BSMessageType.GetExistingDictionary : {
+                if (isDictionaryID(request.payload)) {
+                    dictionaryManager.getDictionaryFromIdentifier(request.payload).then((response) => sendResponse(response));
+                } else {
+                    logUnexpected('payload', request.payload);
+                }
+                break;
             }
-            break;
-        }
-        case BSMessageType.DeleteExitingDictionary: {
-            if (isDictionaryID(request.payload)) {
-                dictionaryManager.removeDictionary(request.payload).then((result) => sendResponse(result));
-            } else {
-                logUnexpected('payload', request.payload);
+            case BSMessageType.UpdateExistingDictionary: {
+                if (isUpdateDictionaryRequest(request.payload)) {
+                    let data: Dictionary = request.payload.content;
+                    let index: DictionaryIdentifier = request.payload.index;
+                    let language: string = request.payload.language;
+                    dictionaryManager.modifyExistingDictionary(index, language, data).then(() => sendResponse());
+                } else {
+                    logUnexpected('payload', request.payload);
+                }
+                break;
             }
-            break;
-        }
-        case BSMessageType.SearchWordURL: {
-            if (isSearchRequest(request.payload)) {
-                dictionaryManager.getWordSearchURL(request.payload.word).then(openTab);
-            } else {
-                logUnexpected('payload', request.payload);
+            case BSMessageType.AddNewDictionary: {
+                if (isAddNewDictRequest(request.payload)) {
+                    const dict: Dictionary = request.payload.dict;
+                    const langauge: string = request.payload.lang;
+                    dictionaryManager.addDictionary(dict, langauge).then(() => sendResponse());
+                }
+                break;
             }
-            break;
-        }
-        case BSMessageType.StorePageData: {
-            if (isPageDataPair(request.payload)) {
-                let data: SiteData = request.payload.data;
-                let url: string = request.payload.url;
-                siteDateStorage.storePageData(data, url);
-            } else {
-                logUnexpected('payload', request.payload);
+            case BSMessageType.DeleteExitingDictionary: {
+                if (isDictionaryID(request.payload)) {
+                    dictionaryManager.removeDictionary(request.payload).then((result) => sendResponse(result));
+                } else {
+                    logUnexpected('payload', request.payload);
+                }
+                break;
             }
-            break;
-        }
-        case BSMessageType.GetPageData: {
-            if (isGetDataForPageRequest(request.payload)) {
-                siteDateStorage.getPageData(request.payload.url).then((data) => sendResponse(data));
-            } else {
-                logUnexpected('payload', request.payload);
+            case BSMessageType.SearchWordURL: {
+                if (isSearchRequest(request.payload)) {
+                    dictionaryManager.getWordSearchURL(request.payload.word).then(openTab);
+                } else {
+                    logUnexpected('payload', request.payload);
+                }
+                break;
             }
-            break;
-        }
-        case BSMessageType.DeletePageData: {
-            if (isGetDataForPageRequest(request.payload)) {
-                siteDateStorage.removePageData(request.payload.url);
-            } else {
-                logUnexpected('payload', request.payload);
+            case BSMessageType.StorePageData: {
+                if (isPageDataPair(request.payload)) {
+                    let data: SiteData = request.payload.data;
+                    let url: string = request.payload.url;
+                    siteDateStorage.storePageData(data, url);
+                } else {
+                    logUnexpected('payload', request.payload);
+                }
+                break;
             }
-            break;
-        }
-        case BSMessageType.GetCurrentActivation: {
-            browserStorage.getCurrentActivation().then((result) => sendResponse(result));
-            break;
-        }
-        case BSMessageType.SetCurrentActivation: {
-            if (isSetActivationRequest(request.payload)) {
-                browserStorage.setCurrentActivation(request.payload.isActivated);
-                contextMenuManager.updateContextMenuBasedOnActivation(request.payload.isActivated);
-                // tab notification done by activaters, so nothing else to do
-            } else {
-                logUnexpected('payload', request.payload);
+            case BSMessageType.GetPageData: {
+                if (isGetDataForPageRequest(request.payload)) {
+                    siteDateStorage.getPageData(request.payload.url).then((data) => sendResponse(data));
+                } else {
+                    logUnexpected('payload', request.payload);
+                }
+                break;
             }
-            break;
-        }
-        case BSMessageType.ShowDeleteHighlightsCM: {
-            contextMenuManager.exposeDeleteContextMenu();
-            sendResponse();
-            break;
-        }
-        case BSMessageType.HideDeleteHighlightsCM: {
-            contextMenuManager.hideDeleteContextMenu();
-            break;
-        }
-        case BSMessageType.GetAllDomains: {
-            siteDateStorage.getAllDomains().then((response) => sendResponse(response));
-            break;
-        }
-        case BSMessageType.GetLabelsForSite: {
-            if (isGetDataForPageRequest(request.payload)) {
-                siteDateStorage.getLabelsOfSpecificSite(request.payload.url).then((response) => sendResponse(response));
-            } else {
-                logUnexpected('payload', request.payload);
+            case BSMessageType.DeletePageData: {
+                if (isGetDataForPageRequest(request.payload)) {
+                    siteDateStorage.removePageData(request.payload.url);
+                } else {
+                    logUnexpected('payload', request.payload);
+                }
+                break;
             }
-            break;
-        }
-        case BSMessageType.GetURLsForLabel: {
-            if (isGetDataForLabelRequest(request.payload)) {
-                siteDateStorage.getURLsOfSpecificLabels(request.payload.label).then((urls: string[]) => {
-                    const siteDataPromises = urls.map(url => siteDateStorage.getPageData(url));
-                    Promise.all(siteDataPromises).then(siteData => {
-                        const seeSiteDataOutput: SeeSiteData[] = [];
-                        for (let i = 0; i < urls.length; i++) {
-                            const data: SeeSiteData = {
-                                url: urls[i],
-                                title: siteData[i].title
-                            };
-                            seeSiteDataOutput.push(data);
-                        }
-                        sendResponse(seeSiteDataOutput);
+            case BSMessageType.GetCurrentActivation: {
+                browserStorage.getCurrentActivation().then((result) => sendResponse(result));
+                break;
+            }
+            case BSMessageType.SetCurrentActivation: {
+                if (isSetActivationRequest(request.payload)) {
+                    browserStorage.setCurrentActivation(request.payload.isActivated);
+                    contextMenuManager.updateContextMenuBasedOnActivation(request.payload.isActivated);
+                    // tab notification done by activaters, so nothing else to do
+                } else {
+                    logUnexpected('payload', request.payload);
+                }
+                break;
+            }
+            case BSMessageType.ShowDeleteHighlightsCM: {
+                contextMenuManager.exposeDeleteContextMenu();
+                sendResponse();
+                break;
+            }
+            case BSMessageType.HideDeleteHighlightsCM: {
+                contextMenuManager.hideDeleteContextMenu();
+                break;
+            }
+            case BSMessageType.GetAllDomains: {
+                siteDateStorage.getAllDomains().then((response) => sendResponse(response));
+                break;
+            }
+            case BSMessageType.GetLabelsForSite: {
+                if (isGetDataForPageRequest(request.payload)) {
+                    siteDateStorage.getLabelsOfSpecificSite(request.payload.url).then((response) => sendResponse(response));
+                } else {
+                    logUnexpected('payload', request.payload);
+                }
+                break;
+            }
+            case BSMessageType.GetURLsForLabel: {
+                if (isGetDataForLabelRequest(request.payload)) {
+                    siteDateStorage.getURLsOfSpecificLabels(request.payload.label).then((urls: string[]) => {
+                        const siteDataPromises = urls.map(url => siteDateStorage.getPageData(url));
+                        Promise.all(siteDataPromises).then(siteData => {
+                            const seeSiteDataOutput: SeeSiteData[] = [];
+                            for (let i = 0; i < urls.length; i++) {
+                                const data: SeeSiteData = {
+                                    url: urls[i],
+                                    title: siteData[i].title
+                                };
+                                seeSiteDataOutput.push(data);
+                            }
+                            sendResponse(seeSiteDataOutput);
+                        });
+                    });
+                } else {
+                    logUnexpected('payload', request.payload);
+                }
+                break;
+            }
+            case BSMessageType.AddLabelEntry: {
+                if (isLabelEntryModRequest(request.payload)) {
+                    siteDateStorage.addLabelEntry(request.payload.url, request.payload.label)
+                        .then(() => sendResponse());
+                } else {
+                    logUnexpected('payload', request.payload);
+                }
+                break;
+            }
+            case BSMessageType.RemoveLabelEntry: {
+                if (isLabelEntryModRequest(request.payload)) {
+                    siteDateStorage.removeLabelEntry(request.payload.url, request.payload.label)
+                        .then(() => sendResponse());
+                } else {
+                    logUnexpected('payload', request.payload);
+                }
+                break;
+            }
+            case BSMessageType.GetAllLabels: {
+                siteDateStorage.getAllLabels().then((response) => sendResponse(response));
+                break;
+            }
+            case BSMessageType.GetSeeSiteData: {
+                if (isGetUrlsOfDomainRequest(request.payload)) {
+                    siteDateStorage.getSeeSiteDataOfDomain(request.payload.schemeAndHost).then((response) => sendResponse(response));
+                } else {
+                    logUnexpected('payload', request.payload);
+                }
+                break;
+            }
+            case BSMessageType.GetAllExtensionData: {
+                const globalD = browserStorage.getAllStorageData();
+                const siteD = siteDateStorage.getAllStorageData();
+                globalD.then((globalData) => {
+                    siteD.then((siteData) => {
+                        const response = {
+                            ...globalData,
+                            ...siteData
+                        };
+                        sendResponse(response)
                     });
                 });
-            } else {
-                logUnexpected('payload', request.payload);
+                break;
             }
-            break;
-        }
-        case BSMessageType.AddLabelEntry: {
-            if (isLabelEntryModRequest(request.payload)) {
-                siteDateStorage.addLabelEntry(request.payload.url, request.payload.label)
-                    .then(() => sendResponse());
-            } else {
-                logUnexpected('payload', request.payload);
+            case BSMessageType.LoadExtensionData: {
+                if (isLoadExtensionDataRequest(request.payload)) {
+                    // Upload data to localStorage
+                    const onlyGlobalData:{[key: string]: any} = {};
+                    onlyGlobalData[browserStorage.isActivatedKey] = request.payload.data[browserStorage.isActivatedKey];
+                    onlyGlobalData[browserStorage.dictionaryKey] = request.payload.data[browserStorage.dictionaryKey];
+                    browserStorage.uploadExtensionData(onlyGlobalData).then((response) =>
+                        contextMenuManager.updateContextMenuBasedOnActivation(response)
+                    );
+                    // Upload data to IndexedDB
+                    siteDateStorage.uploadExtensionData(request.payload.data);
+                } else {
+                    logUnexpected('payload', request.payload);
+                }
+                break;
             }
-            break;
-        }
-        case BSMessageType.RemoveLabelEntry: {
-            if (isLabelEntryModRequest(request.payload)) {
-                siteDateStorage.removeLabelEntry(request.payload.url, request.payload.label)
-                    .then(() => sendResponse());
-            } else {
-                logUnexpected('payload', request.payload);
+            default: {
+                logUnexpected('messageType', request.messageType);
             }
-            break;
         }
-        case BSMessageType.GetAllLabels: {
-            siteDateStorage.getAllLabels().then((response) => sendResponse(response));
-            break;
-        }
-        case BSMessageType.GetSeeSiteData: {
-            if (isGetUrlsOfDomainRequest(request.payload)) {
-                siteDateStorage.getSeeSiteDataOfDomain(request.payload.schemeAndHost).then((response) => sendResponse(response));
-            } else {
-                logUnexpected('payload', request.payload);
-            }
-            break;
-        }
-        case BSMessageType.GetAllExtensionData: {
-            const globalD = browserStorage.getAllStorageData();
-            const siteD = siteDateStorage.getAllStorageData();
-            globalD.then((globalData) => {
-                siteD.then((siteData) => {
-                    const response = {
-                        ...globalData,
-                        ...siteData
-                    };
-                    sendResponse(response)
-                });
-            });
-            break;
-        }
-        case BSMessageType.LoadExtensionData: {
-            if (isLoadExtensionDataRequest(request.payload)) {
-                // Upload data to localStorage
-                const onlyGlobalData:{[key: string]: any} = {};
-                onlyGlobalData[browserStorage.isActivatedKey] = request.payload.data[browserStorage.isActivatedKey];
-                onlyGlobalData[browserStorage.dictionaryKey] = request.payload.data[browserStorage.dictionaryKey];
-                browserStorage.uploadExtensionData(onlyGlobalData).then((response) =>
-                    contextMenuManager.updateContextMenuBasedOnActivation(response)
-                );
-                // Upload data to IndexedDB
-                siteDateStorage.uploadExtensionData(request.payload.data);
-            } else {
-                logUnexpected('payload', request.payload);
-            }
-            break;
-        }
-        default: {
-            logUnexpected('messageType', request.messageType);
-        }
+
+        return true;  // needed because https://stackoverflow.com/questions/54126343/how-to-fix-unchecked-runtime-lasterror-the-message-port-closed-before-a-respon
     }
+}
 
-    return true;  // needed because https://stackoverflow.com/questions/54126343/how-to-fix-unchecked-runtime-lasterror-the-message-port-closed-before-a-respon
- }
-
-
+getIndexedDBStorage(browserStorage).then((siteDataStorage: Readonly<IndexedDBStorage>) => {
+    chrome.runtime.onMessage.addListener(makeHandler(siteDataStorage));
+});
 contextMenuManager.setUpContextMenus();
-chrome.runtime.onMessage.addListener(handler);

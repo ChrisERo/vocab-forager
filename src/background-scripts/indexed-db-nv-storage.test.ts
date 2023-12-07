@@ -274,14 +274,12 @@ describe('IndexedDBStorage SiteDataStorage', () => {
         await dao.setUp(localStorage);
         let indexedDBData = await dao.getAllStorageData()
         expect(Object.keys(indexedDBData).length).toEqual(3);
-        await new Promise((r) => setTimeout(r, 1000));
         expect(await localStorage.getAllPageUrls()).toHaveLength(0);
       });
 
     test('Get IndexedDBStorage Convenience Function', async () => {
-        dao = getIndexedDBStorage();
+        dao = await getIndexedDBStorage();
         expect(dao).not.toEqual(null);
-        await new Promise((r) => setTimeout(r, 1000));
         expect(dao.getDB()).not.toEqual(null);
       });
 
@@ -1617,7 +1615,6 @@ describe('IndexedDBStorage SiteDataStorage', () => {
             }
         ]
     ])('%s async test', async (name: string, executeQuery: queryFunction) => {
-        //jest.setTimeout(10000);  // Does not work in in async tests
         const dataToStore: any = {
             'is_activated': true,
             'https://www.articles.fake.net/articles/334567': {
@@ -1673,7 +1670,7 @@ describe('IndexedDBStorage SiteDataStorage', () => {
         dao = new IndexedDBStorage();
         const localStorage: LocalStorage = getLocalStorage();
         expect(dao.getDB()).toBeNull();
-        dao.setUpTestFunction(3750, localStorage);  // hope 3.75 second wait is enough time to have query execute before setUp completion
+        dao.setUp(localStorage);  // hope 3.75 second wait is enough time to have query execute before setUp completion
         await executeQuery(dao);
         expect(dao.getDB()).not.toBeNull();
         dao.getDB()?.close();
