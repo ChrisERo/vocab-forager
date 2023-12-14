@@ -204,24 +204,32 @@ export class DictionaryManager {
             dictList[dictID.index] = newDict;
             this.source.setDictionaryData(dc);
         } else {
+            // Store important current state before any modification
+            let dc: GlobalDictionaryData = await this.source.getDictionaryData();
+            const oldCurrentDictLanguage = dc.currentDictionary.language;
+            const oldCurrentDictIndex = dc.currentDictionary.index;
+
             // Move dictionary from old language to new language (with edits)
             let successful_delete = await this.removeDictionary(dictID); // must get dicts after doing this
             if (successful_delete) {
-                let dc: GlobalDictionaryData = await this.source.getDictionaryData();
+                dc = await this.source.getDictionaryData();
                 let dictionaries: SubjectToDictsMapping = dc.languagesToResources;
 
-                // Determine whether to move dictionary to brand new or existing language
+                // Determine whether to move/insert dictionary to brand new or existing language
                 if (dictionaries.hasOwnProperty(newLanguage)) {
                     dictionaries[newLanguage].push(newDict);
                 } else {
                     dictionaries[newLanguage] = [newDict];
                 }
 
-                // See if current dictionary identifier needs updating
-                if (dc.currentDictionary.language === dictID.language &&
-                    dc.currentDictionary.index === dictID.index) {
+                // See if "current" dictionary identifier needs updating
+                if (oldCurrentDictLanguage === dictID.language) {
+                    if (oldCurrentDictIndex === dictID.index) {  // references same dictionary, so make new value
                         dc.currentDictionary.language = newLanguage;
                         dc.currentDictionary.index =  dictionaries[newLanguage].length - 1;
+                    } else if (oldCurrentDictIndex > dictID.index) {  // references different dictionary, so adjust to point to same value
+                        dc.currentDictionary.index = oldCurrentDictIndex - 1;
+                    }
                 }
 
                 this.source.setDictionaryData(dc);

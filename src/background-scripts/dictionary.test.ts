@@ -49,6 +49,21 @@ class MockDataStorage implements NonVolatileBrowserStorage {
 
 }
 
+function getDictCountByLanguage(dictData: GlobalDictionaryData, language: string): number {
+    return dictData.languagesToResources[language].length;
+}
+
+function getTotalNumberOfDictionaries(globalDictData: GlobalDictionaryData): number {
+    const newLanguagesPresent =  getLanguages(globalDictData);
+    let dictAgregator = 0;
+    newLanguagesPresent.forEach(lang => {
+        let count = getDictCountByLanguage(globalDictData, lang);
+        dictAgregator += count;
+    });
+
+    return dictAgregator;
+}
+
 describe('Type Checks', () => {
     it.each([
         [
@@ -145,13 +160,8 @@ describe('Type Checks', () => {
     ])('addDictionary: %s ', async (_testDescription: string,
         globalDictData: GlobalDictionaryData, dict: Dictionary, language: string, expectedCurrentDict: DictionaryIdentifier,
         shouldAddNewDict: boolean) => {
-            const languagesPresentOg =  getLanguages(globalDictData);
-            const ogLangCount = languagesPresentOg.length;
-            let ogDictCount = 0;
-            languagesPresentOg.forEach(lang => {
-                let count = globalDictData.languagesToResources[lang].length;
-                ogDictCount+= count;
-            });
+            const ogLangCount = getLanguages(globalDictData).length;
+            const ogDictCount = getTotalNumberOfDictionaries(globalDictData);
 
             const storage = new MockDataStorage(globalDictData);
             const dictManager = new DictionaryManager(storage);
@@ -160,14 +170,155 @@ describe('Type Checks', () => {
             expect(globalDictData.languagesToResources[language]).toContain(dict);
             expect(globalDictData.currentDictionary).toStrictEqual(expectedCurrentDict)
 
-            const newLanguagesPresent =  getLanguages(globalDictData);
-            const newLangCount = languagesPresentOg.length;
-            let newDictCount = 0;
-            newLanguagesPresent.forEach(lang => {
-                let count = globalDictData.languagesToResources[lang].length;
-                newDictCount += count;
-            });
+            const newLangCount = getLanguages(globalDictData).length;
+            const newDictCount = getTotalNumberOfDictionaries(globalDictData);
             expect(newLangCount).toBeGreaterThanOrEqual(ogLangCount)
             expect(newDictCount).toEqual(ogDictCount + (shouldAddNewDict ? 1 : 0));
+    });
+
+    it.each([
+        [
+            'Modify current dictionary, keeping language',
+            {
+                languagesToResources: {
+                    'English': [
+                        {name: 'Merriam-Webster', url: 'https://www.merriam-webster.com/dictionary/{word}'},
+                        {name: 'Oxford Dictionary', url: 'https://www.oed.com/search/dictionary/?scope=Entries&q={word}'}
+                    ]
+                },
+                currentDictionary: {index: 1, language: 'English'}
+            },
+            {language: 'English', index: 1},
+            'English',
+            {name: 'M&W Dict', url: 'https://www.meriamwebster.com/search/{word}'},
+            {language: 'English', index: 1},
+            {language: 'English', index: 1},
+        ],
+        [
+            'Modify current dictionary, making new language',
+            {
+                languagesToResources: {
+                    'English': [
+                        {name: 'Merriam-Webster', url: 'https://www.merriam-webster.com/dictionary/{word}'},
+                        {name: 'Oxford Dictionary', url: 'https://www.oed.com/search/dictionary/?scope=Entries&q={word}'}
+                    ]
+                },
+                currentDictionary: {index: 1, language: 'English'}
+            },
+            {language: 'English', index: 1},
+            'Klingon',
+            {name: 'ST [Klingon]', url: 'https://www.st.com/klingon/search/{word}'},
+            {language: 'Klingon', index: 0},
+            {language: 'Klingon', index: 0},
+        ],
+        [
+            'Modify existing, non-current dictionary, keeping language',
+            {
+                languagesToResources: {
+                    'English': [
+                        {name: 'Merriam-Webster', url: 'https://www.merriam-webster.com/dictionary/{word}'},
+                        {name: 'Oxford Dictionary', url: 'https://www.oed.com/search/dictionary/?scope=Entries&q={word}'}
+                    ]
+                },
+                currentDictionary: {index: 1, language: 'English'}
+            },
+            {language: 'English', index: 0},
+            'English',
+            {name: 'New Oxford Dictionary', url: 'https://www.noed.com/search/{word}'},
+            {language: 'English', index: 0},
+            {language: 'English', index: 1},
+        ],
+        [
+            'Modify existing, non-current dictionary, making new language',
+            {
+                languagesToResources: {
+                    'English': [
+                        {name: 'Merriam-Webster', url: 'https://www.merriam-webster.com/dictionary/{word}'},
+                        {name: 'Oxford Dictionary', url: 'https://www.oed.com/search/dictionary/?scope=Entries&q={word}'}
+                    ]
+                },
+                currentDictionary: {index: 1, language: 'English'}
+            },
+            {language: 'English', index: 0},
+            'Klingon',
+            {name: 'KlingonDict', url: 'http://translator.startrech.com?lang=klingon&word={word}'},
+            {language: 'Klingon', index: 0},
+            {language: 'English', index: 0},
+        ],
+        [
+            'Modify existing, non-current dictionary, making new language [2]',
+            {
+                languagesToResources: {
+                    'English': [
+                        {name: 'Merriam-Webster', url: 'https://www.merriam-webster.com/dictionary/{word}'},
+                        {name: 'Oxford Dictionary', url: 'https://www.oed.com/search/dictionary/?scope=Entries&q={word}'}
+                    ]
+                },
+                currentDictionary: {index: 0, language: 'English'}
+            },
+            {language: 'English', index: 1},
+            'Klingon',
+            {name: 'KlingonDict', url: 'http://translator.startrech.com?lang=klingon&word={word}'},
+            {language: 'Klingon', index: 0},
+            {language: 'English', index: 0},
+        ],
+        [
+            'Modify existing, non-current dictionary, using existing language',
+            {
+                languagesToResources: {
+                    'English': [
+                        {name: 'Merriam-Webster', url: 'https://www.merriam-webster.com/dictionary/{word}'},
+                        {name: 'Oxford Dictionary', url: 'https://www.oed.com/search/dictionary/?scope=Entries&q={word}'}
+                    ],
+                    'Spanish': [
+                        {name: 'DRAE', url: 'https://dle.rae.es/{word}'},
+                        {name: 'SpanishDict', url: 'https://spanishdict.com/translate/{word}'}
+                    ],
+                },
+                currentDictionary: {index: 1, language: 'English'}
+            },
+            {language: 'English', index: 0},
+            'Spanish',
+            {name: 'Oxford (ESP)', url: 'https://www.oed.com/search/dictionary/esp/?scope=Entries&q={word}'},
+            {language: 'Spanish', index: 2},
+            {language: 'English', index: 0},
+        ],
+        [
+            'Modify existing, non-current dictionary, using existing language',
+            {
+                languagesToResources: {
+                    'English': [
+                        {name: 'Merriam-Webster', url: 'https://www.merriam-webster.com/dictionary/{word}'},
+                        {name: 'Oxford Dictionary', url: 'https://www.oed.com/search/dictionary/?scope=Entries&q={word}'}
+                    ],
+                    'Spanish': [
+                        {name: 'DRAE', url: 'https://dle.rae.es/{word}'},
+                        {name: 'SpanishDict', url: 'https://spanishdict.com/translate/{word}'}
+                    ],
+                },
+                currentDictionary: {index: 1, language: 'English'}
+            },
+            {language: 'Spanish', index: 1},
+            'English',
+            {name: 'SpanishDict', url: 'https://spanishdict.com/translate/{word}'},
+            {language: 'English', index: 2},
+            {language: 'English', index: 1},
+        ],
+    ])('%s', async (_testDescription: string, globalDictData: GlobalDictionaryData,
+        id: DictionaryIdentifier, language: string, dict: Dictionary,
+        newId: DictionaryIdentifier, newCurrentDict: DictionaryIdentifier) => {
+
+            const storage = new MockDataStorage(globalDictData);
+            const dictManager = new DictionaryManager(storage);
+            const ogDictCount = getTotalNumberOfDictionaries(globalDictData);
+
+            await dictManager.modifyExistingDictionary(id, language, dict);
+            const newDictCount = getTotalNumberOfDictionaries(globalDictData);
+            expect(newDictCount).toEqual(ogDictCount);
+
+            const newDict: Dictionary = await dictManager.getDictionaryFromIdentifier(newId);
+            expect(newDict).toBe(dict);
+
+            expect(globalDictData.currentDictionary).toEqual(newCurrentDict);
     });
 });
