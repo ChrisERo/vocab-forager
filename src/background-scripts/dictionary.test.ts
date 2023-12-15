@@ -64,6 +64,8 @@ function getTotalNumberOfDictionaries(globalDictData: GlobalDictionaryData): num
     return dictAgregator;
 }
 
+const EMPTY_DICT = {language: '', index: -1};
+
 describe('Type Checks', () => {
     it.each([
         [
@@ -169,6 +171,7 @@ describe('Type Checks', () => {
 
             expect(globalDictData.languagesToResources[language]).toContain(dict);
             expect(globalDictData.currentDictionary).toStrictEqual(expectedCurrentDict)
+            expect(await dictManager.getCurrentDictionaryId()).toBe(globalDictData.currentDictionary);
 
             const newLangCount = getLanguages(globalDictData).length;
             const newDictCount = getTotalNumberOfDictionaries(globalDictData);
@@ -304,6 +307,111 @@ describe('Type Checks', () => {
             {language: 'English', index: 2},
             {language: 'English', index: 1},
         ],
+        [
+            'Modify new, non-current dictionary, using fake language to fake language',
+            {
+                languagesToResources: {
+                    'English': [
+                        {name: 'Merriam-Webster', url: 'https://www.merriam-webster.com/dictionary/{word}'},
+                        {name: 'Oxford Dictionary', url: 'https://www.oed.com/search/dictionary/?scope=Entries&q={word}'}
+                    ],
+                    'Spanish': [
+                        {name: 'DRAE', url: 'https://dle.rae.es/{word}'},
+                        {name: 'SpanishDict', url: 'https://spanishdict.com/translate/{word}'}
+                    ],
+                },
+                currentDictionary: {index: 1, language: 'English'}
+            },
+            {language: 'Klingon', index: 1},
+            'Klingon',
+            {name: 'SpanishDict', url: 'https://spanishdict.com/translate/{word}'},
+            EMPTY_DICT,
+            {language: 'English', index: 1},
+        ],
+        [
+            'Modify new, non-current dictionary, using fake language to fake language 2',
+            {
+                languagesToResources: {
+                    'English': [
+                        {name: 'Merriam-Webster', url: 'https://www.merriam-webster.com/dictionary/{word}'},
+                        {name: 'Oxford Dictionary', url: 'https://www.oed.com/search/dictionary/?scope=Entries&q={word}'}
+                    ],
+                    'Spanish': [
+                        {name: 'DRAE', url: 'https://dle.rae.es/{word}'},
+                        {name: 'SpanishDict', url: 'https://spanishdict.com/translate/{word}'}
+                    ],
+                },
+                currentDictionary: {index: 1, language: 'English'}
+            },
+            {language: 'Klingon', index: 1},
+            'Valerian',
+            {name: 'ValeraianDict', url: 'https://spanishdict.com/translate/{word}'},
+            EMPTY_DICT,
+            {language: 'English', index: 1},
+        ],
+        [
+            'Modify new, non-current dictionary, using fake language to real language',
+            {
+                languagesToResources: {
+                    'English': [
+                        {name: 'Merriam-Webster', url: 'https://www.merriam-webster.com/dictionary/{word}'},
+                        {name: 'Oxford Dictionary', url: 'https://www.oed.com/search/dictionary/?scope=Entries&q={word}'}
+                    ],
+                    'Spanish': [
+                        {name: 'DRAE', url: 'https://dle.rae.es/{word}'},
+                        {name: 'SpanishDict', url: 'https://spanishdict.com/translate/{word}'}
+                    ],
+                },
+                currentDictionary: {index: 1, language: 'English'}
+            },
+            {language: 'Klingon', index: 1},
+            'English',
+            {name: 'ERROR_OUT_PLZ', url: 'https://spanishdict.com/translate/{word}'},
+            EMPTY_DICT,
+            {language: 'English', index: 1},
+        ],
+        [
+            'Modify new, non-current dictionary, using real language(s) impossible id',
+            {
+                languagesToResources: {
+                    'English': [
+                        {name: 'Merriam-Webster', url: 'https://www.merriam-webster.com/dictionary/{word}'},
+                        {name: 'Oxford Dictionary', url: 'https://www.oed.com/search/dictionary/?scope=Entries&q={word}'}
+                    ],
+                    'Spanish': [
+                        {name: 'DRAE', url: 'https://dle.rae.es/{word}'},
+                        {name: 'SpanishDict', url: 'https://spanishdict.com/translate/{word}'}
+                    ],
+                },
+                currentDictionary: {index: 1, language: 'English'}
+            },
+            {language: 'English', index: -1},
+            'Spanish',
+            {name: 'ERROR_OUT_PLZ', url: 'https://spanishdict.com/translate/{word}'},
+            EMPTY_DICT,
+            {language: 'English', index: 1},
+        ],
+        [
+            'Modify new, non-current dictionary, using real language(s) plausible id',
+            {
+                languagesToResources: {
+                    'English': [
+                        {name: 'Merriam-Webster', url: 'https://www.merriam-webster.com/dictionary/{word}'},
+                        {name: 'Oxford Dictionary', url: 'https://www.oed.com/search/dictionary/?scope=Entries&q={word}'}
+                    ],
+                    'Spanish': [
+                        {name: 'DRAE', url: 'https://dle.rae.es/{word}'},
+                        {name: 'SpanishDict', url: 'https://spanishdict.com/translate/{word}'}
+                    ],
+                },
+                currentDictionary: {index: 1, language: 'English'}
+            },
+            {language: 'English', index: 3},
+            'Spanish',
+            {name: 'ERROR_OUT_PLZ', url: 'https://spanishdict.com/translate/{word}'},
+            EMPTY_DICT,
+            {language: 'English', index: 1},
+        ],
     ])('%s', async (_testDescription: string, globalDictData: GlobalDictionaryData,
         id: DictionaryIdentifier, language: string, dict: Dictionary,
         newId: DictionaryIdentifier, newCurrentDict: DictionaryIdentifier) => {
@@ -312,13 +420,93 @@ describe('Type Checks', () => {
             const dictManager = new DictionaryManager(storage);
             const ogDictCount = getTotalNumberOfDictionaries(globalDictData);
 
-            await dictManager.modifyExistingDictionary(id, language, dict);
+            try {
+                await dictManager.modifyExistingDictionary(id, language, dict);
+                expect(newId).not.toEqual(EMPTY_DICT);
+                const newDict: Dictionary = await dictManager.getDictionaryFromIdentifier(newId);
+                expect(newDict).toBe(dict);
+            } catch (error) {
+               expect(newId).toEqual(EMPTY_DICT);
+            }
+
             const newDictCount = getTotalNumberOfDictionaries(globalDictData);
             expect(newDictCount).toEqual(ogDictCount);
+            expect(globalDictData.currentDictionary).toStrictEqual(newCurrentDict);
+            expect(await dictManager.getCurrentDictionaryId()).toBe(globalDictData.currentDictionary);
+    });
 
-            const newDict: Dictionary = await dictManager.getDictionaryFromIdentifier(newId);
-            expect(newDict).toBe(dict);
-
-            expect(globalDictData.currentDictionary).toEqual(newCurrentDict);
+    it.each([
+        [
+            'List of Languages 1',
+            'English',
+            {languagesToResources: {
+                    'English': [
+                        {name: 'Merriam-Webster', url: 'https://www.merriam-webster.com/dictionary/{word}'},
+                        {name: 'Oxford Dictionary', url: 'https://www.oed.com/search/dictionary/?scope=Entries&q={word}'}
+                    ],
+                    'Spanish': [
+                        {name: 'DRAE', url: 'https://dle.rae.es/{word}'},
+                        {name: 'SpanishDict', url: 'https://spanishdict.com/translate/{word}'}
+                    ],
+                }, currentDictionary: {index: 1, language: 'English'}
+            },
+            [
+                {name: 'Merriam-Webster', url: 'https://www.merriam-webster.com/dictionary/{word}'},
+                {name: 'Oxford Dictionary', url: 'https://www.oed.com/search/dictionary/?scope=Entries&q={word}'}
+            ]
+        ],
+        [
+            'List of Languages 2',
+            'Spanish',
+            {languagesToResources: {
+                    'English': [
+                        {name: 'Merriam-Webster', url: 'https://www.merriam-webster.com/dictionary/{word}'},
+                        {name: 'Oxford Dictionary', url: 'https://www.oed.com/search/dictionary/?scope=Entries&q={word}'}
+                    ],
+                    'Spanish': [
+                        {name: 'DRAE', url: 'https://dle.rae.es/{word}'},
+                        {name: 'SpanishDict', url: 'https://spanishdict.com/translate/{word}'}
+                    ],
+                }, currentDictionary: {index: 1, language: 'English'}
+            },
+            [
+                {name: 'DRAE', url: 'https://dle.rae.es/{word}'},
+                {name: 'SpanishDict', url: 'https://spanishdict.com/translate/{word}'}
+            ]
+        ],
+        [
+            'List of Languages FAKE',
+            'Klingon',
+            {languagesToResources: {
+                    'English': [
+                        {name: 'Merriam-Webster', url: 'https://www.merriam-webster.com/dictionary/{word}'},
+                        {name: 'Oxford Dictionary', url: 'https://www.oed.com/search/dictionary/?scope=Entries&q={word}'}
+                    ],
+                    'Spanish': [
+                        {name: 'DRAE', url: 'https://dle.rae.es/{word}'},
+                        {name: 'SpanishDict', url: 'https://spanishdict.com/translate/{word}'}
+                    ],
+                }, currentDictionary: {index: 1, language: 'English'}
+            },
+            []
+        ],
+        [
+            'List of Languages Empty',
+            'English',
+            {languagesToResources: {
+                    'English': [],
+                    'Spanish': [
+                        {name: 'DRAE', url: 'https://dle.rae.es/{word}'},
+                        {name: 'SpanishDict', url: 'https://spanishdict.com/translate/{word}'}
+                    ],
+                }, currentDictionary: {index: 1, language: 'English'}
+            },
+            []
+        ]
+    ])('%s', async(_testDescription: string, language, globalDictData: GlobalDictionaryData, expectedDicts: Dictionary[]) => {
+            const storage = new MockDataStorage(globalDictData);
+            const dictManager = new DictionaryManager(storage);
+            const dictList = await dictManager.getDictionariesOfLanguage(language);
+            expect(dictList).toEqual(expectedDicts)
     });
 });
