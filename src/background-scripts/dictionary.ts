@@ -112,13 +112,12 @@ export class DictionaryManager {
 
     /**
      * Deletes dictionary represented by dictID from non-volatile storage and updates rest
-     * of GlobalDicitonaryData based on removal. Returns true if execution did not throw
-     * an exception: either by not deleteing anything or by deleteing the specified
-     * dictionary.
+     * of {@link GlobalDictionaryData} based on removal. Returns true if execution did not
+     * throw an exception and results in the removal of a dictionary.
      *
      * @param dictID - object with string representing language on dictionary and
      *                 Number representing index of dictionary to delete
-     * @returns false if terminated exceptionally and true otherwise
+     * @returns false if terminated exceptionally or if no data was removed and true otherwise
      */
     async removeDictionary(dictID: DictionaryIdentifier): Promise<boolean> {
         try {
@@ -133,7 +132,7 @@ export class DictionaryManager {
             if (relevantDictionaries == null ||
                 dict_index < 0 ||
                 dict_index >= relevantDictionaries.length) {
-                return true;
+                return false;
             }
             dictionaries[language].splice(dict_index, 1);
 
@@ -153,8 +152,7 @@ export class DictionaryManager {
                 delete dictionaries[language];
             }
 
-            this.source.setDictionaryData(dc);
-
+            this.source.setDictionaryData(dc);  // persist changes to disk
             return true;
         } catch(err) {
             console.error(err);
