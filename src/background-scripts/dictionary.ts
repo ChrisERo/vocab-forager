@@ -104,7 +104,7 @@ export class DictionaryManager {
      *
      * @param chosenDictInfo - data identifying current dicitonary to set
      */
-     async setcurrentDictinoary(chosenDictInfo: DictionaryIdentifier): Promise<void> {
+     async setCurrentDictinoary(chosenDictInfo: DictionaryIdentifier): Promise<void> {
         let dc: GlobalDictionaryData = await this.source.getDictionaryData();
         dc.currentDictionary = chosenDictInfo;
         this.source.setDictionaryData(dc);

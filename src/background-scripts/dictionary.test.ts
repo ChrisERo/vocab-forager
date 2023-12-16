@@ -570,7 +570,7 @@ describe('Type Checks', () => {
         const dictManager = new DictionaryManager(dataStore);
 
         expect(await dictManager.getCurrentDictionaryId()).toBe(currentDictStart);
-        await dictManager.setcurrentDictinoary(newCurrentDict);
+        await dictManager.setCurrentDictinoary(newCurrentDict);
         expect(await dictManager.getCurrentDictionaryId()).toEqual(newCurrentDict);
     });
 });
