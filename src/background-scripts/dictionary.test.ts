@@ -509,4 +509,68 @@ describe('Type Checks', () => {
             const dictList = await dictManager.getDictionariesOfLanguage(language);
             expect(dictList).toEqual(expectedDicts)
     });
+
+    it.each([
+        [
+            'Set back to old value',
+            {index: 1, language: 'English'},
+            {index: 1, language: 'English'}
+        ],
+        [
+            'Set to existing dictionary in same language',
+            {index: 1, language: 'English'},
+            {index: 0, language: 'English'}
+        ],
+        [
+            'Set to existing dictionary in different language',
+            {index: 1, language: 'English'},
+            {index: 0, language: 'Spanish'}
+        ],
+        [
+            'Set to existing dictionary in different language',
+            {index: 0, language: 'Spanish'},
+            {index: 1, language: 'English'}
+        ],
+        [
+            'Set dictionary from scratch',
+            {index: -1, language: ''},
+            {index: 1, language: 'English'}
+        ],
+        [
+            'Set to ficticious dictionary in ficticious language',
+            {index: 0, language: 'Spanish'},
+            {index: 1, language: 'Klingon'}
+        ],
+        [
+            'Set to ficticious dictionary in normal language',
+            {index: 0, language: 'Spanish'},
+            {index: 10, language: 'Spanish'}
+        ],
+        [
+            'Set to ficticious dictionary in normal language',
+            {index: 0, language: 'Spanish'},
+            {index: -1, language: 'Spanish'}
+        ],
+    ])( 'Get And Set Current Dictionary %s',
+    async (_testDescription: string, currentDictStart, newCurrentDict: DictionaryIdentifier) => {
+        const globalDictData = {
+            languagesToResources: {
+                    'English': [
+                        {name: 'Merriam-Webster', url: 'https://www.merriam-webster.com/dictionary/{word}'},
+                        {name: 'Oxford Dictionary', url: 'https://www.oed.com/search/dictionary/?scope=Entries&q={word}'}
+                    ],
+                    'Spanish': [
+                        {name: 'DRAE', url: 'https://dle.rae.es/{word}'},
+                        {name: 'SpanishDict', url: 'https://spanishdict.com/translate/{word}'}
+                    ],
+                },
+                currentDictionary: currentDictStart
+            };
+        const dataStore = new MockDataStorage(globalDictData);
+        const dictManager = new DictionaryManager(dataStore);
+
+        expect(await dictManager.getCurrentDictionaryId()).toBe(currentDictStart);
+        await dictManager.setcurrentDictinoary(newCurrentDict);
+        expect(await dictManager.getCurrentDictionaryId()).toEqual(newCurrentDict);
+    });
 });
