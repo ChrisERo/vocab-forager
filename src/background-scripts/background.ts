@@ -121,7 +121,7 @@ function makeHandler(siteDateStorage: Readonly<IndexedDBStorage>): (message: any
             }
             case BSMessageType.SetCurrentDictionary: {
                 if (isDictionaryID(request.payload)) {
-                    dictionaryManager.setCurrentDictinoary(request.payload).then(() => sendResponse());
+                    dictionaryManager.setCurrentDictionary(request.payload).then(() => sendResponse());
                 } else {
                     logUnexpected('payload', request.payload);
                 }

@@ -102,9 +102,9 @@ export class DictionaryManager {
      * Set current_dictionary to a new dictionary represented by language and index (assume
      * such a dictionary exists) and save this change in non-volatile storage
      *
-     * @param chosenDictInfo - data identifying current dicitonary to set
+     * @param chosenDictInfo - data identifying current dictionary to set
      */
-     async setCurrentDictinoary(chosenDictInfo: DictionaryIdentifier): Promise<void> {
+     async setCurrentDictionary(chosenDictInfo: DictionaryIdentifier): Promise<void> {
         let dc: GlobalDictionaryData = await this.source.getDictionaryData();
         dc.currentDictionary = chosenDictInfo;
         this.source.setDictionaryData(dc);

@@ -64,7 +64,8 @@ function getTotalNumberOfDictionaries(globalDictData: GlobalDictionaryData): num
     return dictAgregator;
 }
 
-const EMPTY_DICT = {language: '', index: -1};
+const EMPTY_DICT_INDEX: DictionaryIdentifier = {language: '', index: -1};
+const EMPTY_DICT: Dictionary = {name: '', url: ''};
 
 describe('Type Checks', () => {
     it.each([
@@ -325,7 +326,7 @@ describe('Type Checks', () => {
             {language: 'Klingon', index: 1},
             'Klingon',
             {name: 'SpanishDict', url: 'https://spanishdict.com/translate/{word}'},
-            EMPTY_DICT,
+            EMPTY_DICT_INDEX,
             {language: 'English', index: 1},
         ],
         [
@@ -346,7 +347,7 @@ describe('Type Checks', () => {
             {language: 'Klingon', index: 1},
             'Valerian',
             {name: 'ValeraianDict', url: 'https://spanishdict.com/translate/{word}'},
-            EMPTY_DICT,
+            EMPTY_DICT_INDEX,
             {language: 'English', index: 1},
         ],
         [
@@ -367,7 +368,7 @@ describe('Type Checks', () => {
             {language: 'Klingon', index: 1},
             'English',
             {name: 'ERROR_OUT_PLZ', url: 'https://spanishdict.com/translate/{word}'},
-            EMPTY_DICT,
+            EMPTY_DICT_INDEX,
             {language: 'English', index: 1},
         ],
         [
@@ -388,7 +389,7 @@ describe('Type Checks', () => {
             {language: 'English', index: -1},
             'Spanish',
             {name: 'ERROR_OUT_PLZ', url: 'https://spanishdict.com/translate/{word}'},
-            EMPTY_DICT,
+            EMPTY_DICT_INDEX,
             {language: 'English', index: 1},
         ],
         [
@@ -409,7 +410,7 @@ describe('Type Checks', () => {
             {language: 'English', index: 3},
             'Spanish',
             {name: 'ERROR_OUT_PLZ', url: 'https://spanishdict.com/translate/{word}'},
-            EMPTY_DICT,
+            EMPTY_DICT_INDEX,
             {language: 'English', index: 1},
         ],
     ])('%s', async (_testDescription: string, globalDictData: GlobalDictionaryData,
@@ -422,11 +423,11 @@ describe('Type Checks', () => {
 
             try {
                 await dictManager.modifyExistingDictionary(id, language, dict);
-                expect(newId).not.toEqual(EMPTY_DICT);
+                expect(newId).not.toEqual(EMPTY_DICT_INDEX);
                 const newDict: Dictionary = await dictManager.getDictionaryFromIdentifier(newId);
                 expect(newDict).toBe(dict);
             } catch (error) {
-               expect(newId).toEqual(EMPTY_DICT);
+               expect(newId).toEqual(EMPTY_DICT_INDEX);
             }
 
             const newDictCount = getTotalNumberOfDictionaries(globalDictData);
@@ -570,7 +571,60 @@ describe('Type Checks', () => {
         const dictManager = new DictionaryManager(dataStore);
 
         expect(await dictManager.getCurrentDictionaryId()).toBe(currentDictStart);
-        await dictManager.setCurrentDictinoary(newCurrentDict);
+        await dictManager.setCurrentDictionary(newCurrentDict);
         expect(await dictManager.getCurrentDictionaryId()).toEqual(newCurrentDict);
+    });
+
+    it.each([
+        [
+            'Getting Current Dictionary',
+            {language: 'English', index: 1},
+            {name: 'Oxford Dictionary', url: 'https://www.oed.com/search/dictionary/?scope=Entries&q={word}'}
+        ],
+        [
+            'Getting Dictionary, Same language as current',
+            {language: 'English', index: 0},
+            {name: 'Merriam-Webster', url: 'https://www.merriam-webster.com/dictionary/{word}'},
+        ],
+        [
+            'Getting Dictionary, Different language as current',
+            {language: 'Spanish', index: 0},
+            {name: 'DRAE', url: 'https://dle.rae.es/{word}'},
+        ],
+        [
+            'Getting Dictionary, Fake Language',
+            {language: 'Klingon', index: 0},
+            EMPTY_DICT,
+        ],
+        [
+            'Getting Dictionary, Fake Dictionary Index',
+            {language: 'Spanish', index: 3},
+            EMPTY_DICT,
+        ],
+        [
+            'Getting Dictionary, Fake Dictionary Index [-1]',
+            {language: 'Spanish', index: -1},
+            EMPTY_DICT,
+        ],
+
+    ])('%s', async (_testDescription: string, dictID: DictionaryIdentifier, expectedDict: Dictionary) => {
+        const globalDictData: GlobalDictionaryData = {
+            languagesToResources: {
+                    'English': [
+                        {name: 'Merriam-Webster', url: 'https://www.merriam-webster.com/dictionary/{word}'},
+                        {name: 'Oxford Dictionary', url: 'https://www.oed.com/search/dictionary/?scope=Entries&q={word}'}
+                    ],
+                    'Spanish': [
+                        {name: 'DRAE', url: 'https://dle.rae.es/{word}'},
+                        {name: 'SpanishDict', url: 'https://spanishdict.com/translate/{word}'}
+                    ],
+                },
+                currentDictionary: {language: 'English', index: 1}
+            };
+        const dataStore = new MockDataStorage(globalDictData);
+        const dictManager = new DictionaryManager(dataStore);
+
+        const dictFetched: Dictionary = await dictManager.getDictionaryFromIdentifier(dictID);
+        expect(dictFetched).toEqual(expectedDict);
     });
 });
