@@ -8,6 +8,7 @@ import {NonVolatileBrowserStorage} from './non-volatile-browser-storage'
 export class DictionaryManager {
     // Placeholder for word to look up in URL of some Dictionary
     static wordURLPlaceHolder = '{word}';
+    static wordURLPlaceHolderRegex = new RegExp(DictionaryManager.wordURLPlaceHolder, 'g');
 
     source: NonVolatileBrowserStorage;
 
@@ -92,10 +93,10 @@ export class DictionaryManager {
      * @param word - word we wish to look up
      */
     async getWordSearchURL(word: string): Promise<string> {
-        let dc: GlobalDictionaryData = await this.source.getDictionaryData();
-        let currentDic = this.getDictionaryFromIdentifierHelper(dc, dc.currentDictionary);
-        let template = currentDic.url;
-        return template.replace(DictionaryManager.wordURLPlaceHolder, word);
+        const dc: GlobalDictionaryData = await this.source.getDictionaryData();
+        const currentDic: Dictionary = this.getDictionaryFromIdentifierHelper(dc, dc.currentDictionary);
+        const template: string = currentDic.url;
+        return template.replace(DictionaryManager.wordURLPlaceHolderRegex, word);
     }
 
     /**

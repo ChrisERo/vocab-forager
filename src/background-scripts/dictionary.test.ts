@@ -627,4 +627,38 @@ describe('Type Checks', () => {
         const dictFetched: Dictionary = await dictManager.getDictionaryFromIdentifier(dictID);
         expect(dictFetched).toEqual(expectedDict);
     });
+
+    it.each([
+        [{language: 'English', index: 1}, 'perfidious', 'https://www.oed.com/search/dictionary/?scope=Entries&q=perfidious'],
+        [{language: 'English', index: 0}, 'perfidious', 'https://www.merriam-webster.com/dictionary/perfidious'],
+        [{language: 'Spanish', index: 0}, 'perfidious', 'https://dle.rae.es/perfidious'],
+        [{language: 'Spanish', index: 0}, 'incredulo', 'https://dle.rae.es/incredulo'],
+        [{language: 'Klingon', index: 0}, 'MyCoolWord', 'http://klingon.search?word=foobar'],
+        [{language: 'Klingon', index: 1}, 'MyCoolWord', 'http://klingon.search?word=MyCoolWord&language=KLG&palabra=MyCoolWord']
+    ])('%s', async (newCurrentDictId: DictionaryIdentifier, word: string, expectedUrl: string) => {
+        const globalDictData: GlobalDictionaryData = {
+            languagesToResources: {
+                    'English': [
+                        {name: 'Merriam-Webster', url: 'https://www.merriam-webster.com/dictionary/{word}'},
+                        {name: 'Oxford Dictionary', url: 'https://www.oed.com/search/dictionary/?scope=Entries&q={word}'}
+                    ],
+                    'Spanish': [
+                        {name: 'DRAE', url: 'https://dle.rae.es/{word}'},
+                        {name: 'SpanishDict', url: 'https://spanishdict.com/translate/{word}'}
+                    ],
+                    'Klingon': [
+                        {name: 'No{word}', url: 'http://klingon.search?word=foobar'},
+                        {name: 'Multiple{word}', url: 'http://klingon.search?word={word}&language=KLG&palabra={word}'}
+                    ]
+                },
+                currentDictionary: {language: 'English', index: 1}
+            };
+        const dataStore = new MockDataStorage(globalDictData);
+        const dictManager = new DictionaryManager(dataStore);
+        await dictManager.setCurrentDictionary(newCurrentDictId);
+        const serachURL = await dictManager.getWordSearchURL(word);
+        expect(serachURL).toEqual(expectedUrl);
+    });
+
+    // TODO: remove()
 });
