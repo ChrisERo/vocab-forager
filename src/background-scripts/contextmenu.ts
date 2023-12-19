@@ -5,18 +5,18 @@ import { NonVolatileBrowserStorage } from "./non-volatile-browser-storage";
 export class ContextMenuManager {
     static readonly activationID = 'activation';
     static readonly quizID = 'quiz';
-    static readonly deleteHighlightsID = "delete_hilight";
+    static readonly deleteHighlightsID = "delete_highlight";
     static readonly changeHighlightStylingID = 'highlight-style';
 
     static readonly activateActivationCMTitle = '🟢   Activate';
     static readonly deactivateActivationCMTitle = '🔴  Deactivate';
     static readonly quizCMTitle = "🧠  Quiz";
-    static readonly deleteHighlightCMTitle = '❌  Delete Hilighted Text';
+    static readonly deleteHighlightCMTitle = '❌  Delete Highlighted Text';
     static readonly changeHighlightStyleingTitle = '🖌 Change Highlight Style';
 
     setUpCMsCalled: boolean;  // true iff context menus have already been set up
     storage: NonVolatileBrowserStorage;
-   
+
 
     constructor(storage: NonVolatileBrowserStorage) {
         this.setUpCMsCalled = false;
@@ -24,7 +24,7 @@ export class ContextMenuManager {
     }
 
     /**
-     * If called for first time, attempts to create the context menus available 
+     * If called for first time, attempts to create the context menus available
      * for usage with their intial configurations; also sets up the context menu listeners.
      * Future calls will be noops.
      */
@@ -43,14 +43,14 @@ export class ContextMenuManager {
 
     /**
      * Instantiates the graphical components to initial context menus
-     * 
+     *
      * @param isActivated whether addon should be considered activated or not
      */
     private setUpContextMenuGraphicalComponents(isActivated: boolean): void {
         chrome.contextMenus.create({
             id: ContextMenuManager.activationID,
-            title: isActivated ? 
-                ContextMenuManager.deactivateActivationCMTitle : 
+            title: isActivated ?
+                ContextMenuManager.deactivateActivationCMTitle :
                 ContextMenuManager.activateActivationCMTitle,
             contexts: ["all"],
           });
@@ -100,7 +100,7 @@ export class ContextMenuManager {
                     this.storage.getCurrentActivation().then((isActivatedNow: boolean) => {
                         let newIsActivatedState = !isActivatedNow;
                         this.storage.setCurrentActivation(newIsActivatedState);
-                        this.updateContextMenuBasedOnActivation(newIsActivatedState);            
+                        this.updateContextMenuBasedOnActivation(newIsActivatedState);
                         let getTabs = chrome.tabs.query({});
                         getTabs.then(function (tabs: chrome.tabs.Tab[]) {
                             let message: CSMessage = {
@@ -171,7 +171,7 @@ export class ContextMenuManager {
      * Hides context menu that exposeDeleteContextMenu reveals
      */
     hideDeleteContextMenu(): void {
-        chrome.contextMenus.update(ContextMenuManager.deleteHighlightsID, 
+        chrome.contextMenus.update(ContextMenuManager.deleteHighlightsID,
             {visible: false});
     }
 
@@ -179,8 +179,8 @@ export class ContextMenuManager {
      * Updates context menus based on whether extension is activated or not
      */
      updateContextMenuBasedOnActivation(isActivated: boolean): void {
-        let title = isActivated ? 
-            ContextMenuManager.deactivateActivationCMTitle : 
+        let title = isActivated ?
+            ContextMenuManager.deactivateActivationCMTitle :
             ContextMenuManager.activateActivationCMTitle;
         chrome.contextMenus.update(ContextMenuManager.activationID, {
             title,
