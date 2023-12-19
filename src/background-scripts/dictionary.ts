@@ -123,13 +123,13 @@ export class DictionaryManager {
     async removeDictionary(dictID: DictionaryIdentifier): Promise<boolean> {
         try {
             // Extract identifying components
-            let language: string = dictID.language;
-            let dict_index: number = dictID.index;
+            const language: string = dictID.language;
+            const dict_index: number = dictID.index;
 
             // Remove dictionary referenced by dictID if possible
-            let dc: GlobalDictionaryData = await this.source.getDictionaryData();
-            let dictionaries: SubjectToDictsMapping = dc.languagesToResources;
-            let relevantDictionaries: Dictionary[] = dictionaries[language];
+            const dc: GlobalDictionaryData = await this.source.getDictionaryData();
+            const dictionaries: SubjectToDictsMapping = dc.languagesToResources;
+            const relevantDictionaries: Dictionary[] = dictionaries[language];
             if (relevantDictionaries == null ||
                 dict_index < 0 ||
                 dict_index >= relevantDictionaries.length) {

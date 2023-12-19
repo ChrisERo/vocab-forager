@@ -660,5 +660,160 @@ describe('Type Checks', () => {
         expect(serachURL).toEqual(expectedUrl);
     });
 
-    // TODO: remove()
+    it.each([
+        [
+            'remove current dictionary',
+            {
+                languagesToResources: {
+                    'English': [
+                        {name: 'Merriam-Webster', url: 'https://www.merriam-webster.com/dictionary/{word}'},
+                        {name: 'Oxford Dictionary', url: 'https://www.oed.com/search/dictionary/?scope=Entries&q={word}'}
+                    ],
+                    'Spanish': [
+                        {name: 'DRAE', url: 'https://dle.rae.es/{word}'},
+                        {name: 'SpanishDict', url: 'https://spanishdict.com/translate/{word}'}
+                    ],
+                },
+                currentDictionary: {language: 'English', index: 1}
+            },
+            {language: 'English', index: 1},
+            EMPTY_DICT_INDEX,
+            true,
+        ],
+        [
+            'remove non-current dictionary (different language))',
+            {
+                languagesToResources: {
+                    'English': [
+                        {name: 'Merriam-Webster', url: 'https://www.merriam-webster.com/dictionary/{word}'},
+                        {name: 'Oxford Dictionary', url: 'https://www.oed.com/search/dictionary/?scope=Entries&q={word}'}
+                    ],
+                    'Spanish': [
+                        {name: 'DRAE', url: 'https://dle.rae.es/{word}'},
+                        {name: 'SpanishDict', url: 'https://spanishdict.com/translate/{word}'}
+                    ],
+                },
+                currentDictionary: {language: 'English', index: 1}
+            },
+            {language: 'Spanish', index: 0},
+            {language: 'English', index: 1},
+            true,
+        ],
+        [
+            'remove non-current dictionary (but same language b4)',
+            {
+                languagesToResources: {
+                    'English': [
+                        {name: 'Merriam-Webster', url: 'https://www.merriam-webster.com/dictionary/{word}'},
+                        {name: 'Oxford Dictionary', url: 'https://www.oed.com/search/dictionary/?scope=Entries&q={word}'}
+                    ],
+                    'Spanish': [
+                        {name: 'DRAE', url: 'https://dle.rae.es/{word}'},
+                        {name: 'SpanishDict', url: 'https://spanishdict.com/translate/{word}'}
+                    ],
+                },
+                currentDictionary: {language: 'English', index: 1}
+            },
+            {language: 'English', index: 0},
+            {language: 'English', index: 0},
+            true,
+        ],
+        [
+            'remove non-current dictionary (but same language after)',
+            {
+                languagesToResources: {
+                    'English': [
+                        {name: 'Merriam-Webster', url: 'https://www.merriam-webster.com/dictionary/{word}'},
+                        {name: 'Oxford Dictionary', url: 'https://www.oed.com/search/dictionary/?scope=Entries&q={word}'}
+                    ],
+                    'Spanish': [
+                        {name: 'DRAE', url: 'https://dle.rae.es/{word}'},
+                        {name: 'SpanishDict', url: 'https://spanishdict.com/translate/{word}'}
+                    ],
+                },
+                currentDictionary: {language: 'English', index: 0}
+            },
+            {language: 'English', index: 1},
+            {language: 'English', index: 0},
+            true,
+        ],
+        [
+            'remove last dictionary',
+            {
+                languagesToResources: {
+                    'English': [
+                        {name: 'Merriam-Webster', url: 'https://www.merriam-webster.com/dictionary/{word}'},
+                    ],
+                },
+                currentDictionary: {language: 'English', index: 0}
+            },
+            {language: 'English', index: 0},
+            EMPTY_DICT_INDEX,
+            true,
+        ],
+        [
+            'remove fake dictionary (fake language)',
+            {
+                languagesToResources: {
+                    'English': [
+                        {name: 'Merriam-Webster', url: 'https://www.merriam-webster.com/dictionary/{word}'},
+                        {name: 'Oxford Dictionary', url: 'https://www.oed.com/search/dictionary/?scope=Entries&q={word}'}
+                    ],
+                    'Spanish': [
+                        {name: 'DRAE', url: 'https://dle.rae.es/{word}'},
+                        {name: 'SpanishDict', url: 'https://spanishdict.com/translate/{word}'}
+                    ],
+                },
+                currentDictionary: {language: 'English', index: 0}
+            },
+            {language: 'Klingon', index: 0},
+            {language: 'English', index: 0},
+            false,
+        ],
+        [
+            'remove fake dictionary (real language)',
+            {
+                languagesToResources: {
+                    'English': [
+                        {name: 'Merriam-Webster', url: 'https://www.merriam-webster.com/dictionary/{word}'},
+                        {name: 'Oxford Dictionary', url: 'https://www.oed.com/search/dictionary/?scope=Entries&q={word}'}
+                    ],
+                    'Spanish': [
+                        {name: 'DRAE', url: 'https://dle.rae.es/{word}'},
+                        {name: 'SpanishDict', url: 'https://spanishdict.com/translate/{word}'}
+                    ],
+                },
+                currentDictionary: {language: 'English', index: 0}
+            },
+            {language: 'Spanish', index: 3},
+            {language: 'English', index: 0},
+            false,
+        ],
+        [
+            'remove fake dictionary (real language)',
+            {
+                languagesToResources: {
+                    'English': [
+                        {name: 'Merriam-Webster', url: 'https://www.merriam-webster.com/dictionary/{word}'},
+                        {name: 'Oxford Dictionary', url: 'https://www.oed.com/search/dictionary/?scope=Entries&q={word}'}
+                    ],
+                    'Spanish': [
+                        {name: 'DRAE', url: 'https://dle.rae.es/{word}'},
+                        {name: 'SpanishDict', url: 'https://spanishdict.com/translate/{word}'}
+                    ],
+                },
+                currentDictionary: {language: 'English', index: 0}
+            },
+            {language: 'Spanish', index: -1},
+            {language: 'English', index: 0},
+            false,
+        ]
+    ])('%s', async (_testDescription: string, globalDictData: GlobalDictionaryData, dictToRemove: DictionaryIdentifier, newCurrentDict: DictionaryIdentifier, shouldRemoveDict: boolean) => {
+        const oldDictCount = getTotalNumberOfDictionaries(globalDictData);
+        const dataStore = new MockDataStorage(globalDictData);
+        const dictManager = new DictionaryManager(dataStore);
+
+        await dictManager.removeDictionary(dictToRemove)
+        expect(getTotalNumberOfDictionaries(globalDictData)).toBe(oldDictCount - (shouldRemoveDict ? 1 : 0));
+    });
 });
