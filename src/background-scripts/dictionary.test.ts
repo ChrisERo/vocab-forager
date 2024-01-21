@@ -2,19 +2,22 @@ import { SiteData, SeeSiteData, GlobalDictionaryData, Dictionary, DictionaryIden
 import { DictionaryManager } from "./dictionary";
 import { NonVolatileBrowserStorage } from "./non-volatile-browser-storage";
 
-class MockDataStorage implements NonVolatileBrowserStorage {
+export class MockDataStorage implements NonVolatileBrowserStorage {
 
     dictData: GlobalDictionaryData;
 
+    currentActivation: boolean;
+
     constructor(dictData: GlobalDictionaryData) {
         this.dictData = dictData;
+        this.currentActivation = false;
     }
 
     getCurrentActivation(): Promise<boolean> {
-        throw new Error("Method not implemented.");
+        return new Promise<boolean>(() => this.currentActivation);
     }
     setCurrentActivation(is_activated: boolean): void {
-        throw new Error("Method not implemented.");
+        this.currentActivation = is_activated;
     }
     getPageData(site: string): Promise<SiteData> {
         throw new Error("Method not implemented.");
