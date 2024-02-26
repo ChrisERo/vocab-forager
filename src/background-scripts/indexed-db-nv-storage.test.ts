@@ -7,7 +7,7 @@ import { getLocalStorage, LocalStorage } from "./non-volatile-browser-storage";
 
 type queryFunction = (a: IndexedDBStorage) => void;
 
-class MockLocalStorage implements chrome.storage.LocalStorageArea {
+export class MockLocalStorage implements chrome.storage.LocalStorageArea {
 
     private storage: {[key: string]: any};
     QUOTA_BYTES: number;

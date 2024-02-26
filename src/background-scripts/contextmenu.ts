@@ -28,17 +28,17 @@ export class ContextMenuManager {
      * for usage with their intial configurations; also sets up the context menu listeners.
      * Future calls will be noops.
      */
-    setUpContextMenus(): void {
+    async setUpContextMenus(): Promise<void> {
         if (this.setUpCMsCalled) {
             console.warn("setUpContextMenus called again");
             return;
         }
 
         this.setUpCMsCalled = true;
-        this.storage.getCurrentActivation().then((isActivated: boolean) => {
-            this.setUpContextMenuGraphicalComponents(isActivated);
-            this.setUpContextMenuListeners();
-        });
+        const isActivated = await this.storage.getCurrentActivation();
+        this.setUpContextMenuGraphicalComponents(isActivated);
+        this.setUpContextMenuListeners();
+        return;
     }
 
     /**
@@ -85,7 +85,6 @@ export class ContextMenuManager {
             contexts: ["all"],
             visible: false
           });
-
     }
 
     /**
