@@ -7,6 +7,43 @@ import { MockLocalStorage } from "./indexed-db-nv-storage.test";
 const setUpBrowser = () => {
     const contextMenuStuff: any = {};
     const messagesSent: any = {};
+    const tabs: chrome.tabs.Tab [] = [{
+        id: 1,
+        index: 0,
+        pinned: false,
+        highlighted: false,
+        windowId: 0,
+        active: false,
+        incognito: false,
+        selected: false,
+        discarded: false,
+        autoDiscardable: false,
+        groupId: 0
+    }, {
+        id: 2,
+        index: 0,
+        pinned: false,
+        highlighted: false,
+        windowId: 0,
+        active: false,
+        incognito: false,
+        selected: false,
+        discarded: false,
+        autoDiscardable: false,
+        groupId: 0
+    }, {
+        id: 3,
+        index: 0,
+        pinned: false,
+        highlighted: false,
+        windowId: 0,
+        active: false,
+        incognito: false,
+        selected: false,
+        discarded: false,
+        autoDiscardable: false,
+        groupId: 0
+    }];
     const listeners: ((info: chrome.contextMenus.OnClickData, tab?: chrome.tabs.Tab | undefined) => void) [] = [];
     global.chrome = {
         contextMenus: {
@@ -24,20 +61,22 @@ const setUpBrowser = () => {
             },
             onClicked: {
                 listeners: listeners,
-                addListener: (callback: (info: chrome.contextMenus.OnClickData, tab?: chrome.tabs.Tab | undefined) => void): void => {
+                addListener: (callback: (info: chrome.contextMenus.OnClickData, tab?: chrome.tabs.Tab | undefined) => any): void => {
                     listeners.push(callback);
                 }
             }
         },
         tabs: {
             messagesSent: messagesSent,
-            sendMessage: (tabId: number, message: any) => {
+            sendMessage: async (tabId: number, message: any): Promise<void> => {
                 if (messagesSent[tabId] === undefined || messagesSent[tabId] === null) {
-                    messagesSent[tabId] = []
+                    messagesSent[tabId] = [];
                 }
 
                 messagesSent[tabId].push(message);
-            }
+                return;
+            },
+            query: (x: any) => new Promise((resolve, _) => resolve(tabs))
         },
         storage: {
             local: new MockLocalStorage(),
@@ -168,15 +207,29 @@ describe('Contextmenu Tests', () => {
 
 
     it.each([
-      [false, ContextMenuManager.quizID, null, false, null],
-      [false, ContextMenuManager.quizID, {id: 1}, true, {1: [{messageType: CSMessageType.StartQuiz}]}],
-      [false, ContextMenuManager.quizID, {id: 0}, true, {0: [{messageType: CSMessageType.StartQuiz}]}],
-      [false, ContextMenuManager.deleteHighlightsID, null, false, null],
-      [false, ContextMenuManager.deleteHighlightsID, {id: 1}, true, {1: [{messageType: CSMessageType.DeleteChosenHighlight}]}],
-      [false, ContextMenuManager.deleteHighlightsID, {id: 0}, true, {0: [{messageType: CSMessageType.DeleteChosenHighlight}]}],
-      [false, 'fakeCMId', null, false, null],
-      [false, 'fakeCMId', {id: 0}, false, null],
-
+       [false, ContextMenuManager.quizID, undefined, false, null],
+       [false, ContextMenuManager.quizID, {id: 1}, true, {1: [{messageType: CSMessageType.StartQuiz}]}],
+       [false, ContextMenuManager.quizID, {id: 0}, true, {0: [{messageType: CSMessageType.StartQuiz}]}],
+       [false, ContextMenuManager.deleteHighlightsID, undefined, false, null],
+       [false, ContextMenuManager.deleteHighlightsID, {id: 1}, true, {1: [{messageType: CSMessageType.DeleteChosenHighlight}]}],
+       [false, ContextMenuManager.deleteHighlightsID, {id: 0}, true, {0: [{messageType: CSMessageType.DeleteChosenHighlight}]}],
+       [false, ContextMenuManager.changeHighlightStylingID, undefined, false, null],
+       [false, ContextMenuManager.changeHighlightStylingID, {id: 1}, true, {1: [{messageType: CSMessageType.ChangeHighlightStyle}]}],
+       [false, ContextMenuManager.changeHighlightStylingID, {id: 0}, true, {0: [{messageType: CSMessageType.ChangeHighlightStyle}]}],
+       [false, 'fakeCMId', undefined, false, null],
+       [false, 'fakeCMId', {id: 0}, false, null],
+       [false, ContextMenuManager.activationID, undefined, true, {
+            1: [{messageType: CSMessageType.ActivationStateChange, payload: {newActivatedState: true}}],
+            2: [{messageType: CSMessageType.ActivationStateChange, payload: {newActivatedState: true}}],
+            3: [{messageType: CSMessageType.ActivationStateChange, payload: {newActivatedState: true}}],
+        }
+       ],
+       [false, ContextMenuManager.activationID, undefined, false, {
+            1: [{messageType: CSMessageType.ActivationStateChange, payload: {newActivatedState: false}}],
+            2: [{messageType: CSMessageType.ActivationStateChange, payload: {newActivatedState: false}}],
+            3: [{messageType: CSMessageType.ActivationStateChange, payload: {newActivatedState: false}}],
+        }
+       ],
     ])('Test CM Listener %s %s', async (isActivatedOG: boolean, menuItemId: string, tabInfo: any, shouldSucceede: boolean, messagesSentExpected: any) => {
         setUpBrowser();
         const globalDict = {languagesToResources: {}, currentDictionary: {index: -1, language: ''}};
@@ -189,10 +242,12 @@ describe('Contextmenu Tests', () => {
         const info = {menuItemId}
 
         const listeners = (chrome.contextMenus.onClicked as any)['listeners'];
+        expect(listeners.length).toBe(1);
         try {
-            listeners.forEach((element: any) => {
-                element(info, tabInfo);
-            });
+            for (let i = 0; i < listeners.length; i++) {
+                let element = listeners[i];
+                await element(info, tabInfo);
+            }
             expect(shouldSucceede).toBeTruthy();
         } catch (ex) {
             if (!shouldSucceede) {
