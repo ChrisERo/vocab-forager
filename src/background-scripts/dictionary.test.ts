@@ -16,8 +16,9 @@ export class MockDataStorage implements NonVolatileBrowserStorage {
     getCurrentActivation(): Promise<boolean> {
         return new Promise<boolean>((resolve) => resolve(this.currentActivation));
     }
-    setCurrentActivation(is_activated: boolean): void {
+    setCurrentActivation(is_activated: boolean): Promise<void> {
         this.currentActivation = is_activated;
+        return Promise.resolve();
     }
     getPageData(site: string): Promise<SiteData> {
         throw new Error("Method not implemented.");

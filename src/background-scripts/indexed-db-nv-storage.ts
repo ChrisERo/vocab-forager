@@ -556,7 +556,7 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
         throw Error('Current Activation is not stored in IndexedDBStorage')
     }
 
-     setCurrentActivation(isActivated: boolean): void {
+     setCurrentActivation(isActivated: boolean): Promise<void> {
         throw Error('Current Activation is not stored in IndexedDBStorage')
     }
 

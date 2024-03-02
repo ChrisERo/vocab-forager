@@ -3,116 +3,12 @@ import "fake-indexeddb/auto";
 import { GlobalDictionaryData, SeeSiteData, SiteData } from "../utils/models";
 import { combineUrl, parseURL } from "../utils/utils";
 import { getLocalStorage, LocalStorage } from "./non-volatile-browser-storage";
+import { MockLocalStorage, setUpMockBrowser } from "./mocks/chrome";
 
 
 type queryFunction = (a: IndexedDBStorage) => void;
 
-export class MockLocalStorage implements chrome.storage.LocalStorageArea {
-
-    private storage: {[key: string]: any};
-    QUOTA_BYTES: number;
-
-    onChanged: chrome.storage.StorageAreaChangedEvent;
-
-    constructor() {
-        this.storage = {};
-        this.QUOTA_BYTES = -1;
-        this.onChanged = {} as chrome.storage.StorageAreaChangedEvent;
-    }
-    setAccessLevel(accessOptions: { accessLevel: "TRUSTED_AND_UNTRUSTED_CONTEXTS" | "TRUSTED_CONTEXTS"; }): Promise<void>;
-    setAccessLevel(accessOptions: { accessLevel: "TRUSTED_AND_UNTRUSTED_CONTEXTS" | "TRUSTED_CONTEXTS"; }, callback: () => void): void;
-    setAccessLevel(accessOptions: unknown, callback?: unknown): void | Promise<void> {
-        throw new Error("Method not implemented.");
-    }
-
-
-
-    getBytesInUse(callback: (bytesInUse: number) => void): void;
-    getBytesInUse(keys?: string | string[] | null | undefined): Promise<number>;
-    getBytesInUse(keys: string | string[] | null, callback: (bytesInUse: number) => void): void;
-    getBytesInUse(keys?: unknown, callback?: unknown): void | Promise<number> {
-        throw new Error("Method not implemented.");
-    }
-    clear(): Promise<void>;
-    clear(callback?: (() => void) | undefined): void;
-    clear(callback?: unknown): void | Promise<void> {
-        return new Promise<void>((resolve, _) => {
-            this.storage = {};
-            resolve();
-        });
-    }
-
-    set(items: { [key: string]: any; }): Promise<void> {
-        return new Promise<void>((resolve, _) => {
-            const keys = Object.keys(items);
-            for (let i = 0; i < keys.length; i++) {
-                const k = keys[i];
-                this.storage[k] = items[k];
-            }
-            resolve();
-        });
-    }
-
-    remove(keys: string | string[]): Promise<void> {
-        return new Promise<void>((resolve, _) => {
-            if (Array.isArray(keys)) {
-                for (let i = 0; i < keys.length; i++) {
-                    const k = keys[i];
-                    delete this.storage[k];
-                }
-            } else {
-                delete this.storage[keys];
-            }
-
-            resolve();
-        });
-    }
-
-    get(callback: (items: { [key: string]: any; }) => void): void;
-    get(keys?: string | string[] | { [key: string]: any; } | null | undefined): Promise<{ [key: string]: any; }>;
-    get(keys: string | string[] | { [key: string]: any; } | null, callback: (items: { [key: string]: any; }) => void): void;
-    get(keys?: unknown, callback?: unknown): void | Promise<{ [key: string]: any; }> {
-        return new Promise<object>((resolve, _) => {
-            if (keys == null) {
-                resolve({ ...this.storage });
-            } else if (typeof keys === 'string' || keys instanceof String) {
-                resolve(this.storage[keys as string]);
-            } else {
-                let keysList: string[];
-                if (Array.isArray(keys)) {
-                    keysList = keys;
-                } else {
-                    keysList = Object.keys(keys);
-                }
-
-                const returnObject: any = {};
-                for (let i = 0; i < keysList.length; i++) {
-                    const k = keysList[i];
-                    returnObject[k] = this.storage[k];
-                }
-
-                resolve(returnObject);
-            }
-        });
-    }
-}
-
-global.chrome = {
-    storage: {
-        local: new MockLocalStorage(),
-        sync: {
-            ...new MockLocalStorage(),
-            MAX_SUSTAINED_WRITE_OPERATIONS_PER_MINUTE: -1,
-            QUOTA_BYTES_PER_ITEM: -1,
-            MAX_ITEMS: -1,
-            MAX_WRITE_OPERATIONS_PER_HOUR: -1,
-            MAX_WRITE_OPERATIONS_PER_MINUTE: -1,
-        } as chrome.storage.SyncStorageArea,
-        session: new MockLocalStorage(),
-        managed: new MockLocalStorage(),
-        onChanged: {} as chrome.storage.StorageChange,
-    }
-} as unknown as typeof chrome;
+setUpMockBrowser();
 
 describe('IndexedDBStorage Fails when required to', () => {
     test('setCurrentActivation', () => {

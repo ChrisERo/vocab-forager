@@ -7,23 +7,23 @@ import { parseURL } from "../utils/utils";
  */
 export interface NonVolatileBrowserStorage {
     /**
-     * Queries whether extension should be activated or not from from extension's 
+     * Queries whether extension should be activated or not from from extension's
      * non-volatile storage. If value is not set, initializes value to false.
-     * 
+     *
      * @returns true if extension is currently activated, and false otherwise
      */
     getCurrentActivation(): Promise<boolean>;
-    
+
     /**
      * Sets in non-volatile storage whether the extension should be activated
-     * 
+     *
      * @param is_activated - whether extension should be activated on pages or not
      * */
-    setCurrentActivation(is_activated: boolean): void;
+    setCurrentActivation(is_activated: boolean): Promise<void>;
 
     /**
      * Given the url to a website, returns the page-specific metadata for said site
-     * 
+     *
      * @param site - url of a website
      */
     getPageData(site: string): Promise<SiteData>;
@@ -39,9 +39,9 @@ export interface NonVolatileBrowserStorage {
     getAllDomains(): Promise<string[]>;
 
     /**
-     * Returns an array of all data pertinent to see-sites page associated with pages of a 
+     * Returns an array of all data pertinent to see-sites page associated with pages of a
      * single domain. This is the url of the page along with its title, if it exists
-     * 
+     *
      * @param schemeAndHost the domain (protocol + host, like https://www.spam.com) to query for
      */
     getSeeSiteDataOfDomain(schemeAndHost: string): Promise<SeeSiteData[]>;
@@ -54,7 +54,7 @@ export interface NonVolatileBrowserStorage {
     /**
     * Saves page-specific metadata in non-volatile storage. If the new SiteData object is
     * empty (isEmpty returns true), then, if the entry already exists, it is to be deleted
-    * 
+    *
     * @param siteData - metadata for particular web url
     * @param page - url corresponding to data from siteData
     */
@@ -64,7 +64,7 @@ export interface NonVolatileBrowserStorage {
      * Removes data for a partucluar webpage url from non-volatile storage
      * @param url - url corresponding to data from siteData
      */
-    removePageData(url: string): void;    
+    removePageData(url: string): void;
 
     /**
      * Gets all dictionary-related data stored in non-volatile source
@@ -73,13 +73,13 @@ export interface NonVolatileBrowserStorage {
 
     /**
      * Sets data pertaining to global dictionary to GlobalDictionaryData
-     * @param gdd 
+     * @param gdd
      */
     setDictionaryData(gdd: GlobalDictionaryData): void;
 
     /**
      * Overrides all extension data stored in non-volatile storage present
-     * 
+     *
      * @param data Data to store into non-volatile storage
      * @return boolean value whose return value depends on specific implementation
      */
@@ -101,21 +101,15 @@ export class LocalStorage implements NonVolatileBrowserStorage {
         this.dictionaryKey = dictionaryKey;
     }
 
-    private async getFromLS(key: string): Promise<any|null> {
-        const fetchedResults = await chrome.storage.local.get(key);
-    
-        if (!fetchedResults.hasOwnProperty(key)) {
-            return null;
-        }
-
-        return fetchedResults[key];
+    private getFromLS(key: string): Promise<any|null> {
+        return chrome.storage.local.get(key);
     }
 
-    private setInLS(key: string, value: any): void {
+    private setInLS(key: string, value: any): Promise<void> {
         const payload = {
             [key]: value
         }
-        chrome.storage.local.set(payload);
+        return chrome.storage.local.set(payload);
     }
 
     private removeFromLS(key: string): void {
@@ -125,22 +119,22 @@ export class LocalStorage implements NonVolatileBrowserStorage {
     private async getAllEntireLS(): Promise<{[key: string]: any}> {
         return chrome.storage.local.get(null);
     }
-    
+
     async getCurrentActivation(): Promise<boolean> {
         let myActivation: boolean = false;
         let isActivated: boolean|null = await this.getFromLS(this.isActivatedKey);
-        
+
         if (isActivated === null) {
             this.setCurrentActivation(myActivation);
         } else {
             myActivation = isActivated;
         }
-    
+
         return myActivation;
     }
 
-     setCurrentActivation(isActivated: boolean): void {
-        this.setInLS(this.isActivatedKey, isActivated);
+     setCurrentActivation(isActivated: boolean): Promise<void> {
+        return this.setInLS(this.isActivatedKey, isActivated);
     }
 
     storePageData(siteData: SiteData, page: string): void {
@@ -154,16 +148,16 @@ export class LocalStorage implements NonVolatileBrowserStorage {
     removePageData(url: string): void {
         this.removeFromLS(url);
     }
-    
+
     getAllStorageData(): Promise<any> {
         return this.getAllEntireLS();
     }
-    
+
     async getAllPageUrls(): Promise<string[]> {
         let nonVolatileMemory = await this.getAllEntireLS();
         const response: string[] = [];
         for (let key in nonVolatileMemory) {
-            if (this.isURL(key)) { 
+            if (this.isURL(key)) {
                 response.push(key);
             }
         }
@@ -223,7 +217,7 @@ export class LocalStorage implements NonVolatileBrowserStorage {
     /**
      * Overrides all extension data stored in non-volatile storage present
      * in data and returns activation status in data
-     * 
+     *
      * @param data Data to store into non-volatile storage
      */
     async uploadExtensionData(data: any): Promise<boolean> {
@@ -246,7 +240,7 @@ export class LocalStorage implements NonVolatileBrowserStorage {
      * @returns true if key corresponds to an entry for a URL and false otherwise
      */
     private isURL(key: string): boolean {
-        return key !== this.dictionaryKey && key !== this.isActivatedKey && 
+        return key !== this.dictionaryKey && key !== this.isActivatedKey &&
             key !== this.tabIdKey;
     }
 }

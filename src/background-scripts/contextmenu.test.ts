@@ -1,99 +1,7 @@
 import { CSMessageType } from "../utils/content-script-communication";
 import { ContextMenuManager } from "./contextmenu";
 import { MockDataStorage } from "./dictionary.test";
-import { MockLocalStorage } from "./indexed-db-nv-storage.test";
-
-
-const setUpBrowser = () => {
-    const contextMenuStuff: any = {};
-    const messagesSent: any = {};
-    const tabs: chrome.tabs.Tab [] = [{
-        id: 1,
-        index: 0,
-        pinned: false,
-        highlighted: false,
-        windowId: 0,
-        active: false,
-        incognito: false,
-        selected: false,
-        discarded: false,
-        autoDiscardable: false,
-        groupId: 0
-    }, {
-        id: 2,
-        index: 0,
-        pinned: false,
-        highlighted: false,
-        windowId: 0,
-        active: false,
-        incognito: false,
-        selected: false,
-        discarded: false,
-        autoDiscardable: false,
-        groupId: 0
-    }, {
-        id: 3,
-        index: 0,
-        pinned: false,
-        highlighted: false,
-        windowId: 0,
-        active: false,
-        incognito: false,
-        selected: false,
-        discarded: false,
-        autoDiscardable: false,
-        groupId: 0
-    }];
-    const listeners: ((info: chrome.contextMenus.OnClickData, tab?: chrome.tabs.Tab | undefined) => void) [] = [];
-    global.chrome = {
-        contextMenus: {
-            contextMenuStuff: contextMenuStuff,
-            update: (id: string | number, updateProperties: any, callback?: () => void): void => {
-                contextMenuStuff[id] = {
-                    ...contextMenuStuff[id],
-                    ...updateProperties
-                }
-            },
-            create: (createProperties: any, callback?: () => void): number | string => {
-                let id: string | number = createProperties['id'];
-                contextMenuStuff[id] = createProperties;
-                return id;
-            },
-            onClicked: {
-                listeners: listeners,
-                addListener: (callback: (info: chrome.contextMenus.OnClickData, tab?: chrome.tabs.Tab | undefined) => any): void => {
-                    listeners.push(callback);
-                }
-            }
-        },
-        tabs: {
-            messagesSent: messagesSent,
-            sendMessage: async (tabId: number, message: any): Promise<void> => {
-                if (messagesSent[tabId] === undefined || messagesSent[tabId] === null) {
-                    messagesSent[tabId] = [];
-                }
-
-                messagesSent[tabId].push(message);
-                return;
-            },
-            query: (x: any) => new Promise((resolve, _) => resolve(tabs))
-        },
-        storage: {
-            local: new MockLocalStorage(),
-            sync: {
-                ...new MockLocalStorage(),
-                MAX_SUSTAINED_WRITE_OPERATIONS_PER_MINUTE: -1,
-                QUOTA_BYTES_PER_ITEM: -1,
-                MAX_ITEMS: -1,
-                MAX_WRITE_OPERATIONS_PER_HOUR: -1,
-                MAX_WRITE_OPERATIONS_PER_MINUTE: -1,
-            } as chrome.storage.SyncStorageArea,
-            session: new MockLocalStorage(),
-            managed: new MockLocalStorage(),
-            onChanged: {} as chrome.storage.StorageChange,
-        }
-    } as unknown as typeof chrome;
-    }
+import { setUpMockBrowser, MockLocalStorage } from "./mocks/chrome";
 
 
 describe('Contextmenu Tests', () => {
@@ -105,7 +13,7 @@ describe('Contextmenu Tests', () => {
         [true, 1, false ],
         [true, 2, false ],
     ])('setUpContextMenu', async (currentActivation: boolean, timesToRunSetup: number, isEmptyExpected: boolean) => {
-        setUpBrowser();
+        setUpMockBrowser();
         const globalDict = {languagesToResources: {}, currentDictionary: {index: -1, language: ''}};
         const localStorage = new MockDataStorage(globalDict);
         localStorage.setCurrentActivation(currentActivation);
@@ -152,7 +60,7 @@ describe('Contextmenu Tests', () => {
       [false, false],
       [true, true],
     ])('updateContextMenuBasedOnActivation %s %s', async (isActivatedOG: boolean, isActivatedNew: boolean) => {
-        setUpBrowser();
+        setUpMockBrowser();
         const globalDict = {languagesToResources: {}, currentDictionary: {index: -1, language: ''}};
         const localStorage = new MockDataStorage(globalDict);
         localStorage.setCurrentActivation(isActivatedOG);
@@ -177,7 +85,7 @@ describe('Contextmenu Tests', () => {
     });
 
     test("Delete Context Menu Hide and Show", async () => {
-        setUpBrowser();
+        setUpMockBrowser();
         const globalDict = {languagesToResources: {}, currentDictionary: {index: -1, language: ''}};
         const localStorage = new MockDataStorage(globalDict);
         localStorage.setCurrentActivation(true);
@@ -231,7 +139,7 @@ describe('Contextmenu Tests', () => {
         }
        ],
     ])('Test CM Listener %s %s', async (isActivatedOG: boolean, menuItemId: string, tabInfo: any, shouldSucceede: boolean, messagesSentExpected: any) => {
-        setUpBrowser();
+        setUpMockBrowser();
         const globalDict = {languagesToResources: {}, currentDictionary: {index: -1, language: ''}};
         const localStorage = new MockDataStorage(globalDict);
         localStorage.setCurrentActivation(isActivatedOG);
