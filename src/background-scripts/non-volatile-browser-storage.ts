@@ -101,8 +101,14 @@ export class LocalStorage implements NonVolatileBrowserStorage {
         this.dictionaryKey = dictionaryKey;
     }
 
-    private getFromLS(key: string): Promise<any|null> {
-        return chrome.storage.local.get(key);
+    private async getFromLS(key: string): Promise<any|null> {
+        const fetchedResults = await chrome.storage.local.get(key);
+
+        if (!fetchedResults.hasOwnProperty(key)) {
+            return null;
+        }
+
+        return fetchedResults[key];
     }
 
     private setInLS(key: string, value: any): Promise<void> {

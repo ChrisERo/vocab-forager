@@ -10,7 +10,7 @@ describe('Test LocalStorage', () => {
         [true, true],
         [null, false],
         [null, true],
-    ])('Test is_activated manupulation %s %s', async (isActivatedOG: boolean | null, newCurrentActivation: boolean) => {
+    ])('Test is_activated manipulation %s %s', async (isActivatedOG: boolean | null, newCurrentActivation: boolean) => {
         setUpMockBrowser();
         await chrome.storage.local.set({'is_activated': isActivatedOG});
         const storage: LocalStorage =  getLocalStorage();

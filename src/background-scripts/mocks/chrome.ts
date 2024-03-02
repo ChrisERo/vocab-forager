@@ -67,7 +67,8 @@ export class MockLocalStorage implements chrome.storage.LocalStorageArea {
             if (keys == null) {
                 resolve({ ...this.storage });
             } else if (typeof keys === 'string' || keys instanceof String) {
-                resolve(this.storage[keys as string]);
+                const key = keys as string;
+                resolve({[key]: this.storage[key]});
             } else {
                 let keysList: string[];
                 if (Array.isArray(keys)) {
