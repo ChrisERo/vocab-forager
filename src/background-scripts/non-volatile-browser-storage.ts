@@ -75,7 +75,7 @@ export interface NonVolatileBrowserStorage {
      * Sets data pertaining to global dictionary to GlobalDictionaryData
      * @param gdd
      */
-    setDictionaryData(gdd: GlobalDictionaryData): void;
+    setDictionaryData(gdd: GlobalDictionaryData): Promise<void>;
 
     /**
      * Overrides all extension data stored in non-volatile storage present
@@ -131,7 +131,7 @@ export class LocalStorage implements NonVolatileBrowserStorage {
         let isActivated: boolean|null = await this.getFromLS(this.isActivatedKey);
 
         if (isActivated === null) {
-            this.setCurrentActivation(myActivation);
+            await this.setCurrentActivation(myActivation);
         } else {
             myActivation = isActivated;
         }
@@ -216,8 +216,8 @@ export class LocalStorage implements NonVolatileBrowserStorage {
         return dictsRaw;
     }
 
-    setDictionaryData(gdd: GlobalDictionaryData): void {
-        this.setInLS(this.dictionaryKey, gdd);
+    setDictionaryData(gdd: GlobalDictionaryData): Promise<void> {
+        return this.setInLS(this.dictionaryKey, gdd);
     }
 
     /**

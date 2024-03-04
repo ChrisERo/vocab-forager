@@ -55,6 +55,7 @@ describe('IndexedDBStorage Fails when required to', () => {
                 currentDictionary: {language: 'ESP', index: 1}
             };
             dao.setDictionaryData(globalDictData);
+            throw new Error("Should have thrown exception");
         } catch (ex: any) {
             expect(ex.message).toBe('IndexedDBStorage does not store dictionary data');
         }

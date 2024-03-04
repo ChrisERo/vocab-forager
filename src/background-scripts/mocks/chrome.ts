@@ -68,7 +68,11 @@ export class MockLocalStorage implements chrome.storage.LocalStorageArea {
                 resolve({ ...this.storage });
             } else if (typeof keys === 'string' || keys instanceof String) {
                 const key = keys as string;
-                resolve({[key]: this.storage[key]});
+                if (this.storage.hasOwnProperty(key)) {
+                    resolve({[key]: this.storage[key]});
+                } else {
+                    resolve({});
+                }
             } else {
                 let keysList: string[];
                 if (Array.isArray(keys)) {
@@ -80,7 +84,9 @@ export class MockLocalStorage implements chrome.storage.LocalStorageArea {
                 const returnObject: any = {};
                 for (let i = 0; i < keysList.length; i++) {
                     const k = keysList[i];
-                    returnObject[k] = this.storage[k];
+                    if (this.storage.hasOwnProperty(k)) {
+                        returnObject[k] = this.storage[k];
+                    }
                 }
 
                 resolve(returnObject);

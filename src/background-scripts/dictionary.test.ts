@@ -44,8 +44,9 @@ export class MockDataStorage implements NonVolatileBrowserStorage {
     async getDictionaryData(): Promise<GlobalDictionaryData> {
        return this.dictData
     }
-    setDictionaryData(gdd: GlobalDictionaryData): void {
+    setDictionaryData(gdd: GlobalDictionaryData): Promise<void> {
         this.dictData = gdd;
+        return Promise.resolve();
     }
     uploadExtensionData(data: any): Promise<boolean> {
         throw new Error("Method not implemented.");

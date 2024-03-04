@@ -564,7 +564,7 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
         throw Error('IndexedDBStorage does not store dictionary data');
     }
 
-    setDictionaryData(gdd: GlobalDictionaryData): void {
+    setDictionaryData(gdd: GlobalDictionaryData): Promise<void> {
         throw Error('IndexedDBStorage does not store dictionary data');
     }
 
