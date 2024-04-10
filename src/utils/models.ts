@@ -8,7 +8,7 @@ export interface Word {
     startOffset: number;
     endOffset: number;
     // in-order list of nodes that contain word parameter in its entirety. Each node is 
-    // represented as the path to it from 
+    // represented as its index in the parent nodes list of children
     nodePath: number[][];
 }
 
