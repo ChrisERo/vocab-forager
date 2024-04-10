@@ -257,3 +257,4 @@ export class LocalStorage implements NonVolatileBrowserStorage {
 export function getLocalStorage(): LocalStorage {
     return new LocalStorage('is_activated', 'dicts');
 }
+
