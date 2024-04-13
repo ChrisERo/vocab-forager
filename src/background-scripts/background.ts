@@ -7,8 +7,8 @@ import { isNewActivatedState } from "../utils/content-script-communication";
 import { getIndexedDBStorage, IndexedDBStorage } from "./indexed-db-nv-storage";
 
 const browserStorage: LocalStorage = getLocalStorage();
-const dictionaryManager: DictionaryManager = new DictionaryManager(browserStorage);
-const contextMenuManager: ContextMenuManager = new ContextMenuManager(browserStorage);
+export const dictionaryManager: DictionaryManager = new DictionaryManager(browserStorage);
+export const contextMenuManager: ContextMenuManager = new ContextMenuManager(browserStorage);
 
 type sendResponseFunction = (response?: any) => void;
 
@@ -92,12 +92,12 @@ async function openTab(url: string): Promise<void> {
  * when loading popup menu for the first time.
  */
 function makeHandler(siteDateStorage: Readonly<IndexedDBStorage>): (message: any, sender: chrome.runtime.MessageSender, sendResponse: (response?: any) => void) => void {
-    return (request: any, _: chrome.runtime.MessageSender, sendResponse: sendResponseFunction): boolean => {
+    return async (request: any, _: chrome.runtime.MessageSender, 
+                  sendResponse: sendResponseFunction): Promise<boolean> => {
         if (!isBsMessage(request)) {
-        logUnexpected("request structure", request);
-        return false;
+            logUnexpected("request structure", request);
+            return false;
         }
-
         console.log(`REQUEST TO BACKGROUND MADE: ${request.messageType}`);
 
         switch (request.messageType) {
@@ -112,7 +112,8 @@ function makeHandler(siteDateStorage: Readonly<IndexedDBStorage>): (message: any
                 break;
             }
             case BSMessageType.GetCurrentDictionary: {
-                dictionaryManager.getCurrentDictionaryId().then((response) => sendResponse(response));
+                const response = await dictionaryManager.getCurrentDictionaryId();
+                sendResponse(response);
                 break;
             }
             case BSMessageType.GetLanguages : {
@@ -321,7 +322,15 @@ function makeHandler(siteDateStorage: Readonly<IndexedDBStorage>): (message: any
     }
 }
 
-getIndexedDBStorage(browserStorage).then((siteDataStorage: Readonly<IndexedDBStorage>) => {
-    chrome.runtime.onMessage.addListener(makeHandler(siteDataStorage));
+const listenerSetupPromise: Promise<void> =  // Promise for unittests
+    getIndexedDBStorage(browserStorage)
+        .then((siteDataStorage: Readonly<IndexedDBStorage>) => {
+            chrome.runtime.onMessage.addListener(makeHandler(siteDataStorage));
 });
-contextMenuManager.setUpContextMenus();
+
+const contextMenuSetup = contextMenuManager.setUpContextMenus();
+
+export const backgroundWorkerPromise: Promise<any[]> = Promise.all([
+    listenerSetupPromise, 
+    contextMenuManager
+]);
