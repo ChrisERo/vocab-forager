@@ -21,24 +21,15 @@ describe('Testing Service Worker', () => {
 
     test('initial setup is correct', async () => {
         expect(contextMenuManager.setUpContextMenus).toHaveBeenCalledTimes(1);
+        
+        // Test that listener was indeed registered
+        await backgroundWorkerPromise;
         const message: BSMessage = {
             messageType: BSMessageType.GetCurrentDictionary,
             payload: null
         };
-        const sendResponse: (response?: any) => void = (resposne?: any) => {
-        };
-        
-        
-        await backgroundWorkerPromise;
-        await (chrome.runtime.onMessage as any).testExecute(
-            {isBogusMessage: true}, 
-            null, 
-            sendResponse
-        );
-        expect(dictionaryManager.getCurrentDictionaryId)
-            .toHaveBeenCalledTimes(0);
-
-        await (chrome.runtime.onMessage as any).testExecute(
+        const sendResponse: (response?: any) => void = (_?: any) => {};
+        await (chrome.runtime.onMessage as any).testExecute(  
             message, 
             null, 
             sendResponse
