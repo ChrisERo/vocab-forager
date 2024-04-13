@@ -96,6 +96,7 @@ export class MockLocalStorage implements chrome.storage.LocalStorageArea {
 }
 
 export const setUpMockBrowser = () => {
+    const onMessageListenersList: Function[] = [];
     const contextMenuStuff: any = {};
     const messagesSent: any = {};
     const tabs: chrome.tabs.Tab [] = [{
@@ -168,6 +169,20 @@ export const setUpMockBrowser = () => {
                 return;
             },
             query: (x: any) => new Promise((resolve, _) => resolve(tabs))
+        },
+        runtime: {
+            onMessage: {
+                addListener: <T extends Function>(x: T) => {
+                    onMessageListenersList.push(x);
+                },
+                testExecute: async (x: any, y: any, z: any) => {  // my own innovation
+                    expect(onMessageListenersList).toHaveLength(1);
+                    for (let i = 0; i < onMessageListenersList.length; i++) {
+                        const ear = onMessageListenersList[i];
+                        await ear(x,y,z);
+                    }
+                }
+            }
         },
         storage: {
             local: new MockLocalStorage(),
