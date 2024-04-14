@@ -12,6 +12,10 @@ export const contextMenuManager: ContextMenuManager = new ContextMenuManager(bro
 
 type sendResponseFunction = (response?: any) => void;
 
+export type HandlerType = (message: any, 
+                           sender: any,
+                           sendResponse: sendResponseFunction)  
+                           => Promise<boolean>;
 
 /**
  * Logs that an unexpected value was asociated with a particular key
@@ -91,7 +95,7 @@ async function openTab(url: string): Promise<void> {
  * Using a listener per background script caused errors, in particular
  * when loading popup menu for the first time.
  */
-function makeHandler(siteDateStorage: Readonly<IndexedDBStorage>): (message: any, sender: chrome.runtime.MessageSender, sendResponse: (response?: any) => void) => void {
+export function makeHandler(siteDateStorage: Readonly<IndexedDBStorage>): HandlerType {
     return async (request: any, _: chrome.runtime.MessageSender, 
                   sendResponse: sendResponseFunction): Promise<boolean> => {
         if (!isBsMessage(request)) {
@@ -103,9 +107,9 @@ function makeHandler(siteDateStorage: Readonly<IndexedDBStorage>): (message: any
         switch (request.messageType) {
             case BSMessageType.DictsOfLang: {
                 if (isDictsOfLangRequest(request.payload)) {
-                    dictionaryManager
-                        .getDictionariesOfLanguage(request.payload.language)
-                        .then((response) => sendResponse(response));
+                    const response = await dictionaryManager
+                        .getDictionariesOfLanguage(request.payload.language);
+                    sendResponse(response);
                 } else {
                     logUnexpected('payload', request.payload);
                 }
@@ -117,12 +121,14 @@ function makeHandler(siteDateStorage: Readonly<IndexedDBStorage>): (message: any
                 break;
             }
             case BSMessageType.GetLanguages : {
-                dictionaryManager.getLanguages().then((response) => sendResponse(response));
+                const languagesList = await dictionaryManager.getLanguages();
+                sendResponse(languagesList);
                 break;
             }
             case BSMessageType.SetCurrentDictionary: {
                 if (isDictionaryID(request.payload)) {
-                    dictionaryManager.setCurrentDictionary(request.payload).then(() => sendResponse());
+                    await dictionaryManager.setCurrentDictionary(request.payload);
+                    sendResponse();
                 } else {
                     logUnexpected('payload', request.payload);
                 }
@@ -130,7 +136,8 @@ function makeHandler(siteDateStorage: Readonly<IndexedDBStorage>): (message: any
             }
             case BSMessageType.GetExistingDictionary : {
                 if (isDictionaryID(request.payload)) {
-                    dictionaryManager.getDictionaryFromIdentifier(request.payload).then((response) => sendResponse(response));
+                    const dict = await dictionaryManager.getDictionaryFromIdentifier(request.payload);
+                    sendResponse(dict);
                 } else {
                     logUnexpected('payload', request.payload);
                 }
@@ -138,10 +145,15 @@ function makeHandler(siteDateStorage: Readonly<IndexedDBStorage>): (message: any
             }
             case BSMessageType.UpdateExistingDictionary: {
                 if (isUpdateDictionaryRequest(request.payload)) {
-                    let data: Dictionary = request.payload.content;
-                    let index: DictionaryIdentifier = request.payload.index;
-                    let language: string = request.payload.language;
-                    dictionaryManager.modifyExistingDictionary(index, language, data).then(() => sendResponse());
+                    const data: Dictionary = request.payload.content;
+                    const index: DictionaryIdentifier = request.payload.index;
+                    const language: string = request.payload.language;
+                    await dictionaryManager.modifyExistingDictionary(
+                        index, 
+                        language, 
+                        data
+                    );
+                    sendResponse();
                 } else {
                     logUnexpected('payload', request.payload);
                 }
