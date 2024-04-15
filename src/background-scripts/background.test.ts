@@ -37,32 +37,32 @@ describe('Testing Service Worker', () => {
                 {name: "shabdok", url: 'https://shabdock.io/{word}'},
             ]
         }
-        dictionaryManager.getDictionariesOfLanguage = 
+        dictionaryManager.getDictionariesOfLanguage =
             jest.fn().mockImplementation(async (lang: string) => {
             return langsToDicts[lang];
         });
-        dictionaryManager.getCurrentDictionaryId = 
+        dictionaryManager.getCurrentDictionaryId =
             jest.fn().mockImplementation(async () => {
             return currentDictionaryId;
         });
-        dictionaryManager.getLanguages = 
+        dictionaryManager.getLanguages =
             jest.fn().mockImplementation(async () => {
             return ['Castellano', 'English', 'हिन्दी'];
         });
-        dictionaryManager.setCurrentDictionary = 
+        dictionaryManager.setCurrentDictionary =
             jest.fn().mockImplementation(async (dictId: DictionaryIdentifier) => {
             currentDictionaryId = dictId;
             return;
         });
-        dictionaryManager.getDictionaryFromIdentifier = 
+        dictionaryManager.getDictionaryFromIdentifier =
             jest.fn().mockImplementation(async (dictId: DictionaryIdentifier) => {
             const dicts = await dictionaryManager.getDictionariesOfLanguage(dictId.language)
             return dicts[dictId.index];
         });
-        dictionaryManager.modifyExistingDictionary = 
+        dictionaryManager.modifyExistingDictionary =
             jest.fn().mockImplementation(async (
-            index: DictionaryIdentifier, 
-            language: string, 
+            index: DictionaryIdentifier,
+            language: string,
             data: Dictionary) => {
                 if (language = index.language) {
                     langsToDicts[index.language][index.index] = data;
@@ -70,12 +70,30 @@ describe('Testing Service Worker', () => {
                     throw 'Need to code up this portion if testing'
                 }
             return;
-            });
+        });
+        dictionaryManager.addDictionary =
+            jest.fn().mockImplementation(async (dict: Dictionary, lang: string) => {
+            if (!langsToDicts.hasOwnProperty(lang)) {
+                langsToDicts[lang] = [];
+            }
+            langsToDicts[lang].push(dict);
+            return;
+        });
+        dictionaryManager.removeDictionary =
+            jest.fn().mockImplementation(async (dictId: DictionaryIdentifier) => {
+            if (langsToDicts.hasOwnProperty(dictId.language)
+                && langsToDicts[dictId.language].length >= dictId.index) {
+                langsToDicts[dictId.language].splice(dictId.index, 1);
+                return true;
+            }
+            return false;
+        });
+
     });
 
     test('initial setup is correct', async () => {
         expect(contextMenuManager.setUpContextMenus).toHaveBeenCalledTimes(1);
-        
+
         // Test that listener was indeed registered
         await backgroundWorkerPromise;
         const message: BSMessage = {
@@ -83,9 +101,9 @@ describe('Testing Service Worker', () => {
             payload: null
         };
         const sendResponse: (response?: any) => void = (_?: any) => {};
-        await (chrome.runtime.onMessage as any).testExecute(  
-            message, 
-            null, 
+        await (chrome.runtime.onMessage as any).testExecute(
+            message,
+            null,
             sendResponse
         );
         expect(dictionaryManager.getCurrentDictionaryId)
@@ -118,11 +136,11 @@ describe('Testing Service Worker', () => {
                     .toHaveBeenCalledTimes(1);
                     const expectedResult = [
                         {
-                            name: "DRAE", 
+                            name: "DRAE",
                             url: 'https://dle.rae.es/{word}?m=form'
                         },
                         {
-                            name: "spanishdict", 
+                            name: "spanishdict",
                             url: 'https://spanishdict.com/{word}'
                         }
                     ];
@@ -145,15 +163,15 @@ describe('Testing Service Worker', () => {
             'Set Current Dictionary Legit',
             {
                 messageType: BSMessageType.SetCurrentDictionary,
-                payload: {language: 'English', index: 3} 
+                payload: {language: 'English', index: 3}
             },
             async () => {
                 expect(dictionaryManager.setCurrentDictionary)
                     .toHaveBeenCalledTimes(1);
-                const currentDictId: DictionaryIdentifier = 
+                const currentDictId: DictionaryIdentifier =
                     await dictionaryManager.getCurrentDictionaryId();
                 const expectedDictId: DictionaryIdentifier = {
-                    language: 'English', 
+                    language: 'English',
                     index: 3
                 };
                 expect(currentDictId).toEqual(expectedDictId);
@@ -178,7 +196,7 @@ describe('Testing Service Worker', () => {
             async (response: any) => {
                 expect(dictionaryManager.getDictionaryFromIdentifier).toHaveBeenCalledTimes(1);
                 expect(response).toEqual({
-                    name: "Dictionary.com", 
+                    name: "Dictionary.com",
                     url: 'https://dictionary.com/{word}',
                 });
             }
@@ -192,7 +210,7 @@ describe('Testing Service Worker', () => {
             async (response: any) => {
                 expect(dictionaryManager.getDictionaryFromIdentifier).toHaveBeenCalledTimes(1);
                 expect(response).toEqual({
-                    name: "DRAE", 
+                    name: "DRAE",
                     url: 'https://dle.rae.es/{word}?m=form',
                 });
             }
@@ -224,7 +242,7 @@ describe('Testing Service Worker', () => {
                 expect(dictionaryManager.modifyExistingDictionary)
                     .toHaveBeenCalledTimes(1);
                 const dict = await dictionaryManager.getDictionaryFromIdentifier({
-                        index: 1, 
+                        index: 1,
                         language: 'English'
                 });
                 const expectedDict: Dictionary = {
@@ -242,7 +260,7 @@ describe('Testing Service Worker', () => {
                     index: {language: 'Castellano', index: 1},
                     language: 'Castellano',
                     content: {
-                        name: "SpanishDict", 
+                        name: "SpanishDict",
                         url: 'https://spanishdict.com/{word}'
                     }
                 },
@@ -252,10 +270,10 @@ describe('Testing Service Worker', () => {
                     .toHaveBeenCalledTimes(1);
                 const dict = await dictionaryManager.getDictionaryFromIdentifier({
                     language: 'Castellano',
-                    index: 1, 
+                    index: 1,
                 });
                 const expectedDict: Dictionary = {
-                    name: "SpanishDict", 
+                    name: "SpanishDict",
                     url: 'https://spanishdict.com/{word}'
                 };
                 expect(dict).toEqual(expectedDict);
@@ -272,8 +290,114 @@ describe('Testing Service Worker', () => {
                     .toHaveBeenCalledTimes(0);
             }
         ],
-    ])('%s makeHandler for valid requests', async (_name: string, 
-                                                   message: BSMessage, 
+        [
+            'Add new Dictionary Valid Payload (existing language)',
+            {
+                messageType: BSMessageType.AddNewDictionary,
+                payload: {
+                    lang: 'Castellano',
+                    dict: {
+                        name: "WordReference",
+                        url: 'https://www.wordreference.com/definicion/{word}'
+                    }
+                },
+            },
+            async () => {
+                expect(dictionaryManager.addDictionary).toHaveBeenCalledTimes(1);
+                const dict = await dictionaryManager.getDictionaryFromIdentifier({
+                    language: 'Castellano',
+                    index: 2,
+                });
+                const expectedDict: Dictionary = {
+                        name: "WordReference",
+                        url: 'https://www.wordreference.com/definicion/{word}'
+                };
+                expect(dict).toEqual(expectedDict);
+            }
+        ],
+        [
+            'Add new Dictionary Valid Payload (new language)',
+            {
+                messageType: BSMessageType.AddNewDictionary,
+                payload: {
+                    lang: 'Telugu',
+                    dict: {
+                        name: "GoogleTranslate",
+                        url: 'https://translate.google.com/?sl=te&tl=en&text={word}&op=translate'
+                    }
+                },
+            },
+            async () => {
+                expect(dictionaryManager.addDictionary).toHaveBeenCalledTimes(1);
+                const dict = await dictionaryManager.getDictionaryFromIdentifier({
+                    language: 'Telugu',
+                    index: 0,
+                });
+                const expectedDict: Dictionary = {
+                        name: "GoogleTranslate",
+                        url: 'https://translate.google.com/?sl=te&tl=en&text={word}&op=translate'
+                };
+                expect(dict).toEqual(expectedDict);
+            }
+        ],
+        [
+            'Add New Dictionary Invalid Payload',
+            {
+                messageType: BSMessageType.AddNewDictionary,
+                payload: null,
+            },
+            async () => {
+                expect(dictionaryManager.addDictionary).toHaveBeenCalledTimes(0);
+            }
+        ],
+        [
+            'Remove Real Dictionary',
+            {
+                messageType: BSMessageType.DeleteExitingDictionary,
+                payload: {
+                    language: 'Castellano',
+                    index: 0
+                },
+            },
+            async (result) => {
+                expect(dictionaryManager.removeDictionary).toHaveBeenCalledTimes(1);
+                expect(result).toBe(true);
+                const dict = await dictionaryManager.getDictionaryFromIdentifier({
+                    language: 'Castellano',
+                    index: 0
+                });
+                expect(dict).toEqual({
+                    name: "spanishdict",
+                    url: 'https://spanishdict.com/{word}'
+                });
+            }
+        ],
+        [
+            'Remove Fake Dictionary',
+            {
+                messageType: BSMessageType.DeleteExitingDictionary,
+                payload: {
+                    language: 'Klingon',
+                    index: 3
+                },
+            },
+            async (result) => {
+                expect(dictionaryManager.removeDictionary).toHaveBeenCalledTimes(1);
+                expect(result).toBe(false);
+            }
+        ],
+        [
+            'Remove Dictionary, bad payload',
+            {
+                messageType: BSMessageType.DeleteExitingDictionary,
+                payload: null,
+            },
+            async (result) => {
+                expect(dictionaryManager.removeDictionary).toHaveBeenCalledTimes(0);
+            }
+        ],
+    ])('%s makeHandler for valid requests', async (_name: string,
+                                                   message: BSMessage,
                                                    test: AssertFunction) => {
 
         jest.clearAllMocks();  // doing this beforeEach distorts setup test
@@ -284,7 +408,7 @@ describe('Testing Service Worker', () => {
             respuesta = resp
         };
         const result: boolean = await handler(message, null, sendResponse);
-        
+
         expect(result).toBeTruthy();
         await test(respuesta);
     });

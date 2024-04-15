@@ -12,9 +12,9 @@ export const contextMenuManager: ContextMenuManager = new ContextMenuManager(bro
 
 type sendResponseFunction = (response?: any) => void;
 
-export type HandlerType = (message: any, 
+export type HandlerType = (message: any,
                            sender: any,
-                           sendResponse: sendResponseFunction)  
+                           sendResponse: sendResponseFunction)
                            => Promise<boolean>;
 
 /**
@@ -96,7 +96,7 @@ async function openTab(url: string): Promise<void> {
  * when loading popup menu for the first time.
  */
 export function makeHandler(siteDateStorage: Readonly<IndexedDBStorage>): HandlerType {
-    return async (request: any, _: chrome.runtime.MessageSender, 
+    return async (request: any, _: chrome.runtime.MessageSender,
                   sendResponse: sendResponseFunction): Promise<boolean> => {
         if (!isBsMessage(request)) {
             logUnexpected("request structure", request);
@@ -149,8 +149,8 @@ export function makeHandler(siteDateStorage: Readonly<IndexedDBStorage>): Handle
                     const index: DictionaryIdentifier = request.payload.index;
                     const language: string = request.payload.language;
                     await dictionaryManager.modifyExistingDictionary(
-                        index, 
-                        language, 
+                        index,
+                        language,
                         data
                     );
                     sendResponse();
@@ -162,14 +162,18 @@ export function makeHandler(siteDateStorage: Readonly<IndexedDBStorage>): Handle
             case BSMessageType.AddNewDictionary: {
                 if (isAddNewDictRequest(request.payload)) {
                     const dict: Dictionary = request.payload.dict;
-                    const langauge: string = request.payload.lang;
-                    dictionaryManager.addDictionary(dict, langauge).then(() => sendResponse());
+                    const language: string = request.payload.lang;
+                    await dictionaryManager.addDictionary(dict, language);
+                    sendResponse();
+                } else {
+                    logUnexpected('payload', request.payload);
                 }
                 break;
             }
             case BSMessageType.DeleteExitingDictionary: {
                 if (isDictionaryID(request.payload)) {
-                    dictionaryManager.removeDictionary(request.payload).then((result) => sendResponse(result));
+                    const deletedSomething: boolean = await dictionaryManager.removeDictionary(request.payload);
+                    sendResponse(deletedSomething);
                 } else {
                     logUnexpected('payload', request.payload);
                 }
@@ -343,6 +347,6 @@ const listenerSetupPromise: Promise<void> =  // Promise for unittests
 const contextMenuSetup = contextMenuManager.setUpContextMenus();
 
 export const backgroundWorkerPromise: Promise<any[]> = Promise.all([
-    listenerSetupPromise, 
+    listenerSetupPromise,
     contextMenuManager
 ]);
