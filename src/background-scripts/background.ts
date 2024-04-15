@@ -1,12 +1,11 @@
 import { DictionaryManager } from "./dictionary";
 import { getLocalStorage, LocalStorage, NonVolatileBrowserStorage } from "./non-volatile-browser-storage";
-import {ContextMenuManager} from "./contextmenu"
-import { BSMessagePayload, BSMessageType, isLabelEntryModRequest, isAddNewDictRequest, isBsMessage, isDictsOfLangRequest, isGetDataForLabelRequest, isGetDataForPageRequest, isGetUrlsOfDomainRequest, isLoadExtensionDataRequest, isPageDataPair, isSearchRequest, isSetActivationRequest, isUpdateDictionaryRequest } from "../utils/background-script-communication";
+import { ContextMenuManager } from "./contextmenu"
+import { BSMessageType, isLabelEntryModRequest, isAddNewDictRequest, isBsMessage, isDictsOfLangRequest, isGetDataForLabelRequest, isGetDataForPageRequest, isGetUrlsOfDomainRequest, isLoadExtensionDataRequest, isPageDataPair, isSearchRequest, isSetActivationRequest, isUpdateDictionaryRequest } from "../utils/background-script-communication";
 import { Dictionary, DictionaryIdentifier, isDictionaryID, SeeSiteData, SiteData } from "../utils/models";
-import { isNewActivatedState } from "../utils/content-script-communication";
 import { getIndexedDBStorage, IndexedDBStorage } from "./indexed-db-nv-storage";
 
-const browserStorage: LocalStorage = getLocalStorage();
+export const browserStorage: LocalStorage = getLocalStorage();
 export const dictionaryManager: DictionaryManager = new DictionaryManager(browserStorage);
 export const contextMenuManager: ContextMenuManager = new ContextMenuManager(browserStorage);
 
@@ -181,7 +180,8 @@ export function makeHandler(siteDateStorage: Readonly<IndexedDBStorage>): Handle
             }
             case BSMessageType.SearchWordURL: {
                 if (isSearchRequest(request.payload)) {
-                    dictionaryManager.getWordSearchURL(request.payload.word).then(openTab);
+                    const url = await dictionaryManager.getWordSearchURL(request.payload.word);
+                    await openTab(url);
                 } else {
                     logUnexpected('payload', request.payload);
                 }
