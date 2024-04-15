@@ -159,6 +159,35 @@ export const setUpMockBrowser = () => {
             }
         },
         tabs: {
+            create: async (message: chrome.tabs.CreateProperties): 
+                Promise<chrome.tabs.Tab> => {
+                const newId = tabs.length + 1;
+                const newTab: chrome.tabs.Tab = {
+                    ...message,
+                    id: newId,
+                    index: 0,
+                    pinned: false,
+                    highlighted: false,
+                    windowId: 0,
+                    active: false,
+                    incognito: false,
+                    selected: false,
+                    discarded: false,
+                    autoDiscardable: false,
+                    groupId: 0
+                }
+                tabs.push(newTab);
+                return newTab
+            },
+            get: async (tabId: number): Promise<chrome.tabs.Tab> => {
+                for (let i = 0; i < tabs.length; i++) {
+                    const tab: chrome.tabs.Tab = tabs[i];
+                    if (tab.id === tabId) {
+                        return tab;
+                    }
+                }
+                throw 'Updated imaginary tab';
+            },
             messagesSent: messagesSent,
             sendMessage: async (tabId: number, message: any): Promise<void> => {
                 if (messagesSent[tabId] === undefined || messagesSent[tabId] === null) {
@@ -168,7 +197,23 @@ export const setUpMockBrowser = () => {
                 messagesSent[tabId].push(message);
                 return;
             },
-            query: (x: any) => new Promise((resolve, _) => resolve(tabs))
+            query: (x: any) => new Promise((resolve, _) => resolve(tabs)),
+            update: async (tabId: number, message: chrome.tabs.UpdateProperties): 
+            Promise<chrome.tabs.Tab> => {
+                for (let i = 0; i < tabs.length; i++) {
+                    const tab: chrome.tabs.Tab = tabs[i];
+                    if (tab.id === tabId) {
+                        tabs[i] = {
+                            ...tab,
+                            ...message,
+                        }
+
+                        return tabs[i];
+                    }
+                }
+
+                throw 'Updated imaginary tab';
+            },
         },
         runtime: {
             onMessage: {

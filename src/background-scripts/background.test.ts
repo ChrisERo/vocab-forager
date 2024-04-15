@@ -1,15 +1,13 @@
 import "fake-indexeddb/auto";
-import { HandlerType, backgroundWorkerPromise, contextMenuManager, dictionaryManager, makeHandler} from "./background";
-import { ContextMenuManager } from "./contextmenu";
-import { DictionaryManager } from "./dictionary";
+import { HandlerType, backgroundWorkerPromise, browserStorage, contextMenuManager, dictionaryManager, makeHandler} from "./background";
+import "./contextmenu";
+import "./dictionary";
 import { IndexedDBStorage } from "./indexed-db-nv-storage";
 import { setUpMockBrowser } from "./mocks/chrome";
-import { LocalStorage } from "./non-volatile-browser-storage";
 import { BSMessage, BSMessageType } from "../utils/background-script-communication";
 import { Dictionary, DictionaryIdentifier } from "../utils/models";
 
 jest.mock("./contextmenu");
-jest.mock("./non-volatile-browser-storage");
 jest.mock("./dictionary");
 
 
@@ -17,6 +15,9 @@ describe('Testing Service Worker', () => {
 
     beforeEach(() => {
         setUpMockBrowser();
+
+        // set up browser storage
+        browserStorage.setTabId(1);
 
         // Mocks for dictionaryManager
         let currentDictionaryId: DictionaryIdentifier = {
@@ -88,7 +89,12 @@ describe('Testing Service Worker', () => {
             }
             return false;
         });
-
+        dictionaryManager.getWordSearchURL =
+            jest.fn().mockImplementation(async (word: string) => {
+            const dictId = await dictionaryManager.getCurrentDictionaryId();
+            const dict = await dictionaryManager.getDictionaryFromIdentifier(dictId);
+            return dict.url.replace('{word}', word);
+        });
     });
 
     test('initial setup is correct', async () => {
@@ -396,11 +402,53 @@ describe('Testing Service Worker', () => {
                 expect(dictionaryManager.removeDictionary).toHaveBeenCalledTimes(0);
             }
         ],
+        [
+            'Search Word In Current Tab',
+            {
+                messageType: BSMessageType.SearchWordURL,
+                payload: {word: 'palabra'},
+            },
+            async () => {
+                expect(dictionaryManager.getWordSearchURL)
+                    .toHaveBeenCalledTimes(1);
+                const myTab: chrome.tabs.Tab = await chrome.tabs.get(1);
+                expect(myTab.url).toBe('https://spanishdict.com/palabra')
+            }
+        ],
+        [
+            'Search Word In New Tab',
+            {
+                messageType: BSMessageType.SearchWordURL,
+                payload: {word: 'uva'},
+                clearCurrentTab: true,
+            },
+            async () => {
+                expect(dictionaryManager.getWordSearchURL)
+                    .toHaveBeenCalledTimes(1);
+                const myTab: chrome.tabs.Tab = await chrome.tabs.get(4);
+                expect(myTab.url).toBe('https://spanishdict.com/uva')
+            }
+        ],
+        [
+            'Search Word Invalid Payload',
+            {
+                messageType: BSMessageType.SearchWordURL,
+                payload: null,
+            },
+            async () => {
+                expect(dictionaryManager.getWordSearchURL)
+                    .toHaveBeenCalledTimes(0);
+            }
+        ],
+
     ])('%s makeHandler for valid requests', async (_name: string,
                                                    message: BSMessage,
                                                    test: AssertFunction) => {
-
         jest.clearAllMocks();  // doing this beforeEach distorts setup test
+        if ((message as any)['clearCurrentTab'] !== undefined
+           && (message as any)['clearCurrentTab']) {
+               browserStorage.setTabId((null as unknown as number));  // gets passed type check
+        }
         const db: IndexedDBStorage = new IndexedDBStorage();
         const handler: HandlerType = makeHandler(db);
         let respuesta: any;
