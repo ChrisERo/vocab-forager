@@ -1,18 +1,17 @@
-import "fake-indexeddb/auto";
-import { HandlerType, backgroundWorkerPromise, browserStorage, contextMenuManager, dictionaryManager, makeHandler} from "./background";
+import "fake-indexeddb/auto";  // needs to come after indexed-db-nv-storage import
+import { DB_NAME, IndexedDBStorage } from "./indexed-db-nv-storage";
 import "./contextmenu";
 import "./dictionary";
-import { IndexedDBStorage } from "./indexed-db-nv-storage";
 import { setUpMockBrowser } from "./mocks/chrome";
 import { BSMessage, BSMessageType } from "../utils/background-script-communication";
 import { Dictionary, DictionaryIdentifier } from "../utils/models";
+import { HandlerType, backgroundWorkerPromise, browserStorage, contextMenuManager, dictionaryManager, indexedDBStorage, makeHandler} from "./background";
 
 jest.mock("./contextmenu");
 jest.mock("./dictionary");
 
 
 describe('Testing Service Worker', () => {
-
     beforeEach(() => {
         setUpMockBrowser();
 
@@ -95,6 +94,11 @@ describe('Testing Service Worker', () => {
             const dict = await dictionaryManager.getDictionaryFromIdentifier(dictId);
             return dict.url.replace('{word}', word);
         });
+    });
+
+    afterEach(() => {  // relies on ordering of tests to be right
+        indexedDBStorage.getDB()?.close();  // needed for deleteDatabase to take effect
+        indexedDB.deleteDatabase(DB_NAME);
     });
 
     test('initial setup is correct', async () => {
@@ -227,7 +231,7 @@ describe('Testing Service Worker', () => {
                 messageType: BSMessageType.GetExistingDictionary,
                 payload: null,
             },
-            async (response: any) => {
+            async () => {
                 expect(dictionaryManager.getDictionaryFromIdentifier).toHaveBeenCalledTimes(0);
             }
         ],
@@ -365,7 +369,7 @@ describe('Testing Service Worker', () => {
                     index: 0
                 },
             },
-            async (result) => {
+            async (result: any) => {
                 expect(dictionaryManager.removeDictionary).toHaveBeenCalledTimes(1);
                 expect(result).toBe(true);
                 const dict = await dictionaryManager.getDictionaryFromIdentifier({
@@ -387,7 +391,7 @@ describe('Testing Service Worker', () => {
                     index: 3
                 },
             },
-            async (result) => {
+            async (result: any) => {
                 expect(dictionaryManager.removeDictionary).toHaveBeenCalledTimes(1);
                 expect(result).toBe(false);
             }
@@ -398,7 +402,7 @@ describe('Testing Service Worker', () => {
                 messageType: BSMessageType.DeleteExitingDictionary,
                 payload: null,
             },
-            async (result) => {
+            async () => {
                 expect(dictionaryManager.removeDictionary).toHaveBeenCalledTimes(0);
             }
         ],
@@ -430,16 +434,43 @@ describe('Testing Service Worker', () => {
             }
         ],
         [
-            'Search Word Invalid Payload',
+            'StorePageData Valid Payload',
             {
-                messageType: BSMessageType.SearchWordURL,
-                payload: null,
+                messageType: BSMessageType.StorePageData,
+                payload: {
+                    data: {
+                        wordEntries: [],
+                        missingWords: ['pizza'],
+                        title: 'Fake News 1'
+                    },
+                    url: 'https://www.cnn.com/fake-news-article'
+                },
             },
-            async () => {
-                expect(dictionaryManager.getWordSearchURL)
-                    .toHaveBeenCalledTimes(0);
+            async (_: any, db: IndexedDBStorage) => {
+                const data0= await db.getPageData('https://www.fakeSitecom/fake-news-article');
+                expect(data0.missingWords).toHaveLength(0);
+                expect(data0.title).toBeUndefined();
+                const data = await db.getPageData('https://www.cnn.com/fake-news-article');
+                expect(data.missingWords).toEqual(['pizza']);
+                expect(data.title).toBe('Fake News 1');
             }
         ],
+        [
+            'StorePageData Invalid',
+            {
+                messageType: BSMessageType.StorePageData,
+                payload: {
+                    foobar: 0,
+                    url: 'https://www.cnn.com/fake-news-article'
+                },
+            },
+            async (_: any, db: IndexedDBStorage) => {
+                const data = await db.getPageData('https://www.cnn.com/fake-news-article');
+                expect(data.missingWords).toHaveLength(0);
+                expect(data.title).toBeUndefined();
+            }
+        ],
+
 
     ])('%s makeHandler for valid requests', async (_name: string,
                                                    message: BSMessage,
@@ -450,6 +481,7 @@ describe('Testing Service Worker', () => {
                browserStorage.setTabId((null as unknown as number));  // gets passed type check
         }
         const db: IndexedDBStorage = new IndexedDBStorage();
+        await db.setUp();
         const handler: HandlerType = makeHandler(db);
         let respuesta: any;
         const sendResponse: (response?: any) => void = (resp?: any) => {
@@ -458,7 +490,8 @@ describe('Testing Service Worker', () => {
         const result: boolean = await handler(message, null, sendResponse);
 
         expect(result).toBeTruthy();
-        await test(respuesta);
+        await test(respuesta, db);
+        db.getDB()?.close();
     });
         // TODO: add test making sure that non-bsmessages wouldn't work
 });
