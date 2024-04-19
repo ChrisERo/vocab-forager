@@ -189,9 +189,9 @@ export function makeHandler(siteDateStorage: Readonly<IndexedDBStorage>): Handle
             }
             case BSMessageType.StorePageData: {
                 if (isPageDataPair(request.payload)) {
-                    let data: SiteData = request.payload.data;
-                    let url: string = request.payload.url;
-                    siteDateStorage.storePageData(data, url);
+                    const data: SiteData = request.payload.data;
+                    const url: string = request.payload.url;
+                    await siteDateStorage.storePageData(data, url);
                 } else {
                     logUnexpected('payload', request.payload);
                 }
@@ -199,7 +199,9 @@ export function makeHandler(siteDateStorage: Readonly<IndexedDBStorage>): Handle
             }
             case BSMessageType.GetPageData: {
                 if (isGetDataForPageRequest(request.payload)) {
-                    siteDateStorage.getPageData(request.payload.url).then((data) => sendResponse(data));
+                    const data: SiteData = 
+                        await siteDateStorage.getPageData(request.payload.url);
+                    sendResponse(data);
                 } else {
                     logUnexpected('payload', request.payload);
                 }
@@ -207,7 +209,7 @@ export function makeHandler(siteDateStorage: Readonly<IndexedDBStorage>): Handle
             }
             case BSMessageType.DeletePageData: {
                 if (isGetDataForPageRequest(request.payload)) {
-                    siteDateStorage.removePageData(request.payload.url);
+                    await siteDateStorage.removePageData(request.payload.url);
                 } else {
                     logUnexpected('payload', request.payload);
                 }
