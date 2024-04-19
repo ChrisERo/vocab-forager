@@ -338,9 +338,12 @@ export function makeHandler(siteDateStorage: Readonly<IndexedDBStorage>): Handle
     }
 }
 
+
+export let indexedDBStorage: IndexedDBStorage;  // exposed for test usage;
 const listenerSetupPromise: Promise<void> =  // Promise for unittests
     getIndexedDBStorage(browserStorage)
-        .then((siteDataStorage: Readonly<IndexedDBStorage>) => {
+        .then((siteDataStorage: IndexedDBStorage) => {
+            indexedDBStorage = siteDataStorage;
             chrome.runtime.onMessage.addListener(makeHandler(siteDataStorage));
 });
 
