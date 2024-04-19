@@ -1,9 +1,9 @@
 import { DB_NAME, DB_VERSION, getIndexedDBStorage, IDBSiteData, IndexedDBStorage, MAX_LABEL_LENGTH } from "./indexed-db-nv-storage";
-import "fake-indexeddb/auto";
+import "fake-indexeddb/auto";  // needs to come after indexed-db-nv-storage import
 import { GlobalDictionaryData, SeeSiteData, SiteData } from "../utils/models";
 import { combineUrl, parseURL } from "../utils/utils";
 import { getLocalStorage, LocalStorage } from "./non-volatile-browser-storage";
-import { MockLocalStorage, setUpMockBrowser } from "./mocks/chrome";
+import { setUpMockBrowser } from "./mocks/chrome";
 
 
 type queryFunction = (a: IndexedDBStorage) => void;
@@ -1567,7 +1567,7 @@ describe('IndexedDBStorage SiteDataStorage', () => {
         dao = new IndexedDBStorage();
         const localStorage: LocalStorage = getLocalStorage();
         expect(dao.getDB()).toBeNull();
-        dao.setUp(localStorage);  // hope 3.75 second wait is enough time to have query execute before setUp completion
+        dao.setUp(localStorage);
         await executeQuery(dao);
         expect(dao.getDB()).not.toBeNull();
         dao.getDB()?.close();
