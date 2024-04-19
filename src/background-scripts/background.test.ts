@@ -4,7 +4,7 @@ import "./contextmenu";
 import "./dictionary";
 import { setUpMockBrowser } from "./mocks/chrome";
 import { BSMessage, BSMessageType } from "../utils/background-script-communication";
-import { Dictionary, DictionaryIdentifier } from "../utils/models";
+import { Dictionary, DictionaryIdentifier, SiteData } from "../utils/models";
 import { HandlerType, backgroundWorkerPromise, browserStorage, contextMenuManager, dictionaryManager, indexedDBStorage, makeHandler} from "./background";
 
 jest.mock("./contextmenu");
@@ -470,8 +470,72 @@ describe('Testing Service Worker', () => {
                 expect(data.title).toBeUndefined();
             }
         ],
-
-
+        [
+            'GetPageData Invalid',
+            {
+                messageType: BSMessageType.GetPageData,
+                payload: null,
+            },
+            async (response: SiteData, _: IndexedDBStorage) => {
+                expect(response).toBeUndefined();
+            }
+        ],
+        [
+            'GetPageData Valid payload 1',
+            {
+                messageType: BSMessageType.GetPageData,
+                payload: {
+                    url: 'https://www.fake-site.com/fake-article-non-existant'
+                },
+            },
+            async (response: SiteData, _: IndexedDBStorage) => {
+                expect(response.wordEntries).toHaveLength(0);
+                expect(response.missingWords).toHaveLength(0);
+            }
+        ],
+        [
+            'GetPageData Valid payload 2',
+            {
+                messageType: BSMessageType.GetPageData,
+                payload: {
+                    url: 'https://darknetdiaries.com/episode/110/'
+                },
+            },
+            async (response: SiteData, _: IndexedDBStorage) => {
+                expect(response.wordEntries).toHaveLength(1);
+                expect(response.wordEntries[0].word).toBe('botnets');
+                expect(response.missingWords).toHaveLength(3);
+                expect(response.missingWords).toEqual(['word','not','here']);
+            }
+        ],
+        [
+            'DeletePageData Invalid',
+            {
+                messageType: BSMessageType.DeletePageData,
+                payload: null,
+            },
+            async (_: any, db: IndexedDBStorage) => {
+                const data: SiteData = await db.getPageData(
+                    'https://darknetdiaries.com/episode/110/'
+                );
+                expect(data.missingWords).toEqual(['word','not','here']);
+            }
+        ],
+        [
+            'DeletePageData Valid Payload',
+            {
+                messageType: BSMessageType.DeletePageData,
+                payload: {
+                    url: 'https://darknetdiaries.com/episode/110/'
+                },
+            },
+            async (_: any, db: IndexedDBStorage) => {
+                const data: SiteData = await db.getPageData(
+                    'https://darknetdiaries.com/episode/110/'
+                );
+                expect(data.missingWords).toHaveLength(0);
+            }
+        ],
     ])('%s makeHandler for valid requests', async (_name: string,
                                                    message: BSMessage,
                                                    test: AssertFunction) => {
@@ -482,6 +546,20 @@ describe('Testing Service Worker', () => {
         }
         const db: IndexedDBStorage = new IndexedDBStorage();
         await db.setUp();
+        await db.storePageData(
+            {
+                missingWords: ['word','not','here'],
+                wordEntries: [
+                    {
+                        word: 'botnets', 
+                        startOffset: 5, 
+                        endOffset: 12, 
+                        nodePath: [[0,2,3,4,5]]
+                    }
+                ]
+            }, 
+            'https://darknetdiaries.com/episode/110/'
+        );
         const handler: HandlerType = makeHandler(db);
         let respuesta: any;
         const sendResponse: (response?: any) => void = (resp?: any) => {
