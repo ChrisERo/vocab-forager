@@ -216,13 +216,19 @@ export function makeHandler(siteDateStorage: Readonly<IndexedDBStorage>): Handle
                 break;
             }
             case BSMessageType.GetCurrentActivation: {
-                browserStorage.getCurrentActivation().then((result) => sendResponse(result));
+                const activation: boolean = 
+                    await browserStorage.getCurrentActivation();
+                sendResponse(activation);
                 break;
             }
             case BSMessageType.SetCurrentActivation: {
                 if (isSetActivationRequest(request.payload)) {
-                    browserStorage.setCurrentActivation(request.payload.isActivated);
-                    contextMenuManager.updateContextMenuBasedOnActivation(request.payload.isActivated);
+                    await browserStorage.setCurrentActivation(
+                        request.payload.isActivated
+                    );
+                    contextMenuManager.updateContextMenuBasedOnActivation(
+                        request.payload.isActivated
+                    );
                     // tab notification done by activaters, so nothing else to do
                 } else {
                     logUnexpected('payload', request.payload);
@@ -236,15 +242,20 @@ export function makeHandler(siteDateStorage: Readonly<IndexedDBStorage>): Handle
             }
             case BSMessageType.HideDeleteHighlightsCM: {
                 contextMenuManager.hideDeleteContextMenu();
+                sendResponse();
                 break;
             }
             case BSMessageType.GetAllDomains: {
-                siteDateStorage.getAllDomains().then((response) => sendResponse(response));
+                const domains: string[] = await siteDateStorage.getAllDomains();
+                sendResponse(domains);
                 break;
             }
             case BSMessageType.GetLabelsForSite: {
                 if (isGetDataForPageRequest(request.payload)) {
-                    siteDateStorage.getLabelsOfSpecificSite(request.payload.url).then((response) => sendResponse(response));
+                    const labels = await siteDateStorage.getLabelsOfSpecificSite(
+                        request.payload.url
+                    );
+                    sendResponse(labels);
                 } else {
                     logUnexpected('payload', request.payload);
                 }
@@ -252,20 +263,23 @@ export function makeHandler(siteDateStorage: Readonly<IndexedDBStorage>): Handle
             }
             case BSMessageType.GetURLsForLabel: {
                 if (isGetDataForLabelRequest(request.payload)) {
-                    siteDateStorage.getURLsOfSpecificLabels(request.payload.label).then((urls: string[]) => {
-                        const siteDataPromises = urls.map(url => siteDateStorage.getPageData(url));
-                        Promise.all(siteDataPromises).then(siteData => {
-                            const seeSiteDataOutput: SeeSiteData[] = [];
-                            for (let i = 0; i < urls.length; i++) {
-                                const data: SeeSiteData = {
-                                    url: urls[i],
-                                    title: siteData[i].title
-                                };
-                                seeSiteDataOutput.push(data);
-                            }
-                            sendResponse(seeSiteDataOutput);
-                        });
-                    });
+                    const urls: string[] = 
+                        await siteDateStorage.getURLsOfSpecificLabels(
+                            request.payload.label
+                    );
+                    const siteData: Promise<SiteData>[] = urls.map(
+                         url => siteDateStorage.getPageData(url)
+                    );
+                    const seeSiteDataOutput: SeeSiteData[] = [];
+                    for (let i = 0; i < urls.length; i++) {
+                        const sd: SiteData = await siteData[i];
+                        const data: SeeSiteData = {
+                            url: urls[i],
+                            title: sd.title
+                        };
+                        seeSiteDataOutput.push(data);
+                    }
+                    sendResponse(seeSiteDataOutput);
                 } else {
                     logUnexpected('payload', request.payload);
                 }

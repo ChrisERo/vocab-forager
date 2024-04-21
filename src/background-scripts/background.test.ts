@@ -536,10 +536,184 @@ describe('Testing Service Worker', () => {
                 expect(data.missingWords).toHaveLength(0);
             }
         ],
-    ])('%s makeHandler for valid requests', async (_name: string,
+        [
+            'GetCurrentActivation Valid Payload',
+            {
+                messageType: BSMessageType.GetCurrentActivation,
+                payload: null,
+            },
+            async (result: any,) => {
+                expect(result).toBeTruthy();
+            }
+        ],
+        [
+            'SetCurrentActivation Valid Payload',
+            {
+                messageType: BSMessageType.SetCurrentActivation,
+                payload: {isActivated: true},
+            },
+            async () => {
+                const currentActivation = 
+                    await browserStorage.getCurrentActivation();
+                expect(currentActivation).toBeTruthy();
+                expect(contextMenuManager.updateContextMenuBasedOnActivation)
+                    .toHaveBeenCalledTimes(1);
+            }
+        ],
+        [
+            'SetCurrentActivation Valid Payload 2',
+            {
+                messageType: BSMessageType.SetCurrentActivation,
+                payload: {isActivated: false},
+            },
+            async () => {
+                const currentActivation = 
+                    await browserStorage.getCurrentActivation();
+                expect(currentActivation).toBeFalsy();
+                expect(contextMenuManager.updateContextMenuBasedOnActivation)
+                    .toHaveBeenCalledTimes(1);
+            }
+        ],
+        [
+            'SetCurrentActivation Invalid Payload',
+            {
+                messageType: BSMessageType.SetCurrentActivation,
+                payload: null,
+            },
+            async () => {
+                expect(contextMenuManager.updateContextMenuBasedOnActivation)
+                    .toHaveBeenCalledTimes(0);
+            }
+        ],
+        [
+            'ShowDeleteHilightsCM',
+            {
+                messageType: BSMessageType.ShowDeleteHighlightsCM,
+                payload: null,
+            },
+            async () => {
+                expect(contextMenuManager.exposeDeleteContextMenu)
+                    .toHaveBeenCalledTimes(1);
+            }
+        ],
+        [
+            'HideDeleteHighlightsCM',
+            {
+                messageType: BSMessageType.HideDeleteHighlightsCM,
+                payload: null,
+            },
+            async () => {
+                expect(contextMenuManager.hideDeleteContextMenu)
+                    .toHaveBeenCalledTimes(1);
+            }
+        ],
+        [
+            'GetAllDomains',
+            {
+                messageType: BSMessageType.GetAllDomains,
+                payload: null,
+            },
+            async (result: any) => {
+                expect(result).toEqual([
+                    'https://darknetdiaries.com',
+                    'https://foobar.io',
+                ]);
+            }
+        ],
+        [
+            'GetLabelsForSite Valid Payload',
+            {
+                messageType: BSMessageType.GetLabelsForSite,
+                payload: {url: 'https://darknetdiaries.com/episode/110/'},
+            },
+            async (result: any) => {
+                expect(result).toEqual([
+                    'botnet',
+                    'cybercrime',
+                ]);
+            }
+        ],
+        [
+            'GetLabelsForSite Valid Payload 2',
+            {
+                messageType: BSMessageType.GetLabelsForSite,
+                payload: {url: 'https://darknetdiaries.com/episode/fakeVid/'},
+            },
+            async (result: any) => {
+                expect(result).toHaveLength(0);
+                expect(result).toEqual([]);
+            }
+        ],
+        [
+            'GetLabelsForSite Invalid',
+            {messageType: BSMessageType.GetLabelsForSite, payload: null,},
+            async (result: any) => {
+                expect(result).not.toEqual([]);
+                expect(result).toBeUndefined();
+            }
+        ],
+        [
+            'GetURLsForLabel multi-sites',
+            {
+                messageType: BSMessageType.GetURLsForLabel, 
+                payload: {label: 'botnet'},
+            },
+            async (result: any) => {
+                expect(result).toEqual([
+                    {url: 'https://darknetdiaries.com/episode/110',}, 
+                    {url: 'https://foobar.io', title: 'Fake Website'},
+                ]);
+            }
+        ],
+        [
+            'GetURLsForLabel single-site-1',
+            {
+                messageType: BSMessageType.GetURLsForLabel, 
+                payload: {label: 'cybercrime'},
+            },
+            async (result: any) => {
+                expect(result).toEqual([
+                    {url: 'https://darknetdiaries.com/episode/110'},                
+                ]);
+            }
+        ],
+        [
+            'GetURLsForLabel single-site-2',
+            {
+                messageType: BSMessageType.GetURLsForLabel, 
+                payload: {label: 'alternative-facts'},
+            },
+            async (result: any) => {
+                expect(result).toEqual([
+                    {url: 'https://foobar.io', title: 'Fake Website'},
+                ]);
+            }
+        ],
+        [
+            'GetURLsForLabel no-labels',
+            {
+                messageType: BSMessageType.GetURLsForLabel, 
+                payload: {label: 'hello-nobondy'},
+            },
+            async (result: any) => {
+                expect(result).toHaveLength(0);
+            }
+        ],
+        [
+            'GetURLsForLabel Invalid Payload',
+            {
+                messageType: BSMessageType.GetURLsForLabel, 
+                payload: null,
+            },
+            async (result: any) => {
+                expect(result).toBeUndefined();
+            }
+        ],
+    ])('makeHandler: [%s]', async (_name: string,
                                                    message: BSMessage,
                                                    test: AssertFunction) => {
         jest.clearAllMocks();  // doing this beforeEach distorts setup test
+        browserStorage.setCurrentActivation(true);
         if ((message as any)['clearCurrentTab'] !== undefined
            && (message as any)['clearCurrentTab']) {
                browserStorage.setTabId((null as unknown as number));  // gets passed type check
@@ -556,9 +730,40 @@ describe('Testing Service Worker', () => {
                         endOffset: 12, 
                         nodePath: [[0,2,3,4,5]]
                     }
+                ],
+                title: "Fake Website"
+            }, 
+            'https://foobar.io'
+        );
+        await db.addLabelEntry(
+            'https://foobar.io',
+            'botnet'
+        );
+        await db.addLabelEntry(
+            'https://foobar.io',
+            'alternative-facts'
+        );
+        await db.storePageData(
+            {
+                missingWords: ['word','not','here'],
+                wordEntries: [
+                    {
+                        word: 'botnets', 
+                        startOffset: 5, 
+                        endOffset: 12, 
+                        nodePath: [[0,2,3,4,5]]
+                    }
                 ]
             }, 
             'https://darknetdiaries.com/episode/110/'
+        );
+        await db.addLabelEntry(
+            'https://darknetdiaries.com/episode/110/',
+            'botnet'
+        );
+        await db.addLabelEntry(
+            'https://darknetdiaries.com/episode/110/',
+            'cybercrime'
         );
         const handler: HandlerType = makeHandler(db);
         let respuesta: any;
