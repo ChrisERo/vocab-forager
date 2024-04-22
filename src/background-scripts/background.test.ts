@@ -709,72 +709,403 @@ describe('Testing Service Worker', () => {
                 expect(result).toBeUndefined();
             }
         ],
-    ])('makeHandler: [%s]', async (_name: string,
-                                                   message: BSMessage,
-                                                   test: AssertFunction) => {
+        [
+            'AddLabelEntry',
+            {
+                messageType: BSMessageType.AddLabelEntry, 
+                payload: {
+                    url: "https://darknetdiaries.com/episode/110/",
+                    label: "russia",
+                },
+            },
+            async (_: any, db: IndexedDBStorage) => {
+                const urls: string[] = await db.getURLsOfSpecificLabels('russia');
+                expect(urls).toEqual([
+                    "https://darknetdiaries.com/episode/110",
+                ]);
+            }
+        ],
+        [
+            'AddLabelEntry 2',
+            {
+                messageType: BSMessageType.AddLabelEntry, 
+                payload: {
+                    url: "https://darknetdiaries.com/episode/110/",
+                    label: "alternative-facts",
+                },
+            },
+            async (_: any, db: IndexedDBStorage) => {
+                const urls: string[] = 
+                    await db.getURLsOfSpecificLabels('alternative-facts');
+                expect(urls).toEqual([
+                    "https://darknetdiaries.com/episode/110",
+                    'https://foobar.io',
+                ]);
+            }
+        ],
+        [
+            'AddLabelEntry 3',
+            {
+                messageType: BSMessageType.AddLabelEntry, 
+                payload: {
+                    url: "https://darknetdiaries.com/episode/110/",
+                    label: "cybercrime",
+                },
+            },
+            async (_: any, db: IndexedDBStorage) => {
+                const urls: string[] = await db.getURLsOfSpecificLabels('cybercrime');
+                expect(urls).toEqual([
+                    "https://darknetdiaries.com/episode/110",
+                ]);
+            }
+        ],
+        [
+            'AddLabelEntry Invalid Payload',
+            {
+                messageType: BSMessageType.AddLabelEntry, 
+                payload: {
+                    url: "https://darknetdiaries.com/episode/110/",
+                    index: 1,
+                },
+            },
+            async (_: any, db: IndexedDBStorage) => {
+                const urls: string[] = await db.getURLsOfSpecificLabels('1');
+                expect(urls).toHaveLength(0);
+                const allLabels = await db.getAllLabels();
+                expect(allLabels).toEqual([
+                    'alternative-facts',
+                    'botnet',
+                    'cybercrime',
+                ]);
+            }
+        ],
+        [
+            'RemoveLabelEntry',
+            {
+                messageType: BSMessageType.RemoveLabelEntry, 
+                payload: {
+                    url: "https://darknetdiaries.com/episode/110/",
+                    label: 'botnet'
+                }
+            },
+            async (_: any, db: IndexedDBStorage) => {
+                const urls = 
+                    await db.getURLsOfSpecificLabels('botnet');
+                expect(urls).toEqual([
+                    'https://foobar.io',
+                ]);
+            }
+        ],
+        [
+            'RemoveLabelEntry 2',
+            {
+                messageType: BSMessageType.RemoveLabelEntry, 
+                payload: {
+                    url: "https://darknetdiaries.com/episode/110/",
+                    label: 'alternative-facts'
+                }
+            },
+            async (_: any, db: IndexedDBStorage) => {
+                const urls = 
+                    await db.getURLsOfSpecificLabels('alternative-facts');
+                expect(urls).toEqual([
+                    'https://foobar.io',
+                ]);
+            }
+        ],
+        [
+            'RemoveLabelEntry 3',
+            {
+                messageType: BSMessageType.RemoveLabelEntry, 
+                payload: {
+                    url: "https://darknetdiaries.com/episode/110/",
+                    label: 'cybercrime'
+                }
+            },
+            async (_: any, db: IndexedDBStorage) => {
+                const urls = 
+                    await db.getURLsOfSpecificLabels('cybercrime');
+                expect(urls).toHaveLength(0);
+            }
+        ],
+        [
+            'RemoveLabelEntry Invalid Payload',
+            {
+                messageType: BSMessageType.RemoveLabelEntry, 
+                payload: null 
+            },
+            async (_: any, db: IndexedDBStorage) => {
+                const allLabels = await db.getAllLabels();
+                expect(allLabels).toEqual([
+                    'alternative-facts',
+                    'botnet',
+                    'cybercrime',
+                ]);            
+            }
+        ],
+        [
+            'GetAllLabels',
+            {
+                messageType: BSMessageType.GetAllLabels, 
+                payload: null,
+            },
+            async (result: any) => {
+                expect(result).toEqual([
+                    'alternative-facts',
+                    'botnet',
+                    'cybercrime',
+                ]);
+            }
+        ],
+        [
+            'GetSeeSiteData',
+            {
+                messageType: BSMessageType.GetSeeSiteData, 
+                payload: {schemeAndHost: 'https://darknetdiaries.com'},
+            },
+            async (result: any) => {
+                expect(result).toEqual([
+                    {
+                        url: 'https://darknetdiaries.com/episode/110'
+                    }
+                ]);
+            }
+        ],
+        [
+            'GetSeeSiteData 2',
+            {
+                messageType: BSMessageType.GetSeeSiteData, 
+                payload: {schemeAndHost: 'https://foobar.io'},
+            },
+            async (result: any) => {
+                expect(result).toEqual([
+                    {
+                        url: 'https://foobar.io',
+                        title: 'Fake Website'
+                    }
+                ]);
+            }
+        ],
+        [
+            'GetSeeSiteData 3',
+            {
+                messageType: BSMessageType.GetSeeSiteData, 
+                payload: {schemeAndHost: 'https://hello.world.net'},
+            },
+            async (result: any) => {
+                expect(result).toHaveLength(0);
+            }
+        ],
+        [
+            'GetSeeSiteData Invalid Payload',
+            {
+                messageType: BSMessageType.GetSeeSiteData, 
+                payload: null,
+            },
+            async (result: any) => {
+                expect(result).toBeUndefined();
+            }
+        ],
+        [
+            'GetAllExtensionData Invalid Payload',
+            {
+                messageType: BSMessageType.GetAllExtensionData, 
+                payload: null,
+            },
+            async (result: any) => {
+                expect(result).toEqual(
+                    {
+                        'https://foobar.io': {
+                            labels: ['alternative-facts', 'botnet'],
+                            missingWords: ['word','not','here'],
+                            wordEntries: [
+                                {
+                                    word: 'botnets', 
+                                    startOffset: 5, 
+                                    endOffset: 12, 
+                                    nodePath: [[0,2,3,4,5]]
+                                }
+                            ],
+                            title: "Fake Website",
+                            schemeAndHost: 'https://foobar.io',
+                            urlPath: '',
+                        },
+                        'https://darknetdiaries.com/episode/110': {
+                            labels: ['botnet', 'cybercrime'],
+                            missingWords: ['word','not','here'],
+                            wordEntries: [
+                                {
+                                    word: 'botnets', 
+                                    startOffset: 5, 
+                                    endOffset: 12, 
+                                    nodePath: [[0,2,3,4,5]]
+                                }
+                            ],
+                            schemeAndHost: 'https://darknetdiaries.com',
+                            urlPath: '/episode/110',
+                        }, 
+                        is_activated: true,
+                        tab_id: 1,
+                    }
+                );
+            }
+        ],
+        [
+            'LoadExtensionData Invalid Payload',
+            {
+                messageType: BSMessageType.LoadExtensionData, 
+                payload: null
+            },
+            async (_: any, db: IndexedDBStorage) => {
+                const labels: string[] = await db.getAllLabels();
+                expect(labels).toEqual([
+                    'alternative-facts',
+                    'botnet',
+                    'cybercrime',
+
+                ]);
+            }
+        ],
+        [
+            'LoadExtensionData',
+            {
+                messageType: BSMessageType.LoadExtensionData, 
+                payload: {
+                    data: {
+                        'https://store.gamersnexus.net/products/cobalt-blue-tear-down-logo-pint-glass-libbey-17-oz': {
+                            labels: ['drinkware', 'donations', 'tech'],
+                            missingWords: ['chugg'],
+                            wordEntries: [
+                                {
+                                    word: 'cobalt', 
+                                    startOffset: 4, 
+                                    endOffset: 10, 
+                                    nodePath: [[0,2,3,4,5]]
+                                }
+                            ],
+                            schemeAndHost: 'https://store.gamersnexus.net',
+                            urlPath: '/products/cobalt-blue-tear-down-logo-pint-glass-libbey-17-oz',
+                        },
+                        'https://store.gamersnexus.net/products/gn-wireframe-mouse-mat': {
+                            labels: ['donations', 'mats', 'tech'],
+                            missingWords: ['electronics'],
+                            wordEntries: [
+                                {
+                                    word: 'microfiber', 
+                                    startOffset: 17, 
+                                    endOffset: 27, 
+                                    nodePath: [[0,0,1,3,0]]
+                                }
+                            ],
+                            schemeAndHost: 'https://store.gamersnexus.net',
+                            urlPath: '/products/gn-wireframe-mouse-mat',
+                        },
+                        'https://www.justandsinner.org/donate.html': {
+                            labels: ['donations', 'christianity', 'lutheranism'],
+                            missingWords: [],
+                            wordEntries: [
+                                {
+                                    word: 'Gospel', 
+                                    startOffset: 25, 
+                                    endOffset: 31, 
+                                    nodePath: [[0,3]]
+                                }
+                            ],
+                            schemeAndHost: 'https://www.justandsinner.org',
+                            urlPath: '/donate.html',
+                        },
+                        is_activated: false,
+                    }
+                },
+            },
+            async (_: any, db: IndexedDBStorage) => {
+                const labels: string[] = await db.getAllLabels();
+                expect(labels).toEqual([
+                    'christianity',
+                    'donations',
+                    'drinkware',
+                    'lutheranism',
+                    'mats',
+                    'tech',
+                ]);
+                const urls: string[] = await db.getAllPageUrls();
+                expect(urls).toEqual([
+                    'https://store.gamersnexus.net/products/cobalt-blue-tear-down-logo-pint-glass-libbey-17-oz',
+                    'https://store.gamersnexus.net/products/gn-wireframe-mouse-mat',
+                    'https://www.justandsinner.org/donate.html'
+                ]);
+            }
+        ],
+
+    ])('makeHandler: [%s]', async (_name: string, message: BSMessage, 
+                                   test: AssertFunction) => {
         jest.clearAllMocks();  // doing this beforeEach distorts setup test
         browserStorage.setCurrentActivation(true);
         if ((message as any)['clearCurrentTab'] !== undefined
            && (message as any)['clearCurrentTab']) {
-               browserStorage.setTabId((null as unknown as number));  // gets passed type check
+               // indirection needed to get passed type check
+               browserStorage.setTabId((null as unknown as number));
         }
         const db: IndexedDBStorage = new IndexedDBStorage();
-        await db.setUp();
-        await db.storePageData(
-            {
-                missingWords: ['word','not','here'],
-                wordEntries: [
-                    {
-                        word: 'botnets', 
-                        startOffset: 5, 
-                        endOffset: 12, 
-                        nodePath: [[0,2,3,4,5]]
-                    }
-                ],
-                title: "Fake Website"
-            }, 
-            'https://foobar.io'
-        );
-        await db.addLabelEntry(
-            'https://foobar.io',
-            'botnet'
-        );
-        await db.addLabelEntry(
-            'https://foobar.io',
-            'alternative-facts'
-        );
-        await db.storePageData(
-            {
-                missingWords: ['word','not','here'],
-                wordEntries: [
-                    {
-                        word: 'botnets', 
-                        startOffset: 5, 
-                        endOffset: 12, 
-                        nodePath: [[0,2,3,4,5]]
-                    }
-                ]
-            }, 
-            'https://darknetdiaries.com/episode/110/'
-        );
-        await db.addLabelEntry(
-            'https://darknetdiaries.com/episode/110/',
-            'botnet'
-        );
-        await db.addLabelEntry(
-            'https://darknetdiaries.com/episode/110/',
-            'cybercrime'
-        );
-        const handler: HandlerType = makeHandler(db);
-        let respuesta: any;
-        const sendResponse: (response?: any) => void = (resp?: any) => {
-            respuesta = resp
-        };
-        const result: boolean = await handler(message, null, sendResponse);
+        try {
+            await db.setUp();
+            await db.storePageData(
+                {
+                    missingWords: ['word','not','here'],
+                    wordEntries: [
+                        {
+                            word: 'botnets', 
+                            startOffset: 5, 
+                            endOffset: 12, 
+                            nodePath: [[0,2,3,4,5]]
+                        }
+                    ],
+                    title: "Fake Website"
+                }, 
+                'https://foobar.io'
+            );
+            await db.addLabelEntry(
+                'https://foobar.io',
+                'botnet'
+            );
+            await db.addLabelEntry(
+                'https://foobar.io',
+                'alternative-facts'
+            );
+            await db.storePageData(
+                {
+                    missingWords: ['word','not','here'],
+                    wordEntries: [
+                        {
+                            word: 'botnets', 
+                            startOffset: 5, 
+                            endOffset: 12, 
+                            nodePath: [[0,2,3,4,5]]
+                        }
+                    ]
+                }, 
+                'https://darknetdiaries.com/episode/110/'
+            );
+            await db.addLabelEntry(
+                'https://darknetdiaries.com/episode/110/',
+                'botnet'
+            );
+            await db.addLabelEntry(
+                'https://darknetdiaries.com/episode/110/',
+                'cybercrime'
+            );
+            const handler: HandlerType = makeHandler(db);
+            let respuesta: any;
+            const sendResponse: (response?: any) => void = (resp?: any) => {
+                respuesta = resp
+            };
+            const result: boolean = await handler(message, null, sendResponse);
 
-        expect(result).toBeTruthy();
-        await test(respuesta, db);
-        db.getDB()?.close();
+            expect(result).toBeTruthy();
+            await test(respuesta, db);
+        } finally {
+            db.getDB()?.close();
+        }
     });
         // TODO: add test making sure that non-bsmessages wouldn't work
 });

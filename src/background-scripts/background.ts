@@ -287,8 +287,11 @@ export function makeHandler(siteDateStorage: Readonly<IndexedDBStorage>): Handle
             }
             case BSMessageType.AddLabelEntry: {
                 if (isLabelEntryModRequest(request.payload)) {
-                    siteDateStorage.addLabelEntry(request.payload.url, request.payload.label)
-                        .then(() => sendResponse());
+                    await siteDateStorage.addLabelEntry(
+                        request.payload.url, 
+                        request.payload.label
+                    );
+                    sendResponse();
                 } else {
                     logUnexpected('payload', request.payload);
                 }
@@ -296,50 +299,58 @@ export function makeHandler(siteDateStorage: Readonly<IndexedDBStorage>): Handle
             }
             case BSMessageType.RemoveLabelEntry: {
                 if (isLabelEntryModRequest(request.payload)) {
-                    siteDateStorage.removeLabelEntry(request.payload.url, request.payload.label)
-                        .then(() => sendResponse());
+                    await siteDateStorage.removeLabelEntry(
+                        request.payload.url, 
+                        request.payload.label
+                    );
+                    sendResponse();
                 } else {
                     logUnexpected('payload', request.payload);
                 }
                 break;
             }
             case BSMessageType.GetAllLabels: {
-                siteDateStorage.getAllLabels().then((response) => sendResponse(response));
+                const labels = await siteDateStorage.getAllLabels();
+                sendResponse(labels);
                 break;
             }
             case BSMessageType.GetSeeSiteData: {
                 if (isGetUrlsOfDomainRequest(request.payload)) {
-                    siteDateStorage.getSeeSiteDataOfDomain(request.payload.schemeAndHost).then((response) => sendResponse(response));
+                    const data = await siteDateStorage.getSeeSiteDataOfDomain(
+                        request.payload.schemeAndHost
+                    );
+                    sendResponse(data);
                 } else {
                     logUnexpected('payload', request.payload);
                 }
                 break;
             }
             case BSMessageType.GetAllExtensionData: {
-                const globalD = browserStorage.getAllStorageData();
-                const siteD = siteDateStorage.getAllStorageData();
-                globalD.then((globalData) => {
-                    siteD.then((siteData) => {
-                        const response = {
-                            ...globalData,
-                            ...siteData
-                        };
-                        sendResponse(response)
-                    });
-                });
+                const globalD: Promise<any> = 
+                    browserStorage.getAllStorageData();
+                const siteD: Promise<any> = siteDateStorage.getAllStorageData();
+                const globalData: any = await globalD;
+                const siteData: any = await siteD;
+                const response = {
+                    ...globalData,
+                    ...siteData
+                };
+                sendResponse(response);
                 break;
             }
             case BSMessageType.LoadExtensionData: {
                 if (isLoadExtensionDataRequest(request.payload)) {
                     // Upload data to localStorage
                     const onlyGlobalData:{[key: string]: any} = {};
-                    onlyGlobalData[browserStorage.isActivatedKey] = request.payload.data[browserStorage.isActivatedKey];
-                    onlyGlobalData[browserStorage.dictionaryKey] = request.payload.data[browserStorage.dictionaryKey];
-                    browserStorage.uploadExtensionData(onlyGlobalData).then((response) =>
-                        contextMenuManager.updateContextMenuBasedOnActivation(response)
-                    );
+                    onlyGlobalData[browserStorage.isActivatedKey] = 
+                        request.payload.data[browserStorage.isActivatedKey];
+                    onlyGlobalData[browserStorage.dictionaryKey] = 
+                        request.payload.data[browserStorage.dictionaryKey];
+                    const isActivated: boolean = 
+                        await browserStorage.uploadExtensionData(onlyGlobalData);
+                    contextMenuManager.updateContextMenuBasedOnActivation(isActivated);
                     // Upload data to IndexedDB
-                    siteDateStorage.uploadExtensionData(request.payload.data);
+                    await siteDateStorage.uploadExtensionData(request.payload.data);
                 } else {
                     logUnexpected('payload', request.payload);
                 }
