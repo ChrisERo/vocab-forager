@@ -199,7 +199,7 @@ export function makeHandler(siteDateStorage: Readonly<IndexedDBStorage>): Handle
             }
             case BSMessageType.GetPageData: {
                 if (isGetDataForPageRequest(request.payload)) {
-                    const data: SiteData = 
+                    const data: SiteData =
                         await siteDateStorage.getPageData(request.payload.url);
                     sendResponse(data);
                 } else {
@@ -216,7 +216,7 @@ export function makeHandler(siteDateStorage: Readonly<IndexedDBStorage>): Handle
                 break;
             }
             case BSMessageType.GetCurrentActivation: {
-                const activation: boolean = 
+                const activation: boolean =
                     await browserStorage.getCurrentActivation();
                 sendResponse(activation);
                 break;
@@ -263,7 +263,7 @@ export function makeHandler(siteDateStorage: Readonly<IndexedDBStorage>): Handle
             }
             case BSMessageType.GetURLsForLabel: {
                 if (isGetDataForLabelRequest(request.payload)) {
-                    const urls: string[] = 
+                    const urls: string[] =
                         await siteDateStorage.getURLsOfSpecificLabels(
                             request.payload.label
                     );
@@ -288,7 +288,7 @@ export function makeHandler(siteDateStorage: Readonly<IndexedDBStorage>): Handle
             case BSMessageType.AddLabelEntry: {
                 if (isLabelEntryModRequest(request.payload)) {
                     await siteDateStorage.addLabelEntry(
-                        request.payload.url, 
+                        request.payload.url,
                         request.payload.label
                     );
                     sendResponse();
@@ -300,7 +300,7 @@ export function makeHandler(siteDateStorage: Readonly<IndexedDBStorage>): Handle
             case BSMessageType.RemoveLabelEntry: {
                 if (isLabelEntryModRequest(request.payload)) {
                     await siteDateStorage.removeLabelEntry(
-                        request.payload.url, 
+                        request.payload.url,
                         request.payload.label
                     );
                     sendResponse();
@@ -326,7 +326,7 @@ export function makeHandler(siteDateStorage: Readonly<IndexedDBStorage>): Handle
                 break;
             }
             case BSMessageType.GetAllExtensionData: {
-                const globalD: Promise<any> = 
+                const globalD: Promise<any> =
                     browserStorage.getAllStorageData();
                 const siteD: Promise<any> = siteDateStorage.getAllStorageData();
                 const globalData: any = await globalD;
@@ -342,11 +342,11 @@ export function makeHandler(siteDateStorage: Readonly<IndexedDBStorage>): Handle
                 if (isLoadExtensionDataRequest(request.payload)) {
                     // Upload data to localStorage
                     const onlyGlobalData:{[key: string]: any} = {};
-                    onlyGlobalData[browserStorage.isActivatedKey] = 
+                    onlyGlobalData[browserStorage.isActivatedKey] =
                         request.payload.data[browserStorage.isActivatedKey];
-                    onlyGlobalData[browserStorage.dictionaryKey] = 
+                    onlyGlobalData[browserStorage.dictionaryKey] =
                         request.payload.data[browserStorage.dictionaryKey];
-                    const isActivated: boolean = 
+                    const isActivated: boolean =
                         await browserStorage.uploadExtensionData(onlyGlobalData);
                     contextMenuManager.updateContextMenuBasedOnActivation(isActivated);
                     // Upload data to IndexedDB
@@ -365,13 +365,41 @@ export function makeHandler(siteDateStorage: Readonly<IndexedDBStorage>): Handle
     }
 }
 
+/**
+ * Converts function of type HandlerType into a function that can be used as onMessage
+ * listener. Please see following link
+ *
+ * https://stackoverflow.com/questions/53024819/sendresponse-not-waiting-for-async-function-or-promises-resolve
+ *
+ * @param handler HandlerType object that we want to convert to actual handler
+ * @returns function that invokes handler, but returns an actual boolean instead of a
+ */
+function makeRealHandler(handler: HandlerType) {
+    return (message: any, sender: any, sendResponse: sendResponseFunction): boolean => {
+        let returnValue: boolean = true;
+        let response: any = undefined;
+        const storeResponse: sendResponseFunction = (res?: any) => {
+            response = res;
+        }
+        handler(message, sender, storeResponse).then((val: boolean) => {
+            if (response === undefined) {
+                sendResponse();
+            } else {
+                sendResponse(response);
+            }
+            returnValue = val;
+        });
+        return returnValue;
+    }
+}
 
 export let indexedDBStorage: IndexedDBStorage;  // exposed for test usage;
 const listenerSetupPromise: Promise<void> =  // Promise for unittests
     getIndexedDBStorage(browserStorage)
         .then((siteDataStorage: IndexedDBStorage) => {
             indexedDBStorage = siteDataStorage;
-            chrome.runtime.onMessage.addListener(makeHandler(siteDataStorage));
+            const asyncHandler: HandlerType = makeHandler(siteDataStorage);
+            chrome.runtime.onMessage.addListener(makeRealHandler(asyncHandler));
 });
 
 const contextMenuSetup = contextMenuManager.setUpContextMenus();
