@@ -553,7 +553,7 @@ describe('Testing Service Worker', () => {
                 payload: {isActivated: true},
             },
             async () => {
-                const currentActivation = 
+                const currentActivation =
                     await browserStorage.getCurrentActivation();
                 expect(currentActivation).toBeTruthy();
                 expect(contextMenuManager.updateContextMenuBasedOnActivation)
@@ -567,7 +567,7 @@ describe('Testing Service Worker', () => {
                 payload: {isActivated: false},
             },
             async () => {
-                const currentActivation = 
+                const currentActivation =
                     await browserStorage.getCurrentActivation();
                 expect(currentActivation).toBeFalsy();
                 expect(contextMenuManager.updateContextMenuBasedOnActivation)
@@ -655,12 +655,12 @@ describe('Testing Service Worker', () => {
         [
             'GetURLsForLabel multi-sites',
             {
-                messageType: BSMessageType.GetURLsForLabel, 
+                messageType: BSMessageType.GetURLsForLabel,
                 payload: {label: 'botnet'},
             },
             async (result: any) => {
                 expect(result).toEqual([
-                    {url: 'https://darknetdiaries.com/episode/110',}, 
+                    {url: 'https://darknetdiaries.com/episode/110',},
                     {url: 'https://foobar.io', title: 'Fake Website'},
                 ]);
             }
@@ -668,19 +668,19 @@ describe('Testing Service Worker', () => {
         [
             'GetURLsForLabel single-site-1',
             {
-                messageType: BSMessageType.GetURLsForLabel, 
+                messageType: BSMessageType.GetURLsForLabel,
                 payload: {label: 'cybercrime'},
             },
             async (result: any) => {
                 expect(result).toEqual([
-                    {url: 'https://darknetdiaries.com/episode/110'},                
+                    {url: 'https://darknetdiaries.com/episode/110'},
                 ]);
             }
         ],
         [
             'GetURLsForLabel single-site-2',
             {
-                messageType: BSMessageType.GetURLsForLabel, 
+                messageType: BSMessageType.GetURLsForLabel,
                 payload: {label: 'alternative-facts'},
             },
             async (result: any) => {
@@ -692,7 +692,7 @@ describe('Testing Service Worker', () => {
         [
             'GetURLsForLabel no-labels',
             {
-                messageType: BSMessageType.GetURLsForLabel, 
+                messageType: BSMessageType.GetURLsForLabel,
                 payload: {label: 'hello-nobondy'},
             },
             async (result: any) => {
@@ -702,7 +702,7 @@ describe('Testing Service Worker', () => {
         [
             'GetURLsForLabel Invalid Payload',
             {
-                messageType: BSMessageType.GetURLsForLabel, 
+                messageType: BSMessageType.GetURLsForLabel,
                 payload: null,
             },
             async (result: any) => {
@@ -712,7 +712,7 @@ describe('Testing Service Worker', () => {
         [
             'AddLabelEntry',
             {
-                messageType: BSMessageType.AddLabelEntry, 
+                messageType: BSMessageType.AddLabelEntry,
                 payload: {
                     url: "https://darknetdiaries.com/episode/110/",
                     label: "russia",
@@ -728,14 +728,14 @@ describe('Testing Service Worker', () => {
         [
             'AddLabelEntry 2',
             {
-                messageType: BSMessageType.AddLabelEntry, 
+                messageType: BSMessageType.AddLabelEntry,
                 payload: {
                     url: "https://darknetdiaries.com/episode/110/",
                     label: "alternative-facts",
                 },
             },
             async (_: any, db: IndexedDBStorage) => {
-                const urls: string[] = 
+                const urls: string[] =
                     await db.getURLsOfSpecificLabels('alternative-facts');
                 expect(urls).toEqual([
                     "https://darknetdiaries.com/episode/110",
@@ -746,7 +746,7 @@ describe('Testing Service Worker', () => {
         [
             'AddLabelEntry 3',
             {
-                messageType: BSMessageType.AddLabelEntry, 
+                messageType: BSMessageType.AddLabelEntry,
                 payload: {
                     url: "https://darknetdiaries.com/episode/110/",
                     label: "cybercrime",
@@ -762,7 +762,7 @@ describe('Testing Service Worker', () => {
         [
             'AddLabelEntry Invalid Payload',
             {
-                messageType: BSMessageType.AddLabelEntry, 
+                messageType: BSMessageType.AddLabelEntry,
                 payload: {
                     url: "https://darknetdiaries.com/episode/110/",
                     index: 1,
@@ -782,14 +782,14 @@ describe('Testing Service Worker', () => {
         [
             'RemoveLabelEntry',
             {
-                messageType: BSMessageType.RemoveLabelEntry, 
+                messageType: BSMessageType.RemoveLabelEntry,
                 payload: {
                     url: "https://darknetdiaries.com/episode/110/",
                     label: 'botnet'
                 }
             },
             async (_: any, db: IndexedDBStorage) => {
-                const urls = 
+                const urls =
                     await db.getURLsOfSpecificLabels('botnet');
                 expect(urls).toEqual([
                     'https://foobar.io',
@@ -799,14 +799,14 @@ describe('Testing Service Worker', () => {
         [
             'RemoveLabelEntry 2',
             {
-                messageType: BSMessageType.RemoveLabelEntry, 
+                messageType: BSMessageType.RemoveLabelEntry,
                 payload: {
                     url: "https://darknetdiaries.com/episode/110/",
                     label: 'alternative-facts'
                 }
             },
             async (_: any, db: IndexedDBStorage) => {
-                const urls = 
+                const urls =
                     await db.getURLsOfSpecificLabels('alternative-facts');
                 expect(urls).toEqual([
                     'https://foobar.io',
@@ -816,14 +816,14 @@ describe('Testing Service Worker', () => {
         [
             'RemoveLabelEntry 3',
             {
-                messageType: BSMessageType.RemoveLabelEntry, 
+                messageType: BSMessageType.RemoveLabelEntry,
                 payload: {
                     url: "https://darknetdiaries.com/episode/110/",
                     label: 'cybercrime'
                 }
             },
             async (_: any, db: IndexedDBStorage) => {
-                const urls = 
+                const urls =
                     await db.getURLsOfSpecificLabels('cybercrime');
                 expect(urls).toHaveLength(0);
             }
@@ -831,8 +831,8 @@ describe('Testing Service Worker', () => {
         [
             'RemoveLabelEntry Invalid Payload',
             {
-                messageType: BSMessageType.RemoveLabelEntry, 
-                payload: null 
+                messageType: BSMessageType.RemoveLabelEntry,
+                payload: null
             },
             async (_: any, db: IndexedDBStorage) => {
                 const allLabels = await db.getAllLabels();
@@ -840,13 +840,13 @@ describe('Testing Service Worker', () => {
                     'alternative-facts',
                     'botnet',
                     'cybercrime',
-                ]);            
+                ]);
             }
         ],
         [
             'GetAllLabels',
             {
-                messageType: BSMessageType.GetAllLabels, 
+                messageType: BSMessageType.GetAllLabels,
                 payload: null,
             },
             async (result: any) => {
@@ -860,7 +860,7 @@ describe('Testing Service Worker', () => {
         [
             'GetSeeSiteData',
             {
-                messageType: BSMessageType.GetSeeSiteData, 
+                messageType: BSMessageType.GetSeeSiteData,
                 payload: {schemeAndHost: 'https://darknetdiaries.com'},
             },
             async (result: any) => {
@@ -874,7 +874,7 @@ describe('Testing Service Worker', () => {
         [
             'GetSeeSiteData 2',
             {
-                messageType: BSMessageType.GetSeeSiteData, 
+                messageType: BSMessageType.GetSeeSiteData,
                 payload: {schemeAndHost: 'https://foobar.io'},
             },
             async (result: any) => {
@@ -889,7 +889,7 @@ describe('Testing Service Worker', () => {
         [
             'GetSeeSiteData 3',
             {
-                messageType: BSMessageType.GetSeeSiteData, 
+                messageType: BSMessageType.GetSeeSiteData,
                 payload: {schemeAndHost: 'https://hello.world.net'},
             },
             async (result: any) => {
@@ -899,7 +899,7 @@ describe('Testing Service Worker', () => {
         [
             'GetSeeSiteData Invalid Payload',
             {
-                messageType: BSMessageType.GetSeeSiteData, 
+                messageType: BSMessageType.GetSeeSiteData,
                 payload: null,
             },
             async (result: any) => {
@@ -909,7 +909,7 @@ describe('Testing Service Worker', () => {
         [
             'GetAllExtensionData Invalid Payload',
             {
-                messageType: BSMessageType.GetAllExtensionData, 
+                messageType: BSMessageType.GetAllExtensionData,
                 payload: null,
             },
             async (result: any) => {
@@ -920,9 +920,9 @@ describe('Testing Service Worker', () => {
                             missingWords: ['word','not','here'],
                             wordEntries: [
                                 {
-                                    word: 'botnets', 
-                                    startOffset: 5, 
-                                    endOffset: 12, 
+                                    word: 'botnets',
+                                    startOffset: 5,
+                                    endOffset: 12,
                                     nodePath: [[0,2,3,4,5]]
                                 }
                             ],
@@ -935,15 +935,15 @@ describe('Testing Service Worker', () => {
                             missingWords: ['word','not','here'],
                             wordEntries: [
                                 {
-                                    word: 'botnets', 
-                                    startOffset: 5, 
-                                    endOffset: 12, 
+                                    word: 'botnets',
+                                    startOffset: 5,
+                                    endOffset: 12,
                                     nodePath: [[0,2,3,4,5]]
                                 }
                             ],
                             schemeAndHost: 'https://darknetdiaries.com',
                             urlPath: '/episode/110',
-                        }, 
+                        },
                         is_activated: true,
                         tab_id: 1,
                     }
@@ -953,7 +953,7 @@ describe('Testing Service Worker', () => {
         [
             'LoadExtensionData Invalid Payload',
             {
-                messageType: BSMessageType.LoadExtensionData, 
+                messageType: BSMessageType.LoadExtensionData,
                 payload: null
             },
             async (_: any, db: IndexedDBStorage) => {
@@ -969,7 +969,7 @@ describe('Testing Service Worker', () => {
         [
             'LoadExtensionData',
             {
-                messageType: BSMessageType.LoadExtensionData, 
+                messageType: BSMessageType.LoadExtensionData,
                 payload: {
                     data: {
                         'https://store.gamersnexus.net/products/cobalt-blue-tear-down-logo-pint-glass-libbey-17-oz': {
@@ -977,9 +977,9 @@ describe('Testing Service Worker', () => {
                             missingWords: ['chugg'],
                             wordEntries: [
                                 {
-                                    word: 'cobalt', 
-                                    startOffset: 4, 
-                                    endOffset: 10, 
+                                    word: 'cobalt',
+                                    startOffset: 4,
+                                    endOffset: 10,
                                     nodePath: [[0,2,3,4,5]]
                                 }
                             ],
@@ -991,9 +991,9 @@ describe('Testing Service Worker', () => {
                             missingWords: ['electronics'],
                             wordEntries: [
                                 {
-                                    word: 'microfiber', 
-                                    startOffset: 17, 
-                                    endOffset: 27, 
+                                    word: 'microfiber',
+                                    startOffset: 17,
+                                    endOffset: 27,
                                     nodePath: [[0,0,1,3,0]]
                                 }
                             ],
@@ -1005,9 +1005,9 @@ describe('Testing Service Worker', () => {
                             missingWords: [],
                             wordEntries: [
                                 {
-                                    word: 'Gospel', 
-                                    startOffset: 25, 
-                                    endOffset: 31, 
+                                    word: 'Gospel',
+                                    startOffset: 25,
+                                    endOffset: 31,
                                     nodePath: [[0,3]]
                                 }
                             ],
@@ -1037,7 +1037,7 @@ describe('Testing Service Worker', () => {
             }
         ],
 
-    ])('makeHandler: [%s]', async (_name: string, message: BSMessage, 
+    ])('makeHandler: [%s]', async (_name: string, message: BSMessage,
                                    test: AssertFunction) => {
         jest.clearAllMocks();  // doing this beforeEach distorts setup test
         browserStorage.setCurrentActivation(true);
@@ -1054,14 +1054,14 @@ describe('Testing Service Worker', () => {
                     missingWords: ['word','not','here'],
                     wordEntries: [
                         {
-                            word: 'botnets', 
-                            startOffset: 5, 
-                            endOffset: 12, 
+                            word: 'botnets',
+                            startOffset: 5,
+                            endOffset: 12,
                             nodePath: [[0,2,3,4,5]]
                         }
                     ],
                     title: "Fake Website"
-                }, 
+                },
                 'https://foobar.io'
             );
             await db.addLabelEntry(
@@ -1077,13 +1077,13 @@ describe('Testing Service Worker', () => {
                     missingWords: ['word','not','here'],
                     wordEntries: [
                         {
-                            word: 'botnets', 
-                            startOffset: 5, 
-                            endOffset: 12, 
+                            word: 'botnets',
+                            startOffset: 5,
+                            endOffset: 12,
                             nodePath: [[0,2,3,4,5]]
                         }
                     ]
-                }, 
+                },
                 'https://darknetdiaries.com/episode/110/'
             );
             await db.addLabelEntry(
@@ -1108,5 +1108,7 @@ describe('Testing Service Worker', () => {
         }
     });
         // TODO: add test making sure that non-bsmessages wouldn't work
+        //    for both Promised and non-promised listener
+        // TODO: add test where null response used.
 });
 
