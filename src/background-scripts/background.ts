@@ -376,20 +376,9 @@ export function makeHandler(siteDateStorage: Readonly<IndexedDBStorage>): Handle
  */
 function makeRealHandler(handler: HandlerType) {
     return (message: any, sender: any, sendResponse: sendResponseFunction): boolean => {
-        let returnValue: boolean = true;
-        let response: any = undefined;
-        const storeResponse: sendResponseFunction = (res?: any) => {
-            response = res;
-        }
-        handler(message, sender, storeResponse).then((val: boolean) => {
-            if (response === undefined) {
-                sendResponse();
-            } else {
-                sendResponse(response);
-            }
-            returnValue = val;
-        });
-        return returnValue;
+        handler(message, sender, sendResponse);
+        // once/if bug gets fixed, can remove this middle-step
+        return true;  // return true regardless of output to keep connection alive
     }
 }
 
