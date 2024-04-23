@@ -101,7 +101,7 @@ export function makeHandler(siteDateStorage: Readonly<IndexedDBStorage>): Handle
             logUnexpected("request structure", request);
             return false;
         }
-        console.log(`REQUEST TO BACKGROUND MADE: ${request.messageType}`);
+        console.log(`REQUEST TO BACKGROUND MADE: ${BSMessageType[request.messageType]}`);
 
         switch (request.messageType) {
             case BSMessageType.DictsOfLang: {
