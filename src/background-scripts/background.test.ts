@@ -12,6 +12,9 @@ jest.mock("./dictionary");
 
 
 describe('Testing Service Worker', () => {
+
+    type AssertFunction = Function;
+
     beforeEach(() => {
         setUpMockBrowser();
 
@@ -106,21 +109,32 @@ describe('Testing Service Worker', () => {
 
         // Test that listener was indeed registered
         await backgroundWorkerPromise;
-        const message: BSMessage = {
+        let message: any = {
             messageType: BSMessageType.GetCurrentDictionary,
             payload: null
         };
         const sendResponse: (response?: any) => void = (_?: any) => {};
-        await (chrome.runtime.onMessage as any).testExecute(
+        (chrome.runtime.onMessage as any).testExecute(
             message,
             null,
             sendResponse
         );
         expect(dictionaryManager.getCurrentDictionaryId)
             .toHaveBeenCalledTimes(1);
-    });
 
-    type AssertFunction = Function;
+        message = {
+            messageType: BSMessageType.SetCurrentDictionary,
+            payload: {
+                langauge: 'हिन्द',
+                index: 0, 
+            } 
+        };
+        (chrome.runtime.onMessage as any).testExecute(
+            message,
+            null,
+            sendResponse
+        ); 
+    });
 
     it.each([
         [
@@ -1107,8 +1121,37 @@ describe('Testing Service Worker', () => {
             db.getDB()?.close();
         }
     });
-        // TODO: add test making sure that non-bsmessages wouldn't work
-        //    for both Promised and non-promised listener
-        // TODO: add test where null response used.
+
+    test('makeHandler with non-BSMessage', async () => {
+        jest.clearAllMocks();  // doing this beforeEach distorts setup test
+        browserStorage.setCurrentActivation(true);
+        const db: IndexedDBStorage = new IndexedDBStorage();
+        try {
+            await db.setUp();
+            await db.storePageData(
+                {
+                    missingWords: ['word','not','here'],
+                    wordEntries: [],
+                },
+                'https://foobar.io'
+            );
+            await db.addLabelEntry(
+                'https://foobar.io',
+                'foobar'
+            );
+            const handler: HandlerType = makeHandler(db);
+            const sendResponse: (response?: any) => void = (resp?: any) => {
+                expect(false).toBeTruthy();
+            };
+            const message: any = {
+                name: 'mario',
+                typeOfMessage: 'mistake'
+            };
+            const result: boolean = await handler(message, null, sendResponse);
+            expect(result).toBeFalsy();
+        } finally {
+            db.getDB()?.close()
+        }
+    });
 });
 

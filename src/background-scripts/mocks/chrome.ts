@@ -220,11 +220,11 @@ export const setUpMockBrowser = () => {
                 addListener: <T extends Function>(x: T) => {
                     onMessageListenersList.push(x);
                 },
-                testExecute: async (x: any, y: any, z: any) => {  // my own innovation
+                testExecute: (x: any, y: any, z: any) => {  // my own innovation
                     expect(onMessageListenersList).toHaveLength(1);
                     for (let i = 0; i < onMessageListenersList.length; i++) {
                         const ear = onMessageListenersList[i];
-                        await ear(x,y,z);
+                        ear(x,y,z);
                     }
                 }
             }
