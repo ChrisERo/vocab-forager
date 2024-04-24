@@ -3,7 +3,6 @@ import { Dictionary, DictionaryIdentifier, isDictionary, isDictionaryID, isSiteD
 /**
  * Types of messages that can be sent to background script listener for processing
  */
-
 export enum BSMessageType {
     DictsOfLang,
     GetCurrentDictionary,

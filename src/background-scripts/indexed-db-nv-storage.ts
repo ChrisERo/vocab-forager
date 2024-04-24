@@ -88,22 +88,6 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
         return this.dbPromise;
     }
 
-    /**
-     * For testing use only! Executes {@link setUp} function, but with some delay
-     *
-     * @param waitTimeMS time in milliseconds to wait before calling {@link setUp}
-     * @param oldStorage LocalStorage object previously used to hold SiteData
-     */
-    async setUpTestFunction(waitTimeMS: number, oldStorage?: LocalStorage): Promise<IDBDatabase> {
-        this.dbPromise = new Promise<IDBDatabase>(async (resolve, reject) => {
-            await new Promise(resolve => setTimeout( resolve, waitTimeMS));
-            const result: IDBDatabase = await this.setUp(oldStorage);
-            resolve(result);
-        });
-        return this.dbPromise;
-
-    }
-
     getPageData(url: string): Promise<SiteData> {
         const query = (db: IDBDatabase): Promise<SiteData> => {
             const urlList = parseURL(url);
@@ -572,7 +556,7 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
         throw Error('Current Activation is not stored in IndexedDBStorage')
     }
 
-     setCurrentActivation(isActivated: boolean): void {
+     setCurrentActivation(isActivated: boolean): Promise<void> {
         throw Error('Current Activation is not stored in IndexedDBStorage')
     }
 
@@ -580,7 +564,7 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
         throw Error('IndexedDBStorage does not store dictionary data');
     }
 
-    setDictionaryData(gdd: GlobalDictionaryData): void {
+    setDictionaryData(gdd: GlobalDictionaryData): Promise<void> {
         throw Error('IndexedDBStorage does not store dictionary data');
     }
 
@@ -635,13 +619,14 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
 }
 
 /**
- * Get IndexedDBStorage object and commence setting it up.
+ * Constructs and IndexedDBStorage and initializes it, returning a Promise that evaluates
+ * to a IndexedDBStorage object if successful.
  *
  * @param ls NonVolatileBrowserStorage object from which to obtain previously-stored data
  * @returns IndexedDBStorage that will eventually complete calling its set up function
  */
- export function getIndexedDBStorage(ls?: LocalStorage): IndexedDBStorage {
+ export async function getIndexedDBStorage(ls?: LocalStorage): Promise<IndexedDBStorage> {
     const nonVolatileStorage =  new IndexedDBStorage();
-    nonVolatileStorage.setUp(ls);
+    await nonVolatileStorage.setUp(ls);
     return nonVolatileStorage;
 }
