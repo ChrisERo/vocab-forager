@@ -4,6 +4,8 @@ import { setUpMockBrowser } from "../background-scripts/mocks/chrome";
 setUpMockBrowser();  // needed to setting fetch-banner's constant for test.
 import { loadBannerHtml } from "./fetch-banner";
 
+type OnClickFunction = ((this: GlobalEventHandlers, ev: MouseEvent) => any);
+
 describe('Testing Service Worker', () => {
     beforeEach(() => {
         setUpMockBrowser();
@@ -150,6 +152,12 @@ describe('Testing Service Worker', () => {
             expect(bannerTextElement).not.toBeNull();
             expect(bannerTextElement.onclick).not.toBeUndefined();
             expect(bannerTextElement.onclick).not.toBeNull();
+            (bannerTextElement.onclick as OnClickFunction)({} as MouseEvent);
+            // JSDOM does not support href change in sourcecode:
+            // https://github.com/jsdom/jsdom?tab=readme-ov-file#reconfiguring-the-jsdom-with-reconfiguresettings
+            //expect(dom.window.location.href).toBe(
+            //    chrome.runtime.getURL("web_pages/index.html")
+            //);
         } else {
             if (bannerTextElement !== null) {
                 expect(bannerTextElement.onclick).toBeNull();
