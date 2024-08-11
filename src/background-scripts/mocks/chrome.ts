@@ -1,3 +1,9 @@
+import { readFileSync } from 'fs';
+import { resolve } from "path";
+
+// Path to public directory (where html and other webpage assets live)
+const PUBLIC_DIR = __dirname + '/../../../public';
+
 export class MockLocalStorage implements chrome.storage.LocalStorageArea {
 
     private storage: {[key: string]: any};
@@ -227,6 +233,9 @@ export const setUpMockBrowser = () => {
                         ear(x,y,z);
                     }
                 }
+            },
+            getURL: (urlPath: string) => {
+                return 'file://' + resolve(PUBLIC_DIR, urlPath);
             }
         },
         storage: {
@@ -244,4 +253,15 @@ export const setUpMockBrowser = () => {
             onChanged: {} as chrome.storage.StorageChange,
         }
     } as unknown as typeof chrome;
+
+    global.fetch = jest.fn((url: string) => {
+        // Assuming url uses file:// protocol as in getURL
+        const filePath: string = url.replace('file://', '');
+        const content = readFileSync(filePath, 'utf-8');
+        return Promise.resolve({
+            json: () => Promise.resolve({}),
+            text: () => Promise.resolve(content),
+        })
+    }) as jest.Mock;
+
 }
