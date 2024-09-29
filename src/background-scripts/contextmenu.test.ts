@@ -1,7 +1,7 @@
 import { CSMessageType } from "../utils/content-script-communication";
 import { ContextMenuManager } from "./contextmenu";
 import { MockDataStorage } from "./dictionary.test";
-import { setUpMockBrowser, MockLocalStorage } from "./mocks/chrome";
+import { setUpMockBrowser } from "./mocks/chrome";
 
 
 describe('Contextmenu Tests', () => {
