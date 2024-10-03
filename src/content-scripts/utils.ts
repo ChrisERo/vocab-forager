@@ -32,7 +32,7 @@ export function defineWord(word: string|null) {
  * (nodePath.length - i)th node in the previous nodes list of children.
  * @returns node reprsented by nodePath
  */
- export function nodPathToNode(nodePath: number[]): Node {
+ export function getNodeFromNodePath(nodePath: number[]): Node {
     let node: Node = document.body;
     for (let i = 0; i < nodePath.length; i++) {
         node = node.childNodes[nodePath[i]];

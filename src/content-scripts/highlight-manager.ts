@@ -1,7 +1,7 @@
 import { BSMessage, BSMessageType } from '../utils/background-script-communication';
 import { HighlightOptions, SiteData, Word } from '../utils/models'
 import { highlightRecovery } from './highlight-recovery';
-import { defineWord, HILIGHT_CLASS, HILIGHT_CLASS_HOVER, isHighlightElement, isHighlightNode, isTextNode, nodeToTreePath, nodPathToNode } from './utils';
+import { defineWord, HILIGHT_CLASS, HILIGHT_CLASS_HOVER, isHighlightElement, isHighlightNode, isTextNode, nodeToTreePath, getNodeFromNodePath } from './utils';
 
 
 /**
@@ -113,7 +113,7 @@ class Highlight {
      * what this.word expects
      */
     highlightWord(): void {
-        let nodesToHighlight: Node[] = this.word.nodePath.map(nodPathToNode);
+        let nodesToHighlight: Node[] = this.word.nodePath.map(getNodeFromNodePath);
         let textCoveredByHighlightNodes = '';  // what text is actually covered
         for (let index = 0; index < nodesToHighlight.length; index++) {            
             // Define offset as start and end of text in new highlight node. 
@@ -469,7 +469,7 @@ export class HighlightsManager {
         let parentsToHighlightNodeIndex = new Map<Node, number[]>();
         for (let i = 0; i < highlight.word.nodePath.length; i++) {
             let nodePath = highlight.word.nodePath[i];
-            let hNode = nodPathToNode(nodePath);
+            let hNode = getNodeFromNodePath(nodePath);
             let parent = hNode.parentNode as Node;
             if (!parentsToHighlightNodeIndex.has(parent)) {
                 parentsToHighlightNodeIndex.set(parent, []);

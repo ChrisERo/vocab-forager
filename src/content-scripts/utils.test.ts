@@ -1,5 +1,5 @@
 import { setUpMockBrowser } from "../background-scripts/mocks/chrome";
-import { defineWord, nodPathToNode } from "./utils";
+import { defineWord, getNodeFromNodePath } from "./utils";
 import { JSDOM } from "jsdom";
 import { BSMessage, BSMessagePayload, BSMessageType, isBsMessage, isSearchRequest, SearchRequest } from "../utils/background-script-communication";
 
@@ -112,7 +112,7 @@ describe('Contextmenu Tests', () => {
             const dom: JSDOM = new JSDOM(pageContent);
             global.document = dom.window.document;
 
-            const result: Node = nodPathToNode(nodePath);
+            const result: Node = getNodeFromNodePath(nodePath);
             const nodeName = result.nodeName;
             expect(nodeName).toBe(expectedNodeName);
             const text = result.textContent;
