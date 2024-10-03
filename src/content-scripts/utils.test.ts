@@ -1,5 +1,5 @@
 import { setUpMockBrowser } from "../background-scripts/mocks/chrome";
-import { defineWord, getNodeFromNodePath } from "./utils";
+import { defineWord, getNodeFromNodePath, isTextNode, nodeToTreePath } from "./utils";
 import { JSDOM } from "jsdom";
 import { BSMessage, BSMessagePayload, BSMessageType, isBsMessage, isSearchRequest, SearchRequest } from "../utils/background-script-communication";
 
@@ -105,18 +105,49 @@ describe('Contextmenu Tests', () => {
                 'UL',
                 'Bien',
             ],
-        ])('nodePathToNode {%p} %s', (siteBody: string, nodePath: number[],
-                             expectedNodeName: string, expectedText: string) => {
+        ])('nodePathToNode and derrivedNodePath {%p} %s', 
+        (siteBody: string, nodePath: number[],expectedNodeName: string, 
+         expectedText: string) => {
+            jest.clearAllMocks();  // doing this beforeEach distorts setup test 
+            const pageContent: string = `<head></head>${siteBody}`;
+            const dom: JSDOM = new JSDOM(pageContent);
+            global.document = dom.window.document;
+            global.Node = dom.window.Node;
+
+            const nodeGotten: Node = getNodeFromNodePath(nodePath);
+            const nodeName = nodeGotten.nodeName;
+            expect(nodeName).toBe(expectedNodeName);
+            const text = nodeGotten.textContent;
+            expect(text).toBe(expectedText);
+
+            const derivedNodePath = nodeToTreePath(nodeGotten);
+            expect(derivedNodePath).toEqual(nodePath);
+        });
+    it.each([
+            [
+                '<body><p>Hello World</p></body>', 
+                [0],
+                'P',
+                false,
+            ],
+            [
+                '<body><p>Hello World</p></body>', 
+                [0,0],
+                '#text',
+                true,
+            ],
+    ])('isText {%p} %s', 
+        (siteBody: string, nodePath: number[],expectedNodeName: string, 
+         isText: boolean) => {
             jest.clearAllMocks();  // doing this beforeEach distorts setup test 
             const pageContent: string = `<head></head>${siteBody}`;
             const dom: JSDOM = new JSDOM(pageContent);
             global.document = dom.window.document;
 
-            const result: Node = getNodeFromNodePath(nodePath);
-            const nodeName = result.nodeName;
+            const nodeGotten: Node = getNodeFromNodePath(nodePath);
+            const nodeName = nodeGotten.nodeName;
             expect(nodeName).toBe(expectedNodeName);
-            const text = result.textContent;
-            expect(text).toBe(expectedText);
+            expect(isTextNode(nodeGotten)).toBe(isText);
         });
 });
 
