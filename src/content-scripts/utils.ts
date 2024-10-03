@@ -32,7 +32,7 @@ export function defineWord(word: string|null) {
  * (nodePath.length - i)th node in the previous nodes list of children.
  * @returns node reprsented by nodePath
  */
- export function getNodeFromNodePath(nodePath: number[]): Node {
+export function getNodeFromNodePath(nodePath: number[]): Node {
     let node: Node = document.body;
     for (let i = 0; i < nodePath.length; i++) {
         node = node.childNodes[nodePath[i]];
@@ -50,7 +50,7 @@ export function defineWord(word: string|null) {
  * represented by i-1th element. node is the last element in the array and the parent of
  * the first element should be the document.body element.
  */
- export function nodeToTreePath(node: Node): number[] {
+export function nodeToTreePath(node: Node): number[] {
     let nodeIndecies = [];
     let currentNode = node;
     const rootNode = document.body;
@@ -77,7 +77,7 @@ export function defineWord(word: string|null) {
  *
  * @param node - Node in document.body
  */
- export function isTextNode(node: Node): boolean {
+export function isTextNode(node: Node): boolean {
     return node.nodeType === Node.TEXT_NODE;
 }
 
@@ -86,7 +86,7 @@ export function defineWord(word: string|null) {
  *
  * @param currentNode - Node in document.body
  */
- export function isHighlightNode(currentNode: Node): boolean {
+export function isHighlightNode(currentNode: Node): boolean {
     return currentNode instanceof Element && isHighlightElement(currentNode)
 }
 
@@ -95,7 +95,7 @@ export function defineWord(word: string|null) {
  *
  * @param element - Node in document.body
  */
- export function isHighlightElement(element: Element) {
+export function isHighlightElement(element: Element) {
     return element.classList != null && element.classList.contains(HILIGHT_CLASS)
 }
 
