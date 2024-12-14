@@ -1,3 +1,9 @@
+import { readFileSync } from 'fs';
+import { resolve } from "path";
+
+// Path to public directory (where html and other webpage assets live)
+const PUBLIC_DIR = __dirname + '/../../../public';
+
 export class MockLocalStorage implements chrome.storage.LocalStorageArea {
 
     private storage: {[key: string]: any};
@@ -98,44 +104,63 @@ export class MockLocalStorage implements chrome.storage.LocalStorageArea {
 export const setUpMockBrowser = () => {
     const onMessageListenersList: Function[] = [];
     const contextMenuStuff: any = {};
-    const messagesSent: any = {};
-    const tabs: chrome.tabs.Tab [] = [{
-        id: 1,
-        index: 0,
-        pinned: false,
-        highlighted: false,
-        windowId: 0,
-        active: false,
-        incognito: false,
-        selected: false,
-        discarded: false,
-        autoDiscardable: false,
-        groupId: 0
-    }, {
-        id: 2,
-        index: 0,
-        pinned: false,
-        highlighted: false,
-        windowId: 0,
-        active: false,
-        incognito: false,
-        selected: false,
-        discarded: false,
-        autoDiscardable: false,
-        groupId: 0
-    }, {
-        id: 3,
-        index: 0,
-        pinned: false,
-        highlighted: false,
-        windowId: 0,
-        active: false,
-        incognito: false,
-        selected: false,
-        discarded: false,
-        autoDiscardable: false,
-        groupId: 0
-    }];
+    const messagesSentToTabs: any = {};
+    const messagesSentToWorkerScript: any[] = [];
+    const tabs: chrome.tabs.Tab [] = [
+        {
+            id: 1,
+            index: 0,
+            pinned: false,
+            highlighted: false,
+            windowId: 0,
+            active: false,
+            incognito: false,
+            selected: false,
+            discarded: false,
+            autoDiscardable: false,
+            groupId: 0
+        },
+        {
+            id: 2,
+            index: 1,
+            pinned: false,
+            highlighted: false,
+            windowId: 0,
+            active: false,
+            incognito: false,
+            selected: false,
+            discarded: false,
+            autoDiscardable: false,
+            groupId: 0
+        },
+        {
+            id: -13,
+            index: 3,
+            pinned: false,
+            highlighted: false,
+            windowId: 0,
+            active: false,
+            incognito: false,
+            selected: false,
+            discarded: false,
+            autoDiscardable: false,
+            groupId: 0,
+            title: "DO_NOT_SEND"
+        },
+        {
+            id: 3,
+            index: 4,
+            pinned: false,
+            highlighted: false,
+            windowId: 0,
+            active: false,
+            incognito: false,
+            selected: false,
+            discarded: false,
+            autoDiscardable: false,
+            groupId: 0
+        }
+    ];
     const listeners: ((info: chrome.contextMenus.OnClickData, tab?: chrome.tabs.Tab | undefined) => void) [] = [];
     global.chrome = {
         contextMenus: {
@@ -188,13 +213,17 @@ export const setUpMockBrowser = () => {
                 }
                 throw 'Updated imaginary tab';
             },
-            messagesSent: messagesSent,
+            messagesSent: messagesSentToTabs,
             sendMessage: async (tabId: number, message: any): Promise<void> => {
-                if (messagesSent[tabId] === undefined || messagesSent[tabId] === null) {
-                    messagesSent[tabId] = [];
+                if (tabId < 0) {
+                    throw new Error("Expected Failure");
                 }
 
-                messagesSent[tabId].push(message);
+                if (messagesSentToTabs[tabId] === undefined || messagesSentToTabs[tabId] === null) {
+                    messagesSentToTabs[tabId] = [];
+                }
+                
+                messagesSentToTabs[tabId].push(message);
                 return;
             },
             query: (x: any) => new Promise((resolve, _) => resolve(tabs)),
@@ -227,6 +256,13 @@ export const setUpMockBrowser = () => {
                         ear(x,y,z);
                     }
                 }
+            },
+            getURL: (urlPath: string) => {
+                return 'file://' + resolve(PUBLIC_DIR, urlPath);
+            },
+            messagesSentToWorkerScript: messagesSentToWorkerScript,
+            sendMessage(message: any) {
+               messagesSentToWorkerScript.push(message);
             }
         },
         storage: {
@@ -244,4 +280,15 @@ export const setUpMockBrowser = () => {
             onChanged: {} as chrome.storage.StorageChange,
         }
     } as unknown as typeof chrome;
+
+    global.fetch = jest.fn((url: string) => {
+        // Assuming url uses file:// protocol as in getURL
+        const filePath: string = url.replace('file://', '');
+        const content = readFileSync(filePath, 'utf-8');
+        return Promise.resolve({
+            json: () => Promise.resolve({}),
+            text: () => Promise.resolve(content),
+        })
+    }) as jest.Mock;
+
 }

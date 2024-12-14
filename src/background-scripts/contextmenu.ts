@@ -127,9 +127,13 @@ export class ContextMenuManager {
                             messageType: CSMessageType.ActivationStateChange,
                             payload: {newActivatedState: newIsActivatedState},
                         }
-                        for (let tabElements of tabs) {
-                            if (tabElements.id !== undefined) {
-                                await chrome.tabs.sendMessage(tabElements.id, message);
+                        for (let tabElement of tabs) {
+                            if (tabElement.id !== undefined) {
+                                try {
+                                    await chrome.tabs.sendMessage(tabElement.id, message);
+                                } catch (err) {  // if extension is not running in certain sites, could get an error
+                                    console.warn(`Failed to send message to tab ${tabElement.index}-${tabElement.title}: ${err}`);
+                                }
                             }
                         }
                         resolve();

@@ -1,14 +1,13 @@
 import { BSMessage, BSMessageType, SearchRequest } from "../utils/background-script-communication";
 
-// TODO: rename once TS is done
 export const HILIGHT_CLASS = 'vf-highlighted'; // class of hilighted sections in html page
 export const HILIGHT_CLASS_HOVER = 'vf-highlighted-hover'; // class of hilighted sections when hovered over
 
 /**
- * Uses background script to open up a website asociated with a particular word. The 
- * current dictionary is used to perform this lookup
+ * Uses extension's service worker to open up a website asociated with a
+ * particular word. The current dictionary is used to perform this lookup
  * 
- * @param {String} word - user-selected text in document
+ * @param {string} word - user-selected text in document
  */
 export function defineWord(word: string|null) {
     if (word !== null && word !== '') {
@@ -33,7 +32,7 @@ export function defineWord(word: string|null) {
  * (nodePath.length - i)th node in the previous nodes list of children.
  * @returns node reprsented by nodePath
  */
- export function nodPathToNode(nodePath: number[]): Node {
+export function getNodeFromNodePath(nodePath: number[]): Node {
     let node: Node = document.body;
     for (let i = 0; i < nodePath.length; i++) {
         node = node.childNodes[nodePath[i]];
@@ -51,7 +50,7 @@ export function defineWord(word: string|null) {
  * represented by i-1th element. node is the last element in the array and the parent of
  * the first element should be the document.body element.
  */
- export function nodeToTreePath(node: Node): number[] {
+export function nodeToTreePath(node: Node): number[] {
     let nodeIndecies = [];
     let currentNode = node;
     const rootNode = document.body;
@@ -78,7 +77,7 @@ export function defineWord(word: string|null) {
  *
  * @param node - Node in document.body
  */
- export function isTextNode(node: Node): boolean {
+export function isTextNode(node: Node): boolean {
     return node.nodeType === Node.TEXT_NODE;
 }
 
@@ -87,7 +86,7 @@ export function defineWord(word: string|null) {
  *
  * @param currentNode - Node in document.body
  */
- export function isHighlightNode(currentNode: Node): boolean {
+export function isHighlightNode(currentNode: Node): boolean {
     return currentNode instanceof Element && isHighlightElement(currentNode)
 }
 
@@ -96,7 +95,7 @@ export function defineWord(word: string|null) {
  *
  * @param element - Node in document.body
  */
- export function isHighlightElement(element: Element) {
+export function isHighlightElement(element: Element) {
     return element.classList != null && element.classList.contains(HILIGHT_CLASS)
 }
 
