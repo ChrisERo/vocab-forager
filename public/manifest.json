@@ -1,7 +1,7 @@
 {
   "name": "VocabForager",
   "description": "VocabForager is a browser extension built for people build their vocabulary for one, or several, languages.",
-  "version": "2.1.4",
+  "version": "2.1.5",
   "manifest_version": 3,
   "icons": {
     "16": "icons/icon128.png",
