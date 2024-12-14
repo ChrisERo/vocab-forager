@@ -106,43 +106,61 @@ export const setUpMockBrowser = () => {
     const contextMenuStuff: any = {};
     const messagesSentToTabs: any = {};
     const messagesSentToWorkerScript: any[] = [];
-    const tabs: chrome.tabs.Tab [] = [{
-        id: 1,
-        index: 0,
-        pinned: false,
-        highlighted: false,
-        windowId: 0,
-        active: false,
-        incognito: false,
-        selected: false,
-        discarded: false,
-        autoDiscardable: false,
-        groupId: 0
-    }, {
-        id: 2,
-        index: 0,
-        pinned: false,
-        highlighted: false,
-        windowId: 0,
-        active: false,
-        incognito: false,
-        selected: false,
-        discarded: false,
-        autoDiscardable: false,
-        groupId: 0
-    }, {
-        id: 3,
-        index: 0,
-        pinned: false,
-        highlighted: false,
-        windowId: 0,
-        active: false,
-        incognito: false,
-        selected: false,
-        discarded: false,
-        autoDiscardable: false,
-        groupId: 0
-    }];
+    const tabs: chrome.tabs.Tab [] = [
+        {
+            id: 1,
+            index: 0,
+            pinned: false,
+            highlighted: false,
+            windowId: 0,
+            active: false,
+            incognito: false,
+            selected: false,
+            discarded: false,
+            autoDiscardable: false,
+            groupId: 0
+        },
+        {
+            id: 2,
+            index: 1,
+            pinned: false,
+            highlighted: false,
+            windowId: 0,
+            active: false,
+            incognito: false,
+            selected: false,
+            discarded: false,
+            autoDiscardable: false,
+            groupId: 0
+        },
+        {
+            id: -13,
+            index: 3,
+            pinned: false,
+            highlighted: false,
+            windowId: 0,
+            active: false,
+            incognito: false,
+            selected: false,
+            discarded: false,
+            autoDiscardable: false,
+            groupId: 0,
+            title: "DO_NOT_SEND"
+        },
+        {
+            id: 3,
+            index: 4,
+            pinned: false,
+            highlighted: false,
+            windowId: 0,
+            active: false,
+            incognito: false,
+            selected: false,
+            discarded: false,
+            autoDiscardable: false,
+            groupId: 0
+        }
+    ];
     const listeners: ((info: chrome.contextMenus.OnClickData, tab?: chrome.tabs.Tab | undefined) => void) [] = [];
     global.chrome = {
         contextMenus: {
@@ -197,10 +215,14 @@ export const setUpMockBrowser = () => {
             },
             messagesSent: messagesSentToTabs,
             sendMessage: async (tabId: number, message: any): Promise<void> => {
+                if (tabId < 0) {
+                    throw new Error("Expected Failure");
+                }
+
                 if (messagesSentToTabs[tabId] === undefined || messagesSentToTabs[tabId] === null) {
                     messagesSentToTabs[tabId] = [];
                 }
-
+                
                 messagesSentToTabs[tabId].push(message);
                 return;
             },

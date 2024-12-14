@@ -443,7 +443,7 @@ describe('Testing Service Worker', () => {
             async () => {
                 expect(dictionaryManager.getWordSearchURL)
                     .toHaveBeenCalledTimes(1);
-                const myTab: chrome.tabs.Tab = await chrome.tabs.get(4);
+                const myTab: chrome.tabs.Tab = await chrome.tabs.get(5);
                 expect(myTab.url).toBe('https://spanishdict.com/uva')
             }
         ],
