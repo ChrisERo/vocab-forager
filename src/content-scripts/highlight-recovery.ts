@@ -1,9 +1,10 @@
-import { SiteData, Word } from "../utils/models";
+import { Word } from "../utils/models";
 import { isTextNode, isWhiteSpace, nodeToTreePath } from "./utils";
 
 const END_OF_WORD = 'ED';
 const SPACE_CHAR = ' ';
 
+// consumer that takes a Word object.
 type WordConsumer = (w: Word) => void;
 
 /**
@@ -310,7 +311,8 @@ class TextIndex {
  * All resulting highlights have no intersection
  * 
  * @param words set of words that need to be found in webpage
- * @returns set fo words from words that were not found, or null if all were found
+ * @param operation to perform on discovered word 
+ * @returns set of strings from words set that were not found, or null if all were found
  */
 export function highlightRecovery(words: Set<string>, highlight: WordConsumer): Set<string>|null {
     let trieStruct = makeTrieStructure(words);
