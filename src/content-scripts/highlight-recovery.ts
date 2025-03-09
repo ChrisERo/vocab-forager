@@ -470,7 +470,6 @@ function searchForString(startPos: TextIndex, wordEndPosBuffer: TextIndex, textN
     while (true) {
         let currentChar = (wordEndPosBuffer.getCurrentChar(textNodes) as string).toLowerCase();
         let nextTrie = trieNode.getNodeWithChar(currentChar);
-        
         if (nextTrie === undefined) {
             // Count new nodes as spaces
             if (wordEndPosBuffer.lastAdvanceIncreasedNode) {
@@ -484,11 +483,11 @@ function searchForString(startPos: TextIndex, wordEndPosBuffer: TextIndex, textN
             encounteredWrongChar = true;
             break;
         } else {
+            trieNode = nextTrie;
             let advanceFailed: boolean = !wordEndPosBuffer.advance(textNodes);
             if (advanceFailed) {
                 break;
             }
-            trieNode = nextTrie;
         }
     }
 
@@ -498,7 +497,8 @@ function searchForString(startPos: TextIndex, wordEndPosBuffer: TextIndex, textN
     }
 
     while (!trieNode.isRoot()) {
-        let currentChar = (wordEndPosBuffer.getCurrentChar(textNodes) as string).toLocaleLowerCase();
+        let currentChar = (wordEndPosBuffer.getCurrentChar(textNodes) as string);
+        currentChar = currentChar.toLocaleLowerCase();
         let goBackFailed = false;
         if (currentChar === trieNode.char || 
             (isWhiteSpace(currentChar) && isWhiteSpace(trieNode.char))) {
@@ -520,14 +520,12 @@ function searchForString(startPos: TextIndex, wordEndPosBuffer: TextIndex, textN
                     }
 
             } else {
-                throw new Error(`Unexpected character difference: Trie: ${trieNode.char}, 
-                    Text: ${currentChar}`);
+                throw new Error(`Unexpected character difference: Trie: ${trieNode.char}, Text: ${currentChar}`);
             }
         }
 
         if (goBackFailed) {
-            throw new Error(`Failed to go back at index ${wordEndPosBuffer.charIndex} of text 
-                ${textNodes[wordEndPosBuffer.nodeIndex].textContent}`);
+            throw new Error(`Failed to go back at index ${wordEndPosBuffer.charIndex} of text ${textNodes[wordEndPosBuffer.nodeIndex].textContent}`);
         }
     }
 
