@@ -375,7 +375,7 @@ export class HighlightsManager {
      * @param word: text not currently managed or partially managed by this.
      */
     highlight(word: Word): void {
-        let highlightForWord = new Highlight(word, this.highlights.length, this);
+        const highlightForWord = new Highlight(word, this.highlights.length, this);
         this.insertHighlightData(highlightForWord);
         highlightForWord.highlightWord();
         if (this.highlightStyleOptions) {
@@ -466,7 +466,7 @@ export class HighlightsManager {
      * added to DOM yet either.
      */
     private insertHighlightData(highlight: Highlight): void {
-        let parentsToHighlightNodeIndex = new Map<Node, number[]>();
+        const parentsToHighlightNodeIndex = new Map<Node, number[]>();
         for (let i = 0; i < highlight.word.nodePath.length; i++) {
             let nodePath = highlight.word.nodePath[i];
             let hNode = getNodeFromNodePath(nodePath);
