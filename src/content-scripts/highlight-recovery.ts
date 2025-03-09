@@ -406,17 +406,21 @@ function findMissingWords(root: Trie, textNodes: Node[], highlight: WordConsumer
                 nodePath: nodePaths,
             };
 
+            const nodesOfEPPostHL = endParent.childNodes.length;
             highlight(foundWordObj);
             if (root.children.size === 0) {
                 return null;
             }
+            const totalNodesChange= endParent.childNodes.length - nodesOfEPPostHL;
 
-            // Update textNodes assumes that highlight always results in 3 new nodes 
+            // Update textNodes assumes that each highlight node always results in 3 new nodes being made to replace the one that was modified.
             // at parent level
             textNodes = textNodes.slice(endNodeIndex + 1);
             const lastNodeArray = nodePaths[nodePaths.length - 1]
             const domEndNodeIndex = lastNodeArray[lastNodeArray.length - 1];
-            const firstTextNodeAfterNewHighlight = endParent.childNodes[domEndNodeIndex + 2];
+            const firstTextNodeAfterNewHighlight = endParent.childNodes[
+                domEndNodeIndex + totalNodesChange
+            ];
             if (firstTextNodeAfterNewHighlight !== null &&
                 firstTextNodeAfterNewHighlight.textContent !== null &&
                 firstTextNodeAfterNewHighlight.textContent.trim().length !== 0) {
@@ -454,7 +458,6 @@ function searchForString(startPos: TextIndex, wordEndPosBuffer: TextIndex, textN
     wordEndPosBuffer.nodeIndex = startPos.nodeIndex;
     wordEndPosBuffer.charIndex = startPos.charIndex;
     wordEndPosBuffer.lastAdvanceIncreasedNode = false;
-    
     let trieNode = trieRoot;
     let encounteredWrongChar = false;
     

@@ -272,9 +272,82 @@ describe('Highlight Recovery Utilities', () => {
                 ],
                 null,
             ],
+            [
+                'highlights with text across nodes',
+                `
+                <body>
+                    <p>En un lugar de la Mancha,</p>
+                    <p>de cuyo nombre <b>no</b> quiero acordarme,</p>
+                    <p>no ha mucho tiempo que vivía un hidalgo de los de lanza en astillero, adarga antigua, rocín flaco y galgo corredor.</p></body>`, 
+                ['tiempo', 'Quijote', 'hidalgo', 'nombre no', 'acordarme'],
+                [
+                    {
+                        word: "nombre no",
+                        startOffset: 8,
+                        endOffset: 2,
+                        nodePath: [[3, 0], [3,1,0]],
+                    },
+                    {
+                        word: "acordarme",
+                        startOffset: 8,
+                        endOffset: 17,
+                        nodePath: [[3,4]],
+                    },
+                    {
+                        word: "tiempo",
+                        startOffset: 12, 
+                        endOffset: 18,
+                        nodePath: [[5,0]],
+                    },
+                    {
+                        word: "hidalgo",
+                        startOffset: 14, 
+                        endOffset: 21,
+                        nodePath: [[5,2]],
+                    },
+                ],
+                ['quijote'],
+            ],
+            [
+                'highlights with text across nodes',
+                `
+                <body>
+                    <p>En un lugar de la Mancha,</p>
+                    <p>de cuyo nombre <b>no</b> quiero acordarme,</p>
+                    <p>no ha mucho tiempo que vivía un hidalgo de los de lanza en astillero, adarga antigua, rocín flaco y galgo corredor.</p></body>`, 
+                ['tiempo', 'Quijote', 'hidalgo', 'nombre no quiero', 'acordarme'],
+                [
+                    {
+                        word: "nombre no quiero",
+                        startOffset: 8,
+                        endOffset: 7,
+                        nodePath: [[3, 0], [3,1,0], [3, 2]],
+                    },
+                    {
+                        word: "acordarme",
+                        startOffset: 1,
+                        endOffset: 10,
+                        nodePath: [[3,6]],
+                    },
+                    {
+                        word: "tiempo",
+                        startOffset: 12, 
+                        endOffset: 18,
+                        nodePath: [[5,0]],
+                    },
+                    {
+                        word: "hidalgo",
+                        startOffset: 14, 
+                        endOffset: 21,
+                        nodePath: [[5,2]],
+                    },
+                ],
+                ['quijote'],
+            ],
         ])('highlightRecovery %s', 
         (ignoreDescription: string, siteBody: string, wordsToFindArr: string[],
         expectedWordsFound: Word[], expectedMissingWords: null | string[]) => {
+            //console.log(ignoreDescription);
             const pageContent: string = `<head></head>${siteBody}`;
             const dom: JSDOM = new JSDOM(pageContent);
             global.document = dom.window.document;
@@ -308,6 +381,7 @@ describe('Highlight Recovery Utilities', () => {
                     range.setStart(node, startIndex);
                     range.setEnd(node, endIndex);
                     range.surroundContents(highlightNode);
+                    //console.log(document.body.innerHTML);
                 }
             };
             const wordsAtLarge: Set<string> | null =
