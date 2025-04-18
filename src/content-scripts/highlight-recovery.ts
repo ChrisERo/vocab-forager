@@ -1,9 +1,10 @@
-import { SiteData, Word } from "../utils/models";
+import { Word } from "../utils/models";
 import { isTextNode, isWhiteSpace, nodeToTreePath } from "./utils";
 
 const END_OF_WORD = 'ED';
 const SPACE_CHAR = ' ';
 
+// consumer that takes a Word object.
 type WordConsumer = (w: Word) => void;
 
 /**
@@ -310,7 +311,8 @@ class TextIndex {
  * All resulting highlights have no intersection
  * 
  * @param words set of words that need to be found in webpage
- * @returns set fo words from words that were not found, or null if all were found
+ * @param operation to perform on discovered word 
+ * @returns set of strings from words set that were not found, or null if all were found
  */
 export function highlightRecovery(words: Set<string>, highlight: WordConsumer): Set<string>|null {
     let trieStruct = makeTrieStructure(words);
@@ -404,17 +406,21 @@ function findMissingWords(root: Trie, textNodes: Node[], highlight: WordConsumer
                 nodePath: nodePaths,
             };
 
+            const nodesOfEPPostHL = endParent.childNodes.length;
             highlight(foundWordObj);
             if (root.children.size === 0) {
                 return null;
             }
+            const totalNodesChange= endParent.childNodes.length - nodesOfEPPostHL;
 
-            // Update textNodes assumes that highlight always results in 3 new nodes 
+            // Update textNodes assumes that each highlight node always results in 3 new nodes being made to replace the one that was modified.
             // at parent level
             textNodes = textNodes.slice(endNodeIndex + 1);
             const lastNodeArray = nodePaths[nodePaths.length - 1]
             const domEndNodeIndex = lastNodeArray[lastNodeArray.length - 1];
-            const firstTextNodeAfterNewHighlight = endParent.childNodes[domEndNodeIndex + 2];
+            const firstTextNodeAfterNewHighlight = endParent.childNodes[
+                domEndNodeIndex + totalNodesChange
+            ];
             if (firstTextNodeAfterNewHighlight !== null &&
                 firstTextNodeAfterNewHighlight.textContent !== null &&
                 firstTextNodeAfterNewHighlight.textContent.trim().length !== 0) {
@@ -452,7 +458,6 @@ function searchForString(startPos: TextIndex, wordEndPosBuffer: TextIndex, textN
     wordEndPosBuffer.nodeIndex = startPos.nodeIndex;
     wordEndPosBuffer.charIndex = startPos.charIndex;
     wordEndPosBuffer.lastAdvanceIncreasedNode = false;
-    
     let trieNode = trieRoot;
     let encounteredWrongChar = false;
     
@@ -468,7 +473,6 @@ function searchForString(startPos: TextIndex, wordEndPosBuffer: TextIndex, textN
     while (true) {
         let currentChar = (wordEndPosBuffer.getCurrentChar(textNodes) as string).toLowerCase();
         let nextTrie = trieNode.getNodeWithChar(currentChar);
-        
         if (nextTrie === undefined) {
             // Count new nodes as spaces
             if (wordEndPosBuffer.lastAdvanceIncreasedNode) {
@@ -482,11 +486,11 @@ function searchForString(startPos: TextIndex, wordEndPosBuffer: TextIndex, textN
             encounteredWrongChar = true;
             break;
         } else {
+            trieNode = nextTrie;
             let advanceFailed: boolean = !wordEndPosBuffer.advance(textNodes);
             if (advanceFailed) {
                 break;
             }
-            trieNode = nextTrie;
         }
     }
 
@@ -496,7 +500,8 @@ function searchForString(startPos: TextIndex, wordEndPosBuffer: TextIndex, textN
     }
 
     while (!trieNode.isRoot()) {
-        let currentChar = (wordEndPosBuffer.getCurrentChar(textNodes) as string).toLocaleLowerCase();
+        let currentChar = (wordEndPosBuffer.getCurrentChar(textNodes) as string);
+        currentChar = currentChar.toLocaleLowerCase();
         let goBackFailed = false;
         if (currentChar === trieNode.char || 
             (isWhiteSpace(currentChar) && isWhiteSpace(trieNode.char))) {
@@ -518,14 +523,12 @@ function searchForString(startPos: TextIndex, wordEndPosBuffer: TextIndex, textN
                     }
 
             } else {
-                throw new Error(`Unexpected character difference: Trie: ${trieNode.char}, 
-                    Text: ${currentChar}`);
+                throw new Error(`Unexpected character difference: Trie: ${trieNode.char}, Text: ${currentChar}`);
             }
         }
 
         if (goBackFailed) {
-            throw new Error(`Failed to go back at index ${wordEndPosBuffer.charIndex} of text 
-                ${textNodes[wordEndPosBuffer.nodeIndex].textContent}`);
+            throw new Error(`Failed to go back at index ${wordEndPosBuffer.charIndex} of text ${textNodes[wordEndPosBuffer.nodeIndex].textContent}`);
         }
     }
 
