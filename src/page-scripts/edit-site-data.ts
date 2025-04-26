@@ -15,6 +15,9 @@ export const BACKGROUND_COLOR_INPUT = document
     .getElementById('bg-color') as HTMLInputElement;
 export const FONT_COLOR_INPUT = document
     .getElementById('font-color') as HTMLInputElement;
+export const HIGHLIGHT_DEMO = document
+    .getElementById('highlight-demo') as HTMLDivElement;
+
 
 const MISSING_WORDS_SECTION = document.getElementById('missing-words-section') as HTMLDivElement;
 const PRESENT_WORDS_SECTION = document.getElementById('present-words-section') as HTMLDivElement;
@@ -136,6 +139,8 @@ async function populateSiteData(url: string,
         FONT_COLOR_INPUT.value = ogFontColor; 
         FONT_COLOR_INPUT.onchange = () => 
             updateHighlightOpts(url, siteData);
+        HIGHLIGHT_DEMO.style.backgroundColor = ogBGColor;
+        HIGHLIGHT_DEMO.style.color = ogFontColor;
 }
 
 function updateHighlightOpts(url: string, siteData: SiteData): void {
@@ -145,6 +150,8 @@ function updateHighlightOpts(url: string, siteData: SiteData): void {
     };
     siteData.highlightOptions = newHighlights;
     saveSiteData(url, siteData);
+    HIGHLIGHT_DEMO.style.backgroundColor = newHighlights.backgroundColor;
+    HIGHLIGHT_DEMO.style.color = newHighlights.fontColor;
 }
 
 function saveSiteData(url: string, siteData: SiteData): void {
