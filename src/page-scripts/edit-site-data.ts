@@ -3,13 +3,13 @@ import { BSMessage, BSMessageType } from "../utils/background-script-communicati
 import { HighlightOptions, SiteData } from "../utils/models";
 
 
-const SITE_NAME_HEADER= document.getElementById('site-name-header') as HTMLElement;
-const LABELS_LIST_SECTION = document.getElementById('labels-list-section') as HTMLDivElement;
-const MISSING_WORDS_LIST_SECTION = document.getElementById('missing-words') as HTMLDivElement;
-const PRESENT_WORDS_LIST_SECTION = document.getElementById('present-words') as HTMLDivElement;
+export const SITE_NAME_HEADER= document.getElementById('site-name-header') as HTMLElement;
+export const LABELS_LIST_SECTION = document.getElementById('labels-list-section') as HTMLDivElement;
+export const MISSING_WORDS_LIST_SECTION = document.getElementById('missing-words') as HTMLDivElement;
+export const PRESENT_WORDS_LIST_SECTION = document.getElementById('present-words') as HTMLDivElement;
 
-const LABELS_SECTION = document.getElementById('labels-section') as HTMLDivElement;
-const HIGHLIGHT_COLORS_SECTION = document
+export const LABELS_SECTION = document.getElementById('labels-section') as HTMLDivElement;
+export const HIGHLIGHT_COLORS_SECTION = document
     .getElementById('highlight-colors-section') as HTMLDivElement;
 export const BACKGROUND_COLOR_INPUT = document
     .getElementById('bg-color') as HTMLInputElement;
