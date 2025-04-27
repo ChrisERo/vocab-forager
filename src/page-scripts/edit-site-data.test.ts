@@ -165,5 +165,7 @@ describe('Scripts for Editting Site Data from Settings Page', () => {
 
         expect(LABELS_SECTION.style.display).toBe('inline-block');
    });
+
+   // TODO: add unit tests for changing highlight text content
 });
 
