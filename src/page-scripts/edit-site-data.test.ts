@@ -1,5 +1,7 @@
 import { readFileSync } from 'fs';
 import { JSDOM } from "jsdom";
+import { setUpMockBrowser } from "../background-scripts/mocks/chrome";
+setUpMockBrowser();
 import { SiteData } from '../utils/models';
 
 // Assumes npm test ran from repo root
@@ -14,7 +16,7 @@ global.Range = MOCK_DOM.window.Range;
 global.DOMParser = MOCK_DOM.window.DOMParser;
 
 
-import { BACKGROUND_COLOR_INPUT, clearEditPageComponents, FONT_COLOR_INPUT, LABELS_LIST_SECTION, LABELS_SECTION, MISSING_WORDS_LIST_SECTION, PRESENT_WORDS_LIST_SECTION, setUpEditPage, SITE_NAME_HEADER } from './edit-site-data';
+import { BACKGROUND_COLOR_INPUT, clearEditPageComponents, FONT_COLOR_INPUT, HIGHLIGHT_DEMO, LABELS_LIST_SECTION, LABELS_SECTION, MISSING_WORDS_LIST_SECTION, PRESENT_WORDS_LIST_SECTION, setUpEditPage, SITE_NAME_HEADER } from './edit-site-data';
 
 describe('Scripts for Editting Site Data from Settings Page', () => {
     test('test clearEditPageComponents', async () => {
@@ -138,7 +140,7 @@ describe('Scripts for Editting Site Data from Settings Page', () => {
             },
             ['platos-argentinos']
         ],
-    ])('setUpEditPage', async (url: string, siteData: SiteData, labels: string[]) => {
+    ])('setUpEditPage %s %j %p', async (url: string, siteData: SiteData, labels: string[]) => {
         const sdp = Promise.resolve(siteData);
         const ldp = Promise.resolve(labels);
         clearEditPageComponents();
@@ -166,6 +168,85 @@ describe('Scripts for Editting Site Data from Settings Page', () => {
         expect(LABELS_SECTION.style.display).toBe('inline-block');
    });
 
-   // TODO: add unit tests for changing highlight text content
+   function rgbToHex(rgb: string): string {
+       const match = rgb.match(/\d+/g);
+       if (!match) {
+          return "#000000";
+       }
+       const colorValues = match.map(num => parseInt(num).toString(16).padStart(2, "0"));
+       return `#${colorValues[0]}${colorValues[1]}${colorValues[2]}`;
+    }
+
+   it.each([
+       [
+           '#000000',
+           '#ffff00',
+           '#000000',
+           '#ffff00',
+       ],
+       [
+           '#000000',
+           '#ffff00',
+           '#000000',
+           '#123456',
+       ],
+       [
+           '#000000',
+           '#ffff00',
+           '#123456',
+           '#ffff00',
+       ],
+       [
+           '#000000',
+           '#ffff00',
+           '#ffffff',
+           '#0000ff',
+       ],
+       [
+           '#ffffff',
+           '#0000ff',
+           '#000000',
+           '#ffff00',
+       ]
+   ])('Change highlight colors %s:%s-->%s:%s', async (ogFontColor: string, ogBgColor: string,
+                 newFontColor: string, newBgColor) => {
+        const url: string = 'https://test0.com?test=standard-content';
+        const siteData: SiteData = {
+            title: 'Basic Test Everything Filled',
+            wordEntries: [
+                {
+                    word: 'vacio',
+                    startOffset: 0,
+                    endOffset: 5,
+                    nodePath: [[0,0,0]],
+                },
+            ],
+            missingWords: ['chimichurri'],
+            highlightOptions: {
+                fontColor: ogFontColor,
+                backgroundColor: ogBgColor,
+            },
+        };
+        const labels: string[] = ['platos-argentinos']
+        const sdp = Promise.resolve(siteData);
+        const ldp = Promise.resolve(labels);
+        clearEditPageComponents();
+        await setUpEditPage(url, sdp, ldp);
+        if (newBgColor !== ogBgColor) {
+            BACKGROUND_COLOR_INPUT.value = newBgColor;
+            expect(BACKGROUND_COLOR_INPUT.onchange).not.toBeNull();
+            (BACKGROUND_COLOR_INPUT as any).onchange();
+        }
+        if (newFontColor !== ogFontColor) {
+            FONT_COLOR_INPUT.value = newFontColor;
+            expect(FONT_COLOR_INPUT.onchange).not.toBeNull();
+            (FONT_COLOR_INPUT as any).onchange();
+        }
+
+        expect(rgbToHex(HIGHLIGHT_DEMO.style.color)).toBe(newFontColor);
+        expect(rgbToHex(HIGHLIGHT_DEMO.style.backgroundColor)).toBe(newBgColor);
+        expect(siteData.highlightOptions?.fontColor).toBe(newFontColor);
+        expect(siteData.highlightOptions?.backgroundColor).toBe(newBgColor);
+   });
 });
 
