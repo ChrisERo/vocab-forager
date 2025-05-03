@@ -108,6 +108,14 @@
             display: inline-block;
             width: 175px;
         }
+        label.color-input {
+            margin-top: 5px;
+            margin-bottom: 5px;
+        }
+        input[type="color" i] {
+            width: 50px;
+            height: 20pt;
+        }
         #site-name-header {
             text-align: center;
             max-width: 32em;
@@ -162,6 +170,22 @@
             <div class="sitedata-section" id="labels-section">
                 <div class="title">Labels</div>
                 <div id="labels-list-section" class="site-data-section word-grid"></div>
+            </div>
+            <div class="sitedata-section" id="highlight-colors-section">
+                <div class="title">Highlight Settings</div>
+                <div>
+                    <div>
+                        <label class="color-input" for="bg-color">Background color:</label>
+                        <input type="color" id="bg-color" name="bg-color" value="#ff0000">
+                    </div>
+                    <div>
+                        <label class="color-input" for="font-color">Font color:</label>
+                        <input type="color" id="font-color" name="font-color" value="#ff0000">
+                    </div>
+                </div>
+                <div style="display: flex;">
+                    <p style="border:solid; margin: auto; margin-top: 20px; padding: 8px;">See <span id=highlight-demo>example highlight</span> here.</p>
+                </div>
             </div>
             <div class="sitedata-section" id="present-words-section">
                 <div class="title">Present Words</div>

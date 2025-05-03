@@ -1,14 +1,24 @@
 import { QuizManager } from "../content-scripts/quiz";
 import { BSMessage, BSMessageType } from "../utils/background-script-communication";
-import { SiteData } from "../utils/models";
+import { HighlightOptions, SiteData } from "../utils/models";
 
 
-const SITE_NAME_HEADER= document.getElementById('site-name-header') as HTMLElement;
-const LABELS_LIST_SECTION = document.getElementById('labels-list-section') as HTMLDivElement;
-const MISSING_WORDS_LIST_SECTION = document.getElementById('missing-words') as HTMLDivElement;
-const PRESENT_WORDS_LIST_SECTION = document.getElementById('present-words') as HTMLDivElement;
+export const SITE_NAME_HEADER= document.getElementById('site-name-header') as HTMLElement;
+export const LABELS_LIST_SECTION = document.getElementById('labels-list-section') as HTMLDivElement;
+export const MISSING_WORDS_LIST_SECTION = document.getElementById('missing-words') as HTMLDivElement;
+export const PRESENT_WORDS_LIST_SECTION = document.getElementById('present-words') as HTMLDivElement;
 
-const LABELS_SECTION = document.getElementById('labels-section') as HTMLDivElement;
+export const LABELS_SECTION = document.getElementById('labels-section') as HTMLDivElement;
+export const HIGHLIGHT_COLORS_SECTION = document
+    .getElementById('highlight-colors-section') as HTMLDivElement;
+export const BACKGROUND_COLOR_INPUT = document
+    .getElementById('bg-color') as HTMLInputElement;
+export const FONT_COLOR_INPUT = document
+    .getElementById('font-color') as HTMLInputElement;
+export const HIGHLIGHT_DEMO = document
+    .getElementById('highlight-demo') as HTMLDivElement;
+
+
 const MISSING_WORDS_SECTION = document.getElementById('missing-words-section') as HTMLDivElement;
 const PRESENT_WORDS_SECTION = document.getElementById('present-words-section') as HTMLDivElement;
 
@@ -17,6 +27,7 @@ export const QUIZ_BUTTON = document.getElementById('quiz-button') as HTMLElement
 
 export function setUpEditPage(url: string, siteDataPromise: Promise<SiteData>,
     labelsPromise: Promise<string[]>): void {
+        HIGHLIGHT_COLORS_SECTION.style.display = 'inline-block';
         LABELS_SECTION.style.display = 'inline-block';
         PRESENT_WORDS_SECTION.style.display = 'inline-block';
         MISSING_WORDS_SECTION.style.display = 'inline-block';
@@ -30,6 +41,7 @@ export function clearEditPageComponents(): void {
     LABELS_LIST_SECTION.innerHTML = '';
     PRESENT_WORDS_LIST_SECTION.innerHTML = '';
     MISSING_WORDS_LIST_SECTION.innerHTML = '';
+    HIGHLIGHT_COLORS_SECTION.style.display = 'none';
     LABELS_SECTION.style.display = 'none';
     PRESENT_WORDS_SECTION.style.display = 'none';
     MISSING_WORDS_SECTION.style.display = 'none';
@@ -101,19 +113,45 @@ async function populateSiteData(url: string,
 
         const missingWordEntires: string[] = siteData.missingWords;
         const presentWordEntries: string[] = siteData.wordEntries.map((w) => w.word);
-        createTextEntries(presentWordEntries, 'present-words', siteData, (sd: SiteData, i) => {
-            sd.wordEntries.splice(i, 1);
-            saveSiteData(url, sd);
+        createTextEntries(presentWordEntries, 'present-words', siteData,
+            (sd: SiteData, i) => {
+                sd.wordEntries.splice(i, 1);
+                saveSiteData(url, sd);
         });
-        createTextEntries(missingWordEntires, 'missing-words', siteData, (sd: SiteData, i) => {
-            sd.missingWords.splice(i, 1);
-            saveSiteData(url, sd);
+        createTextEntries(missingWordEntires, 'missing-words', siteData,
+            (sd: SiteData, i) => {
+                sd.missingWords.splice(i, 1);
+                saveSiteData(url, sd);
         });
 
         const quizzer = new QuizManager();
-        QUIZ_BUTTON.addEventListener('click', () => {
+        QUIZ_BUTTON.onclick = () => {
             quizzer.loadQuizHTML(siteData);
-        });
+        };
+
+        const ogBGColor = siteData.highlightOptions?.backgroundColor === undefined
+            ? '#FFFF01' : siteData.highlightOptions?.backgroundColor;
+        BACKGROUND_COLOR_INPUT.value = ogBGColor;
+        BACKGROUND_COLOR_INPUT.onchange = () =>
+            updateHighlightOpts(url, siteData);
+        const ogFontColor = siteData.highlightOptions?.fontColor=== undefined
+            ? '#000000' : siteData.highlightOptions?.fontColor;
+        FONT_COLOR_INPUT.value = ogFontColor; 
+        FONT_COLOR_INPUT.onchange = () => 
+            updateHighlightOpts(url, siteData);
+        HIGHLIGHT_DEMO.style.backgroundColor = ogBGColor;
+        HIGHLIGHT_DEMO.style.color = ogFontColor;
+}
+
+function updateHighlightOpts(url: string, siteData: SiteData): void {
+    const newHighlights: HighlightOptions = {
+        backgroundColor: BACKGROUND_COLOR_INPUT.value,
+        fontColor: FONT_COLOR_INPUT.value,
+    };
+    siteData.highlightOptions = newHighlights;
+    saveSiteData(url, siteData);
+    HIGHLIGHT_DEMO.style.backgroundColor = newHighlights.backgroundColor;
+    HIGHLIGHT_DEMO.style.color = newHighlights.fontColor;
 }
 
 function saveSiteData(url: string, siteData: SiteData): void {

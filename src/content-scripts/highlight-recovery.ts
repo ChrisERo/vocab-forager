@@ -411,7 +411,8 @@ function findMissingWords(root: Trie, textNodes: Node[], highlight: WordConsumer
             if (root.children.size === 0) {
                 return null;
             }
-            const totalNodesChange= endParent.childNodes.length - nodesOfEPPostHL;
+            const totalNodesChange = endParent.childNodes.length 
+                - nodesOfEPPostHL;
 
             // Update textNodes assumes that each highlight node always results in 3 new nodes being made to replace the one that was modified.
             // at parent level
