@@ -1,7 +1,7 @@
 import { DictionaryManager } from "./dictionary";
 import { getLocalStorage, LocalStorage, NonVolatileBrowserStorage } from "./non-volatile-browser-storage";
 import { ContextMenuManager } from "./contextmenu"
-import { BSMessageType, isLabelEntryModRequest, isAddNewDictRequest, isBsMessage, isDictsOfLangRequest, isGetDataForLabelRequest, isGetDataForPageRequest, isGetUrlsOfDomainRequest, isLoadExtensionDataRequest, isPageDataPair, isSearchRequest, isSetActivationRequest, isUpdateDictionaryRequest } from "../utils/background-script-communication";
+import { BSMessageType, isLabelEntryModRequest, isAddNewDictRequest, isBsMessage, isDictsOfLangRequest, isGetDataForLabelRequest, isGetDataForPageRequest, isGetUrlsOfDomainRequest, isLoadExtensionDataRequest, isPageDataPair, isSearchRequest, isSetActivationRequest, isUpdateDictionaryRequest, isGetDataForPageByIdRequest } from "../utils/background-script-communication";
 import { Dictionary, DictionaryIdentifier, isDictionaryID, SeeSiteData, SiteData } from "../utils/models";
 import { getIndexedDBStorage, IndexedDBStorage } from "./indexed-db-nv-storage";
 
@@ -207,6 +207,26 @@ export function makeHandler(siteDateStorage: Readonly<IndexedDBStorage>): Handle
                 }
                 break;
             }
+            case BSMessageType.GetPageDataByPK: {
+                if (isGetDataForPageByIdRequest(request.payload)) {
+                    const data: SiteData = await siteDateStorage
+                        .getPageDataById(request.payload.id);
+                    sendResponse(data);
+                } else {
+                    logUnexpected('payload', request.payload);
+                }
+                break;
+            }
+            case BSMessageType.GetPagePrimaryKey: {
+                if (isGetDataForPageRequest(request.payload)) {
+                    const pageUrl = request.payload.url;
+                    const pageId = await siteDateStorage.getPageId(pageUrl);
+                    console.log(`From the Database, I received ${pageId}`)
+                    sendResponse(pageId);
+                } else {
+                    logUnexpected('payload', request.payload);
+                }
+                break;            }
             case BSMessageType.DeletePageData: {
                 if (isGetDataForPageRequest(request.payload)) {
                     await siteDateStorage.removePageData(request.payload.url);
@@ -389,9 +409,9 @@ const listenerSetupPromise: Promise<void> =  // Promise for unittests
             indexedDBStorage = siteDataStorage;
             const asyncHandler: HandlerType = makeHandler(siteDataStorage);
             chrome.runtime.onMessage.addListener(makeRealHandler(asyncHandler));
+            contextMenuManager.setUpContextMenus(siteDataStorage);
 });
 
-const contextMenuSetup = contextMenuManager.setUpContextMenus();
 
 export const backgroundWorkerPromise: Promise<any[]> = Promise.all([
     listenerSetupPromise,

@@ -93,7 +93,7 @@ describe('IndexedDBStorage SiteDataStorage', () => {
 
         expect(internalDB).toBeInstanceOf(IDBDatabase);
         expect(internalDB).toBe(dao.getDB());
-        expect(internalDB.version).toBe(DB_VERSION);
+        expect(internalDB.version).toBe(DB_VERSION + 1);
         expect(internalDB.name).toBe(DB_NAME);
         expect(internalDB.objectStoreNames).toContain(IndexedDBStorage.SITE_DATA_TABLE);
 

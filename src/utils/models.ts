@@ -60,6 +60,7 @@ export interface SiteData {
     highlightOptions?: HighlightOptions;
     // title of website if one exists
     title?: string;
+    id?: number;
 }
 
 export function isSiteData(data: any): data is SiteData {
@@ -188,5 +189,6 @@ export function getLanguages(dc: GlobalDictionaryData): string[] {
 export interface SeeSiteData {
     url: string,
     title?: string,
+    id?: number
 }
 

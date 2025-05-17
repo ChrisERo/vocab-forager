@@ -3,7 +3,7 @@ import { CSMessageType, isCsMessage, isNewActivatedState } from "../utils/conten
 import { enforceExplicityDarkMode, enforceExplicityLightMode, isHighlightLight, SiteData, Word } from "../utils/models";
 import { HighlightsManager } from "./highlight-manager";
 import { QuizManager } from "./quiz";
-import { isHighlightElement, isHighlightNode, isTextNode, nodeToTreePath } from "./utils";
+import { isHighlightNode, isTextNode, nodeToTreePath } from "./utils";
 
 /**
  * Gets either the first or the last node under the root Node (including root itself) that
@@ -347,7 +347,7 @@ function handler(request: any): void {
             break;
         }
         case CSMessageType.ChangeHighlightStyle: {
-            let highlightOptions  = highlightManager.getStyleOptions();
+            let highlightOptions = highlightManager.getStyleOptions();
             if (isHighlightLight(highlightOptions)) {
                 highlightOptions = enforceExplicityDarkMode(highlightOptions);
             } else {

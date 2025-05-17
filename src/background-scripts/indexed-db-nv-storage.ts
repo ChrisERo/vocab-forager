@@ -1,10 +1,11 @@
+import { PRESENT_WORDS_LIST_SECTION } from "../page-scripts/edit-site-data";
 import { GlobalDictionaryData, isEmpty, isSiteData, SeeSiteData, SiteData } from "../utils/models";
 import { combineUrl, parseURL } from "../utils/utils";
 import { LocalStorage, NonVolatileBrowserStorage } from "./non-volatile-browser-storage";
 
 
 export const DB_NAME = 'vocab-forager';
-export const DB_VERSION = 2;
+export const DB_VERSION = 3;  // Next DB_VERSION must be 6
 
 export const MAX_LABEL_LENGTH = 64;
 
@@ -34,19 +35,41 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
     // name of table to use
     public static readonly SITE_DATA_TABLE = 'site-data';
     public static readonly LABEL_TABLE = 'label-data';
+    public static readonly TEMP_TABLE = 'TEMP';
+
+    private static readonly POST_UPGRADE_ACTIONS: ((db: IDBDatabase) => Promise<void>)[] = [];  // list of actions to perform after updates
     // index  mapping database version to transform function to move from previous version of table to said table
-    private static readonly TRANSFORMS = [
-        () => {console.error("SHOULD NOT BE HERE");}, // noop
+    private static readonly ON_UPGRADE_CALLBACKS = [
+        () => {console.error("SHOULD NOT BE HERE"); return false;}, // noop
         IndexedDBStorage.v1Creation,
-        IndexedDBStorage.addSubjectTable
+        IndexedDBStorage.addSubjectTable,
+        IndexedDBStorage.copySiteDataIntoTemp,
+        IndexedDBStorage.recreateSiteDataObjectStore,
+        IndexedDBStorage.deleteTempTable
     ];
 
+    private setUpComplete:boolean = false;
     private db: IDBDatabase | null = null;  // database connection object
     private dbPromise: Promise<IDBDatabase> | null = null;
 
-    setUp(oldStorage?: LocalStorage): Promise<IDBDatabase> {
+    public getSetUpComplete(): boolean {
+        return this.setUpComplete;
+    }
+
+    setUp(oldStorage?: LocalStorage, dbVersion: number = DB_VERSION): Promise<IDBDatabase> {
+        if (this.setUpComplete && this.dbPromise != null) {
+            // setUpComplete --> this.dbPromise is set.
+            console.warn('Invoked setUp on IndexedDBStorage when it was already set up');
+            return this.dbPromise;
+        }
+        if (this.db != null) {
+            this.db.close();
+        }
+
+        let haltedUpdatesPrematurely = false;
         this.dbPromise = new Promise<IDBDatabase>((resolve, reject) => {
-            const openRequest = indexedDB.open(DB_NAME, DB_VERSION);
+            console.log(`Trying out version ${dbVersion}`)
+            const openRequest = indexedDB.open(DB_NAME, dbVersion);
             openRequest.onerror = function (event) {
               reject("Problem opening DB: " + event);
             };
@@ -59,13 +82,30 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
                 // Only perform transformations asociated with newer versions (older transforms not needed)
                 for (let i = Math.max(0, event.oldVersion) + 1; i <= event.newVersion; i++) {
                     console.log(`Performing IndexedDB Transform ${i}`);
-                    const func = IndexedDBStorage.TRANSFORMS[i];
-                    func(db);  // Will likely need changing for future, but fine for now
+                    const func = IndexedDBStorage.ON_UPGRADE_CALLBACKS[i];
+                    const shouldStop: boolean = func(db);
+                    if (shouldStop) {
+                        haltedUpdatesPrematurely = true;
+                        break;
+                    }
                 }
 
             };
             openRequest.onsuccess = async (event: any) => {
                 this.db = event.target.result as IDBDatabase;
+                while (IndexedDBStorage.POST_UPGRADE_ACTIONS.length > 0) {
+                    // only remove action after it has completed successfully
+                    const action = IndexedDBStorage.POST_UPGRADE_ACTIONS[0];
+                    await action(this.db);
+                    IndexedDBStorage.POST_UPGRADE_ACTIONS.shift();
+                }
+
+                if (haltedUpdatesPrematurely) {
+                    console.log("Halted updates prematurely");
+                    resolve(this.db);  // TODO: not sure what to return here.
+                    return;
+                }
+
                 console.log('this.db set');
                 if (shouldPullSiteDataFromLS && oldStorage !== undefined) {
                     // Use fact that localStorage mimics upload/download data format
@@ -80,12 +120,70 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
                         oldStorage.removePageData(oldUrls[i]);
                     }
                 }
-
+                this.setUpComplete = true;
                 resolve(this.db);
             };
         });
 
         return this.dbPromise;
+    }
+
+    getPageId(url: string): Promise<number | null> {
+        const query = (db: IDBDatabase): Promise<number | null> => {
+            const urlList = parseURL(url);
+            const schemeAndHost: string = urlList[0];
+            const urlPath: string = urlList[1];
+
+            const getTransaction = db.transaction(IndexedDBStorage.SITE_DATA_TABLE, "readonly");
+            const objectStore = getTransaction.objectStore(IndexedDBStorage.SITE_DATA_TABLE);
+            const osIndex = objectStore.index('url');
+
+            return new Promise((resolve) => {
+                const getRequest = osIndex.getKey([schemeAndHost, urlPath]);
+                getRequest.onerror = (ex) =>  {
+                    console.error(`Failed to get site data ID: ${ex}`)
+                    resolve(null);
+                };
+                getRequest.onsuccess = (event: any) => {
+                    console.log("GOT DATA");
+                    console.log(event)
+                    let result = event.target.result as (number | null | undefined);
+                    if (result === undefined) {
+                        result = null;
+                    }
+
+                    resolve(result);
+                };
+            });
+        };
+
+        return this.runQuery(query);
+    }
+
+    getPageDataById(id: number): Promise<SiteData> {
+        const query = (db: IDBDatabase): Promise<SiteData> => {
+            const getTransaction = db.transaction(IndexedDBStorage.SITE_DATA_TABLE, "readonly");
+            const objectStore = getTransaction.objectStore(IndexedDBStorage.SITE_DATA_TABLE);
+            return new Promise((resolve) => {
+                const getRequest = objectStore.get(id);
+                getRequest.onerror = (ex) =>  {
+                    console.error(`Failed to get site data: ${ex}`)
+                };
+                getRequest.onsuccess = (event: any) => {
+                    let siteData: SiteData | undefined = event.target.result as (SiteData | undefined)
+                    if (siteData === undefined) {
+                        siteData = {
+                            wordEntries: [],
+                            missingWords: [],
+                        };
+                    }
+
+                    resolve(siteData);
+                };
+            });
+        };
+
+        return this.runQuery(query);
     }
 
     getPageData(url: string): Promise<SiteData> {
@@ -137,14 +235,29 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
             return new Promise((resolve, reject) => {
                 const writeTransaction = db.transaction(IndexedDBStorage.SITE_DATA_TABLE, "readwrite");
                 const objectStore = writeTransaction.objectStore(IndexedDBStorage.SITE_DATA_TABLE);
-
-                let request = objectStore.put(siteDataToStore, [siteDataToStore.schemeAndHost, siteDataToStore.urlPath]);
-                request.onerror = (err) => {
-                    reject(`Unexpected error when saving ${url} ` + err);
+                const osIndex = objectStore.index('url');
+                const urlList = parseURL(url);
+                const schemeAndHost: string = urlList[0];
+                const urlPath: string = urlList[1];
+                const searchForEntry = osIndex.get([schemeAndHost, urlPath]);
+                searchForEntry.onerror = (err) => {
+                    console.error(err);
+                    reject(`Unexpected error when saving ${url} | ${err}`);
                 };
-                request.onsuccess = () => {
-                    resolve();
-                };
+                searchForEntry.onsuccess = (event: any) => {
+                    const result = event.target.result as IDBSiteData | undefined;
+                    if (result !== undefined) {
+                        siteDataToStore.id = result.id;
+                    }
+                    const request = objectStore.put(siteDataToStore);  // TODO: figure out why SiteData does not have id and 
+                    request.onerror = (err) => {
+                        console.error(err);
+                        reject(`Unexpected error when saving ${url} | ${err}`);
+                    };
+                    request.onsuccess = () => {
+                        resolve();
+                    };
+                }; 
             });
         };
 
@@ -535,7 +648,7 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
                                         labelObjectStore.put(labelDataEntry);
                                     }
                                 }
-                                siteDataObjectStore.put(elementToStore, [elementToStore.schemeAndHost, elementToStore.urlPath]);
+                                siteDataObjectStore.put(elementToStore);
                             }
                         }
                     }
@@ -592,7 +705,7 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
      *
      * @param db database connection object with which to create object stores
      */
-    private static v1Creation(db: IDBDatabase): void {
+    private static v1Creation(db: IDBDatabase): boolean {
         console.log('Adding siteData table');
         // Create an objectStore for this database
         const objectStore = db.createObjectStore(IndexedDBStorage.SITE_DATA_TABLE, { autoIncrement: true });
@@ -600,6 +713,7 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
         // define what data items the objectStore will contain
         objectStore.createIndex('url', ['schemeAndHost', 'urlPath'], { unique: true });
         objectStore.createIndex('schemeAndHost', 'schemeAndHost', { unique: false });
+        return false;
     }
 
     /**
@@ -608,13 +722,87 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
      *
      * @param db database connection object with which to create object stores
      */
-    private static addSubjectTable(db: IDBDatabase): void {
+    private static addSubjectTable(db: IDBDatabase): boolean {
         console.log('Adding label table');
         const objectStore = db.createObjectStore(IndexedDBStorage.LABEL_TABLE,
             { keyPath: ['label', 'schemeAndHost', 'urlPath'] }
         );
         objectStore.createIndex('url', ['schemeAndHost', 'urlPath'], { unique: false });
         objectStore.createIndex('label', 'label', { unique: false });
+        return false;
+    }
+
+    private static copySiteDataIntoTemp(db: IDBDatabase): boolean {
+        console.log("Starting Process of Adding KEY to site data table")
+        db.createObjectStore(
+            IndexedDBStorage.TEMP_TABLE , 
+            {autoIncrement: true, keyPath: 'id'}
+        );
+        IndexedDBStorage.POST_UPGRADE_ACTIONS.push(async (db: IDBDatabase) => {
+            await IndexedDBStorage.copyDatabaseContents(
+                db,
+                IndexedDBStorage.SITE_DATA_TABLE,
+                IndexedDBStorage.TEMP_TABLE
+            ); 
+            return;
+        });
+        return true;
+    }
+
+    private static recreateSiteDataObjectStore(db: IDBDatabase): boolean {
+        console.log("DELETEING OLD TABLE")
+        db.deleteObjectStore(IndexedDBStorage.SITE_DATA_TABLE);
+        console.log("DELETION COMPLETE")
+
+        console.log("Recreating SiteData Object Store");
+        const newStore = db.createObjectStore(
+                IndexedDBStorage.SITE_DATA_TABLE,
+                { keyPath: 'id', autoIncrement: true }
+        );
+        newStore.createIndex('url', ['schemeAndHost', 'urlPath'], { unique: true });
+        newStore.createIndex('schemeAndHost', 'schemeAndHost', { unique: false });
+        IndexedDBStorage.POST_UPGRADE_ACTIONS.push(async (db: IDBDatabase) => {
+            await IndexedDBStorage.copyDatabaseContents(
+                db,
+                IndexedDBStorage.TEMP_TABLE,
+                IndexedDBStorage.SITE_DATA_TABLE,
+            ); 
+            return;
+        });
+        return true;
+    }
+
+    private static deleteTempTable(db: IDBDatabase): boolean {
+        console.log("DELETEING TEMP TABLE")
+        db.deleteObjectStore(IndexedDBStorage.TEMP_TABLE);
+        console.log("DELETION COMPLETE");
+        return false;
+    }
+
+    private static copyDatabaseContents(db: IDBDatabase,
+                                        sourceStoreName: string, 
+                                        destStoreName: string): Promise<void> {
+        return new Promise<void>((resolve, _) => {
+            console.log(`COPYING DATA FROM ${sourceStoreName} to ${destStoreName}`);
+            const transaction = db.transaction(
+                [sourceStoreName, destStoreName],
+                "readwrite"
+            );
+            const sourceStore = transaction.objectStore(sourceStoreName);
+            const destStore= transaction.objectStore(destStoreName);
+            sourceStore.openCursor().onsuccess = (event: Event) => {
+                const cursor = (event.target as IDBRequest).result;
+                if (cursor) {
+                    const data = cursor.value;
+                    destStore.put(data);
+                    cursor.continue();
+                } else {
+                    console.log(`COMPLETED COPY ${sourceStoreName} -> ${destStoreName}`);
+                    resolve();
+                    return;
+                }
+            };
+        });
     }
 }
 
@@ -626,7 +814,14 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
  * @returns IndexedDBStorage that will eventually complete calling its set up function
  */
  export async function getIndexedDBStorage(ls?: LocalStorage): Promise<IndexedDBStorage> {
-    const nonVolatileStorage =  new IndexedDBStorage();
-    await nonVolatileStorage.setUp(ls);
+    console.log(`starting setup`);
+    const nonVolatileStorage = new IndexedDBStorage();
+    let dbVersion = DB_VERSION;
+    while (!nonVolatileStorage.getSetUpComplete()) {
+        await nonVolatileStorage.setUp(ls, dbVersion);
+        ++dbVersion;
+    }
+    --dbVersion;  // to counteract last update
+    console.log(`FINSIHED with Version ${dbVersion}`);
     return nonVolatileStorage;
 }

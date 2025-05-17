@@ -28,7 +28,9 @@ export enum BSMessageType {
     GetURLsForLabel,
     AddLabelEntry,
     RemoveLabelEntry,
-    GetAllLabels
+    GetAllLabels,
+    GetPagePrimaryKey,
+    GetPageDataByPK,
 }
 
 /**
@@ -142,11 +144,26 @@ export interface DictsOfLangRequest {
 }
 
 /**
+ * Request to get data for particular page
+ */
+ export interface GetDataForPageById {
+    id: number;
+}
+
+/**
  * Returns true if and only if object provided is a GetDataForPage
  */
  export function isGetDataForPageRequest(mssg: any): mssg is GetDataForPage {
     let temp = mssg as GetDataForPage;
     return temp != null && temp.url !== undefined;
+}
+
+/**
+ * Returns true if and only if object provided is a GetDataForPageById
+ */
+ export function isGetDataForPageByIdRequest(mssg: any): mssg is GetDataForPageById{
+    let temp = mssg as GetDataForPageById;
+    return temp != null && temp.id!== undefined;
 }
 
 /**

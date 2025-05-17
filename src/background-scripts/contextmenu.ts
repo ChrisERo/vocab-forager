@@ -1,4 +1,6 @@
+import { BSMessage, BSMessageType } from "../utils/background-script-communication";
 import { CSMessage, CSMessageType } from "../utils/content-script-communication";
+import { IndexedDBStorage } from "./indexed-db-nv-storage";
 import { NonVolatileBrowserStorage } from "./non-volatile-browser-storage";
 
 
@@ -28,7 +30,7 @@ export class ContextMenuManager {
      * for usage with their intial configurations; also sets up the context menu listeners.
      * Future calls will be noops.
      */
-    async setUpContextMenus(): Promise<void> {
+    async setUpContextMenus(siteDataStorage?: IndexedDBStorage): Promise<void> {
         if (this.setUpCMsCalled) {
             console.warn("setUpContextMenus called again");
             return;
@@ -37,7 +39,7 @@ export class ContextMenuManager {
         this.setUpCMsCalled = true;
         const isActivated = await this.storage.getCurrentActivation();
         this.setUpContextMenuGraphicalComponents(isActivated);
-        this.setUpContextMenuListeners();
+        this.setUpContextMenuListeners(siteDataStorage);
         return;
     }
 
@@ -112,8 +114,8 @@ export class ContextMenuManager {
     /**
      * Instantiates context menu listeners
      */
-    private setUpContextMenuListeners(): void {
-        chrome.contextMenus.onClicked.addListener((info, tab): Promise<void> => {
+    private setUpContextMenuListeners(siteDataStorage?: IndexedDBStorage): void {
+        chrome.contextMenus.onClicked.addListener((info: any, tab: chrome.tabs.Tab | undefined): Promise<void> => {
             switch(info.menuItemId) {
                 case ContextMenuManager.activationID: {
                     return new Promise<void>(async (resolve) => {
@@ -154,11 +156,27 @@ export class ContextMenuManager {
                     );
                 }
                 case ContextMenuManager.changeHighlightStylingID: {
-                    return this.specificTabSend(
-                        tab,
-                        CSMessageType.ChangeHighlightStyle,
-                        'highlight change triggered without active tab'
-                    );
+                    const urlIn: string | undefined = tab?.url;
+                    if (urlIn === undefined) {
+                        console.error(`URL of tab ${tab?.index} is undefined`);
+                        return Promise.resolve();
+                    }
+
+                    console.log(`Requesting PK of ${urlIn}`);
+                    if (siteDataStorage === undefined) {
+                        console.log("Failed to execute since undefined");
+                        return Promise.resolve();
+                    }
+                    return siteDataStorage.getPageId(urlIn).then((response: any) => {
+                        console.log(`Behold, the PK of ${urlIn}:\n${response}`);
+                    });
+                        
+
+                    //return this.specificTabSend(
+                    //    tab,
+                    //    CSMessageType.ChangeHighlightStyle,
+                    //    'highlight change triggered without active tab'
+                    //);
                 }
                 default: {
                     console.error(`unexpected menu item ${info.menuItemId}`)
@@ -195,5 +213,4 @@ export class ContextMenuManager {
             title,
         });
     }
-
 }
