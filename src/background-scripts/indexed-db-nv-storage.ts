@@ -1,4 +1,3 @@
-import { PRESENT_WORDS_LIST_SECTION } from "../page-scripts/edit-site-data";
 import { GlobalDictionaryData, isEmpty, isSiteData, SeeSiteData, SiteData } from "../utils/models";
 import { combineUrl, parseURL } from "../utils/utils";
 import { LocalStorage, NonVolatileBrowserStorage } from "./non-volatile-browser-storage";
@@ -37,7 +36,11 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
     public static readonly LABEL_TABLE = 'label-data';
     public static readonly TEMP_TABLE = 'TEMP';
 
-    private static readonly POST_UPGRADE_ACTIONS: ((db: IDBDatabase) => Promise<void>)[] = [];  // list of actions to perform after updates
+    // list of actions to perform after IDBDatabase has been requested successfully
+    //     added to mostly by actions in ON_UPGRADE_CALLBACKS
+    //     elements are removed after they are completed.
+    private static readonly POST_UPGRADE_ACTIONS: ((db: IDBDatabase) => Promise<void>)[] = [];
+
     // index  mapping database version to transform function to move from previous version of table to said table
     private static readonly ON_UPGRADE_CALLBACKS = [
         () => {console.error("SHOULD NOT BE HERE"); return false;}, // noop
@@ -48,31 +51,35 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
         IndexedDBStorage.deleteTempTable
     ];
 
-    private setUpComplete:boolean = false;
+    // boolean flag indicating whether the setUp command has been fully ran to completion .
+    //     This means that all required database upgrade action have been executed.
+    //     This mostly reffers to action within ON_UPGRADE_CALLBACKS, unless
+    //     updating from DB_VERSION 0.
+    private setUpFullyDone:boolean = false;
+
     private db: IDBDatabase | null = null;  // database connection object
     private dbPromise: Promise<IDBDatabase> | null = null;
 
-    public getSetUpComplete(): boolean {
-        return this.setUpComplete;
+    public getSetUpFullyDone(): boolean {
+        return this.setUpFullyDone;
     }
 
     setUp(oldStorage?: LocalStorage, dbVersion: number = DB_VERSION): Promise<IDBDatabase> {
-        if (this.setUpComplete && this.dbPromise != null) {
+        if (this.setUpFullyDone && this.dbPromise != null) {
             // setUpComplete --> this.dbPromise is set.
             console.warn('Invoked setUp on IndexedDBStorage when it was already set up');
             return this.dbPromise;
         }
-        if (this.db != null) {
+        if (this.db != null) {  // needed so that new version of database can be requested
             this.db.close();
         }
 
-        let haltedUpdatesPrematurely = false;
         this.dbPromise = new Promise<IDBDatabase>((resolve, reject) => {
-            console.log(`Trying out version ${dbVersion}`)
             const openRequest = indexedDB.open(DB_NAME, dbVersion);
             openRequest.onerror = function (event) {
               reject("Problem opening DB: " + event);
             };
+            let haltedUpdatesPrematurely = false;
             let shouldPullSiteDataFromLS: boolean = false;
             openRequest.onupgradeneeded = (event: any) => {
                 console.log(`Upgrading ${DB_NAME} to ${event.newVersion} from ${event.oldVersion}`);
@@ -120,7 +127,7 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
                         oldStorage.removePageData(oldUrls[i]);
                     }
                 }
-                this.setUpComplete = true;
+                this.setUpFullyDone = true;
                 resolve(this.db);
             };
         });
@@ -145,7 +152,6 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
                     resolve(null);
                 };
                 getRequest.onsuccess = (event: any) => {
-                    console.log("GOT DATA");
                     console.log(event)
                     let result = event.target.result as (number | null | undefined);
                     if (result === undefined) {
@@ -235,6 +241,8 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
             return new Promise((resolve, reject) => {
                 const writeTransaction = db.transaction(IndexedDBStorage.SITE_DATA_TABLE, "readwrite");
                 const objectStore = writeTransaction.objectStore(IndexedDBStorage.SITE_DATA_TABLE);
+                // URL check before storeing object is more full proof
+                //   (though we can change this in future PR)
                 const osIndex = objectStore.index('url');
                 const urlList = parseURL(url);
                 const schemeAndHost: string = urlList[0];
@@ -249,7 +257,7 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
                     if (result !== undefined) {
                         siteDataToStore.id = result.id;
                     }
-                    const request = objectStore.put(siteDataToStore);  // TODO: figure out why SiteData does not have id and 
+                    const request = objectStore.put(siteDataToStore);
                     request.onerror = (err) => {
                         console.error(err);
                         reject(`Unexpected error when saving ${url} | ${err}`);
@@ -817,7 +825,7 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
     console.log(`starting setup`);
     const nonVolatileStorage = new IndexedDBStorage();
     let dbVersion = DB_VERSION;
-    while (!nonVolatileStorage.getSetUpComplete()) {
+    while (!nonVolatileStorage.getSetUpFullyDone()) {
         await nonVolatileStorage.setUp(ls, dbVersion);
         ++dbVersion;
     }
