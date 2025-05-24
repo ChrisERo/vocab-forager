@@ -1,4 +1,3 @@
-import { BSMessage, BSMessageType } from "../utils/background-script-communication";
 import { CSMessage, CSMessageType } from "../utils/content-script-communication";
 import { IndexedDBStorage } from "./indexed-db-nv-storage";
 import { NonVolatileBrowserStorage } from "./non-volatile-browser-storage";

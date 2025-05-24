@@ -5,7 +5,7 @@ import "./dictionary";
 import { setUpMockBrowser } from "./mocks/chrome";
 import { BSMessage, BSMessageType } from "../utils/background-script-communication";
 import { Dictionary, DictionaryIdentifier, SiteData } from "../utils/models";
-import { HandlerType, backgroundWorkerPromise, browserStorage, contextMenuManager, dictionaryManager, indexedDBStorage, makeHandler} from "./background";
+import { HandlerType, backgroundWorkerPromise, browserStorage, contextMenuManager, dictionaryManager, indexedDBStorage, listenerSetupPromise, makeHandler} from "./background";
 
 jest.mock("./contextmenu");
 jest.mock("./dictionary");
@@ -105,6 +105,7 @@ describe('Testing Service Worker', () => {
     });
 
     test('initial setup is correct', async () => {
+        await listenerSetupPromise;
         expect(contextMenuManager.setUpContextMenus).toHaveBeenCalledTimes(1);
 
         // Test that listener was indeed registered

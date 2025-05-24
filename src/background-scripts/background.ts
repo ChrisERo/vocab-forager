@@ -403,7 +403,7 @@ function makeRealHandler(handler: HandlerType) {
 }
 
 export let indexedDBStorage: IndexedDBStorage;  // exposed for test usage;
-const listenerSetupPromise: Promise<void> =  // Promise for unittests
+export const listenerSetupPromise: Promise<void> =  // Promise for unittests
     getIndexedDBStorage(browserStorage)
         .then((siteDataStorage: IndexedDBStorage) => {
             indexedDBStorage = siteDataStorage;
