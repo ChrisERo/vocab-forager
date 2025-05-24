@@ -32,7 +32,7 @@ describe('Contextmenu Tests', () => {
                 "separator-1",
                 ContextMenuManager.quizID,
                 "separator-2",
-                ContextMenuManager.changeHighlightStylingID,
+                ContextMenuManager.goToSiteDataPageID,
                 "separator-3",
                 ContextMenuManager.deleteHighlightsID
             ];
@@ -121,9 +121,9 @@ describe('Contextmenu Tests', () => {
        [false, ContextMenuManager.deleteHighlightsID, undefined, false, null],
        [false, ContextMenuManager.deleteHighlightsID, {id: 1}, true, {1: [{messageType: CSMessageType.DeleteChosenHighlight}]}],
        [false, ContextMenuManager.deleteHighlightsID, {id: 0}, true, {0: [{messageType: CSMessageType.DeleteChosenHighlight}]}],
-       [false, ContextMenuManager.changeHighlightStylingID, undefined, false, null],
-       [false, ContextMenuManager.changeHighlightStylingID, {id: 1}, true, {1: [{messageType: CSMessageType.ChangeHighlightStyle}]}],
-       [false, ContextMenuManager.changeHighlightStylingID, {id: 0}, true, {0: [{messageType: CSMessageType.ChangeHighlightStyle}]}],
+       [false, ContextMenuManager.goToSiteDataPageID, undefined, false, {}],
+       [false, ContextMenuManager.goToSiteDataPageID, {id: 1}, true, {}],
+       [false, ContextMenuManager.goToSiteDataPageID, {id: 0}, true, {}],
        [false, 'fakeCMId', undefined, false, null],
        [false, 'fakeCMId', {id: 0}, false, null],
        [false, ContextMenuManager.activationID, undefined, true, {

@@ -1,6 +1,6 @@
 import { BSMessage, BSMessageType } from "../utils/background-script-communication";
 import { CSMessageType, isCsMessage, isNewActivatedState } from "../utils/content-script-communication";
-import { enforceExplicityDarkMode, enforceExplicityLightMode, isHighlightLight, SiteData, Word } from "../utils/models";
+import { isHighlightLight, SiteData, Word } from "../utils/models";
 import { HighlightsManager } from "./highlight-manager";
 import { QuizManager } from "./quiz";
 import { isHighlightNode, isTextNode, nodeToTreePath } from "./utils";
@@ -344,18 +344,6 @@ function handler(request: any): void {
                 missingWords: missingWords
             };
             quizManager.loadQuizHTML(data);
-            break;
-        }
-        case CSMessageType.ChangeHighlightStyle: {
-            let highlightOptions = highlightManager.getStyleOptions();
-            if (isHighlightLight(highlightOptions)) {
-                highlightOptions = enforceExplicityDarkMode(highlightOptions);
-            } else {
-                highlightOptions = enforceExplicityLightMode(highlightOptions);
-            }
-            highlightManager.setStyleOptions(highlightOptions);
-            highlightManager.applyHighlightStyle();
-            saveData(highlightManager, missingWords);
             break;
         }
         default: {

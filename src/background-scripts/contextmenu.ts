@@ -7,13 +7,13 @@ export class ContextMenuManager {
     static readonly activationID = 'activation';
     static readonly quizID = 'quiz';
     static readonly deleteHighlightsID = "delete_highlight";
-    static readonly changeHighlightStylingID = 'highlight-style';
+    static readonly goToSiteDataPageID = 'site-data-page';
 
     static readonly activateActivationCMTitle = '🟢   Activate';
     static readonly deactivateActivationCMTitle = '🔴  Deactivate';
     static readonly quizCMTitle = "🧠  Quiz";
     static readonly deleteHighlightCMTitle = '❌  Delete Highlighted Text';
-    static readonly changeHighlightStyleingTitle = '🖌 Change Highlight Style';
+    static readonly goToSitePageTitle = '🕮 Go to site data page';
 
     setUpCMsCalled: boolean;  // true iff context menus have already been set up
     storage: NonVolatileBrowserStorage;
@@ -71,8 +71,8 @@ export class ContextMenuManager {
             contexts: ["all"]
           });
           chrome.contextMenus.create({
-            id: ContextMenuManager.changeHighlightStylingID,
-            title: ContextMenuManager.changeHighlightStyleingTitle,
+            id: ContextMenuManager.goToSiteDataPageID,
+            title: ContextMenuManager.goToSitePageTitle,
             contexts: ["all"],
           });
           chrome.contextMenus.create({
@@ -154,7 +154,7 @@ export class ContextMenuManager {
                         'quiz triggered without active tab'
                     );
                 }
-                case ContextMenuManager.changeHighlightStylingID: {
+                case ContextMenuManager.goToSiteDataPageID: {
                     const urlIn: string | undefined = tab?.url;
                     if (urlIn === undefined) {
                         console.error(`URL of tab ${tab?.index} is undefined`);
@@ -173,13 +173,6 @@ export class ContextMenuManager {
                         const url = `web_pages/see-sites.html?pageId=${response}`;
                         chrome.tabs.create({ url });
                     });
-                        
-
-                    //return this.specificTabSend(
-                    //    tab,
-                    //    CSMessageType.ChangeHighlightStyle,
-                    //    'highlight change triggered without active tab'
-                    //);
                 }
                 default: {
                     console.error(`unexpected menu item ${info.menuItemId}`)
