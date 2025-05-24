@@ -2,6 +2,8 @@ import { BSMessage, BSMessageType } from "../utils/background-script-communicati
 import { SeeSiteData, SiteData } from "../utils/models";
 import { loadBannerHtml } from "./fetch-banner";
 import {clearEditPageComponents, setUpEditPage as setUpEditPageMode} from "./edit-site-data";
+import { IDBSiteData } from "../background-scripts/indexed-db-nv-storage";
+import { combineUrl } from "../utils/utils";
 
 const ERROR_MESSAGE = document.getElementById('error-message') as HTMLElement
 
@@ -138,6 +140,69 @@ function getSpecificGroupingClass(messageType: BSMessageType, listElement: HTMLD
 
 }
 
+function extractPageId(): number | null {
+    const url = new URL(window.location.href);
+    const search: URLSearchParams = url.searchParams;
+    const pageId = search.get('pageId');
+    if (pageId === null) {
+        return null;
+    } else {
+        const pageIdNum = parseInt(pageId);
+        if (isNaN(pageIdNum)) {
+            return null;
+        } else {
+            return pageIdNum;
+        }
+    }
+}
+
+function setUpSiteDataPage(url: string, pageData: Promise<SiteData>, 
+                           labelData: Promise<string[]>): void {
+    // Disable buttons from search sites as move towards specific site page
+    DELETE_BUTTON.style.display = 'none';
+    REFRESH_PAGE_BUTTON.style.display = 'none';
+    MODIFY_SITE_DATA_BUTTON.style.display = 'none';
+    (document.getElementById('list-of-urls') as HTMLElement).innerHTML = '';
+
+    REFRESH_PAGE_BUTTON.style.display = 'inline-block';
+    setUpEditPageMode(url, pageData, labelData);
+
+}
+
+function initEditPage(): Promise<boolean> {
+    return new Promise((resolve) => {
+        const pageId = extractPageId();
+        if (pageId === null) {
+            clearEditPageComponents();
+            resolve(false);
+            return;
+        }
+        const request: BSMessage = {
+            messageType: BSMessageType.GetPageDataByPK,
+            payload: {
+                id: pageId
+            }
+        };
+        chrome.runtime.sendMessage(request, (data: IDBSiteData | null) => {
+            if (data === null) {
+                console.warn('Failed to find site data for pageId: ' + pageId);
+                resolve(false);
+                return;
+            }
+            const url = combineUrl(data.schemeAndHost, data.urlPath);
+            const request = {
+                messageType: BSMessageType.GetLabelsForSite,
+                payload: {
+                    url: url
+                }
+            };
+            const labelDataPromise: Promise<string[]> = chrome.runtime.sendMessage(request);
+            const pageDataPromsie: Promise<SiteData> = Promise.resolve(data);
+            setUpSiteDataPage(url, pageDataPromsie, labelDataPromise);
+        });
+    }); 
+}
+
 function setUpPageInit() {
     DOMAIN_INPUT_SECTION.style.display = 'inline-block';
     LABEL_INPUT_SECTION.style.display = 'inline-block';
@@ -148,10 +213,13 @@ function setUpPageInit() {
     DELETE_BUTTON.style.display = 'none';
     REFRESH_PAGE_BUTTON.style.display = 'none';
     MODIFY_SITE_DATA_BUTTON.style.display = 'none';
-    clearEditPageComponents();
 
-    getSpecificGroupingClass(BSMessageType.GetAllDomains, DOMAIN_LIST_ELEMENT);
-    getSpecificGroupingClass(BSMessageType.GetAllLabels, LABEL_LIST_ELEMENT);
+    initEditPage().then(editPageSet => {
+        if (!editPageSet) {
+            getSpecificGroupingClass(BSMessageType.GetAllDomains, DOMAIN_LIST_ELEMENT);
+            getSpecificGroupingClass(BSMessageType.GetAllLabels, LABEL_LIST_ELEMENT);
+        }
+     });
 }
 
 
@@ -216,15 +284,7 @@ MODIFY_SITE_DATA_BUTTON.addEventListener('click', () => {
     const pageData: Promise<SiteData> = chrome.runtime.sendMessage(request);
     request.messageType = BSMessageType.GetLabelsForSite;
     const labelData: Promise<string[]> = chrome.runtime.sendMessage(request);
-
-    // Disable buttons from search sites as move towards specific site page
-    DELETE_BUTTON.style.display = 'none';
-    REFRESH_PAGE_BUTTON.style.display = 'none';
-    MODIFY_SITE_DATA_BUTTON.style.display = 'none';
-    (document.getElementById('list-of-urls') as HTMLElement).innerHTML = '';
-
-    REFRESH_PAGE_BUTTON.style.display = 'inline-block';
-    setUpEditPageMode(url, pageData, labelData);
+    setUpSiteDataPage(url, pageData, labelData);
 })
 
 // Delete all urls that were checked by user from non-volatile storage

@@ -189,6 +189,6 @@ export function getLanguages(dc: GlobalDictionaryData): string[] {
 export interface SeeSiteData {
     url: string,
     title?: string,
-    id?: number
+    id?: number  // TODO: I think this should be removed
 }
 

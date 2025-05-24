@@ -169,8 +169,8 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
         return this.runQuery(query);
     }
 
-    getPageDataById(id: number): Promise<SiteData> {
-        const query = (db: IDBDatabase): Promise<SiteData> => {
+    getPageDataById(id: number): Promise<IDBSiteData | null> {
+        const query = (db: IDBDatabase): Promise<IDBSiteData> => {
             const getTransaction = db.transaction(IndexedDBStorage.SITE_DATA_TABLE, "readonly");
             const objectStore = getTransaction.objectStore(IndexedDBStorage.SITE_DATA_TABLE);
             return new Promise((resolve) => {
@@ -179,14 +179,11 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
                     console.error(`Failed to get site data: ${ex}`)
                 };
                 getRequest.onsuccess = (event: any) => {
-                    let siteData: SiteData | undefined = event.target.result as (SiteData | undefined)
+                    let siteData: IDBSiteData | undefined =
+                        event.target.result as (IDBSiteData | undefined);
                     if (siteData === undefined) {
-                        siteData = {
-                            wordEntries: [],
-                            missingWords: [],
-                        };
+                        return null;
                     }
-
                     resolve(siteData);
                 };
             });

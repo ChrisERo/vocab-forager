@@ -160,14 +160,18 @@ export class ContextMenuManager {
                         console.error(`URL of tab ${tab?.index} is undefined`);
                         return Promise.resolve();
                     }
-
-                    console.log(`Requesting PK of ${urlIn}`);
                     if (siteDataStorage === undefined) {
-                        console.log("Failed to execute since undefined");
+                        console.log('No access to siteData persistent storage');
                         return Promise.resolve();
                     }
+
                     return siteDataStorage.getPageId(urlIn).then((response: any) => {
-                        console.log(`Behold, the PK of ${urlIn}:\n${response}`);
+                        if (response === undefined) {
+                            console.error(`No pageId found for ${urlIn}`);
+                            return Promise.resolve();
+                        }
+                        const url = `web_pages/see-sites.html?pageId=${response}`;
+                        chrome.tabs.create({ url });
                     });
                         
 

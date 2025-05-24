@@ -216,7 +216,7 @@ export function isGetUrlsOfDomainRequest(mssg: any): mssg is GetAllURLsOfDomainR
 export type BSMessagePayload = DictsOfLangRequest|SearchRequest|DictionaryIdentifier|
     PageDataPair|SetActivationRequest|GetDataForPage|UpdateDictionaryRequest|
     AddNewDictRequest|LoadExtensionDataRequest|GetAllURLsOfDomainRequest|
-    LabelEntryModRequest|GetDataForLabel|null;
+    LabelEntryModRequest|GetDataForLabel|GetDataForPageById |null;
 
 /**
  * Message that can be sent to background script listener

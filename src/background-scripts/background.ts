@@ -209,8 +209,7 @@ export function makeHandler(siteDateStorage: Readonly<IndexedDBStorage>): Handle
             }
             case BSMessageType.GetPageDataByPK: {
                 if (isGetDataForPageByIdRequest(request.payload)) {
-                    const data: SiteData = await siteDateStorage
-                        .getPageDataById(request.payload.id);
+                    const data = await siteDateStorage.getPageDataById(request.payload.id);
                     sendResponse(data);
                 } else {
                     logUnexpected('payload', request.payload);
