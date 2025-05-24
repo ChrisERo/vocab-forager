@@ -81,6 +81,19 @@ describe('Type Checks', () => {
     });
 
     it.each([
+        [{id: 0}, true],
+        [{id: -1}, true],
+        [{id: 1}, true],
+        [{house: {}, id: 2343241, height: 5.67}, true],
+        [{house: {}, notId: 2343241, height: 5.67}, false],
+        [0, false],
+        [{}, false],
+        [null, false],
+    ])('%# Is %p a getDataForPageByIdRequest body', (object: any, isExpectedReqType: boolean) => {
+        expect(bgcom.isGetDataForPageByIdRequest(object)).toEqual(isExpectedReqType);
+    });
+
+    it.each([
         [{isActivated: true}, false],
         [
             {
