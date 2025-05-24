@@ -4,7 +4,7 @@ import { LocalStorage, NonVolatileBrowserStorage } from "./non-volatile-browser-
 
 
 export const DB_NAME = 'vocab-forager';
-export const DB_VERSION = 3;  // Next DB_VERSION must be 6
+export const DB_VERSION = 3;
 
 export const MAX_LABEL_LENGTH = 64;
 
@@ -51,39 +51,43 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
         IndexedDBStorage.deleteTempTable
     ];
 
+    private pullLSSiteDataInSetup: boolean = false;
+
     // boolean flag indicating whether the setUp command has been fully ran to completion .
     //     This means that all required database upgrade action have been executed.
     //     This mostly reffers to action within ON_UPGRADE_CALLBACKS, unless
     //     updating from DB_VERSION 0.
-    private setUpFullyDone:boolean = false;
+    private setUpCompleted:boolean = false;
 
     private db: IDBDatabase | null = null;  // database connection object
     private dbPromise: Promise<IDBDatabase> | null = null;
 
-    public getSetUpFullyDone(): boolean {
-        return this.setUpFullyDone;
+    
+    async setUp(oldStorage?: LocalStorage): Promise<IDBDatabase> {
+        let dbVersion = DB_VERSION;
+        while (!this.setUpCompleted) {
+            await this.setUpHelper(oldStorage, dbVersion);
+            ++dbVersion;
+        }
+        return this.db as IDBDatabase;
     }
 
-    setUp(oldStorage?: LocalStorage, dbVersion: number = DB_VERSION): Promise<IDBDatabase> {
-        if (this.setUpFullyDone && this.dbPromise != null) {
-            // setUpComplete --> this.dbPromise is set.
-            console.warn('Invoked setUp on IndexedDBStorage when it was already set up');
-            return this.dbPromise;
-        }
+
+    private setUpHelper(oldStorage?: LocalStorage, dbVersion: number = DB_VERSION): Promise<IDBDatabase> {
         if (this.db != null) {  // needed so that new version of database can be requested
             this.db.close();
         }
 
         this.dbPromise = new Promise<IDBDatabase>((resolve, reject) => {
             const openRequest = indexedDB.open(DB_NAME, dbVersion);
-            openRequest.onerror = function (event) {
-              reject("Problem opening DB: " + event);
+            openRequest.onerror = function (event: any) {
+              reject(`Problem opening DB ${DB_NAME}:${dbVersion}: ${event.target.error}`);
             };
             let haltedUpdatesPrematurely = false;
-            let shouldPullSiteDataFromLS: boolean = false;
             openRequest.onupgradeneeded = (event: any) => {
                 console.log(`Upgrading ${DB_NAME} to ${event.newVersion} from ${event.oldVersion}`);
-                shouldPullSiteDataFromLS = event.oldVersion <= 0;
+                this.pullLSSiteDataInSetup = this.pullLSSiteDataInSetup
+                    || event.oldVersion <= 0;
 
                 const db: IDBDatabase = event.target.result;
                 // Only perform transformations asociated with newer versions (older transforms not needed)
@@ -114,7 +118,7 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
                 }
 
                 console.log('this.db set');
-                if (shouldPullSiteDataFromLS && oldStorage !== undefined) {
+                if (this.pullLSSiteDataInSetup && oldStorage !== undefined) {
                     // Use fact that localStorage mimics upload/download data format
                     console.log('Transferring any old localStorage http data to indexedDB');
                     const oldData = await oldStorage.getAllStorageData();
@@ -127,7 +131,7 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
                         oldStorage.removePageData(oldUrls[i]);
                     }
                 }
-                this.setUpFullyDone = true;
+                this.setUpCompleted = true;
                 resolve(this.db);
             };
         });
@@ -248,9 +252,8 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
                 const schemeAndHost: string = urlList[0];
                 const urlPath: string = urlList[1];
                 const searchForEntry = osIndex.get([schemeAndHost, urlPath]);
-                searchForEntry.onerror = (err) => {
-                    console.error(err);
-                    reject(`Unexpected error when saving ${url} | ${err}`);
+                searchForEntry.onerror = (err: any) => {
+                    reject(`Unexpected error when querying data ${url} | ${err.target.error}`);
                 };
                 searchForEntry.onsuccess = (event: any) => {
                     const result = event.target.result as IDBSiteData | undefined;
@@ -258,9 +261,8 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
                         siteDataToStore.id = result.id;
                     }
                     const request = objectStore.put(siteDataToStore);
-                    request.onerror = (err) => {
-                        console.error(err);
-                        reject(`Unexpected error when saving ${url} | ${err}`);
+                    request.onerror = (err: any) => {
+                        reject(`Unexpected error when storing page data for ${url} | ${err.target.error}`);
                     };
                     request.onsuccess = () => {
                         resolve();
@@ -487,8 +489,8 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
                 };
 
 
-                writeTransaction.onerror = (err) => {
-                    reject(`Unexpected error when saving ${url} ` + err);
+                writeTransaction.onerror = (err: any) => {
+                    reject(`Unexpected error deleteing ${url} ${err.target.error}`);
                 };
                 writeTransaction.oncomplete = () => {
                     resolve();
@@ -824,12 +826,6 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
  export async function getIndexedDBStorage(ls?: LocalStorage): Promise<IndexedDBStorage> {
     console.log(`starting setup`);
     const nonVolatileStorage = new IndexedDBStorage();
-    let dbVersion = DB_VERSION;
-    while (!nonVolatileStorage.getSetUpFullyDone()) {
-        await nonVolatileStorage.setUp(ls, dbVersion);
-        ++dbVersion;
-    }
-    --dbVersion;  // to counteract last update
-    console.log(`FINSIHED with Version ${dbVersion}`);
+    await nonVolatileStorage.setUp(ls);
     return nonVolatileStorage;
 }

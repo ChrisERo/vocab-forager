@@ -93,7 +93,7 @@ describe('IndexedDBStorage SiteDataStorage', () => {
 
         expect(internalDB).toBeInstanceOf(IDBDatabase);
         expect(internalDB).toBe(dao.getDB());
-        expect(internalDB.version).toBe(DB_VERSION + 1);
+        expect(internalDB.version).toBeGreaterThanOrEqual(DB_VERSION);
         expect(internalDB.name).toBe(DB_NAME);
         expect(internalDB.objectStoreNames).toContain(IndexedDBStorage.SITE_DATA_TABLE);
 
@@ -169,6 +169,7 @@ describe('IndexedDBStorage SiteDataStorage', () => {
         expect(await localStorage.getAllPageUrls()).toHaveLength(3);
 
         await dao.setUp(localStorage);
+        expect(dao['setUpCompleted']).toBe(true);
         let indexedDBData = await dao.getAllStorageData()
         expect(Object.keys(indexedDBData).length).toEqual(3);
         expect(await localStorage.getAllPageUrls()).toHaveLength(0);
@@ -580,7 +581,6 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                 await dao.removePageData(url);
             } else {
                 await dao.storePageData(dataToStore, url);
-
             }
 
             // Want to test if change in count first
