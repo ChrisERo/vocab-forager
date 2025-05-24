@@ -46,9 +46,7 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
         () => {console.error("SHOULD NOT BE HERE"); return false;}, // noop
         IndexedDBStorage.v1Creation,
         IndexedDBStorage.addSubjectTable,
-        IndexedDBStorage.copySiteDataIntoTemp,
-        IndexedDBStorage.recreateSiteDataObjectStore,
-        IndexedDBStorage.deleteTempTable
+        IndexedDBStorage.addSiteDataIdKey,
     ];
 
     private pullLSSiteDataInSetup: boolean = false;
@@ -90,11 +88,12 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
                     || event.oldVersion <= 0;
 
                 const db: IDBDatabase = event.target.result;
+                let transaction: IDBTransaction = event.target.transaction;
                 // Only perform transformations asociated with newer versions (older transforms not needed)
                 for (let i = Math.max(0, event.oldVersion) + 1; i <= event.newVersion; i++) {
                     console.log(`Performing IndexedDB Transform ${i}`);
                     const func = IndexedDBStorage.ON_UPGRADE_CALLBACKS[i];
-                    const shouldStop: boolean = func(db);
+                    const shouldStop: boolean = func(db, transaction);
                     if (shouldStop) {
                         haltedUpdatesPrematurely = true;
                         break;
@@ -473,28 +472,45 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
                     [IndexedDBStorage.SITE_DATA_TABLE, IndexedDBStorage.LABEL_TABLE],
                     "readwrite"
                 );
-
-                const objectStoreSiteData = writeTransaction.objectStore(IndexedDBStorage.SITE_DATA_TABLE);
-                const objectStoreLabels = writeTransaction.objectStore(IndexedDBStorage.LABEL_TABLE);
-                const labelIndex = objectStoreLabels.index('url');
-
-                objectStoreSiteData.delete([schemeAndHost, urlPath]);
-                const labelEntriesCursor = labelIndex.openKeyCursor(IDBKeyRange.only(urlAsArray));
-                labelEntriesCursor.onsuccess = (event: any) => {
-                    const cursor: IDBCursor | null = event.target.result;
-                    if (cursor) {
-                        objectStoreLabels.delete(cursor.primaryKey);
-                        cursor.continue();
-                    }
-                };
-
-
                 writeTransaction.onerror = (err: any) => {
                     reject(`Unexpected error deleteing ${url} ${err.target.error}`);
                 };
                 writeTransaction.oncomplete = () => {
                     resolve();
                 };
+
+                const objectStoreSiteData = writeTransaction.objectStore(IndexedDBStorage.SITE_DATA_TABLE);
+                const siteDateIndex = objectStoreSiteData.index('url');
+                const objectStoreLabels = writeTransaction.objectStore(IndexedDBStorage.LABEL_TABLE);
+                const labelIndex = objectStoreLabels.index('url');
+
+                // Find SiteData entry corresponding to url, if one exists, delete it along with
+                // corresponding label entries
+                const getSiteDataForIndex = siteDateIndex.get([schemeAndHost, urlPath]);
+                getSiteDataForIndex.onerror = (err: any) => {
+                    reject(`Unexpected error getting ${url} ${err.target.error}`);
+                };
+                getSiteDataForIndex.onsuccess = (event: any) => {
+                    const result = event.target.result as SiteData | undefined;
+                    if (result == undefined) {
+                        resolve();
+                        return;
+                    }
+                    const deleteSiteDataRequest = objectStoreSiteData.delete(result.id as number);
+                    deleteSiteDataRequest.onerror = (err: any) => {
+                        reject(`Unexpected error deleting ${url} ${err.target.error}`);
+                    };
+                    deleteSiteDataRequest.onsuccess = () => {
+                        const labelEntriesCursor = labelIndex.openKeyCursor(IDBKeyRange.only(urlAsArray));
+                        labelEntriesCursor.onsuccess = (event: any) => {
+                            const cursor: IDBCursor | null = event.target.result;
+                            if (cursor) {
+                                objectStoreLabels.delete(cursor.primaryKey);
+                                cursor.continue();
+                            }
+                        }; 
+                    };
+                }; 
             });
         };
 
@@ -518,11 +534,13 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
                     const rawData = event.target.result as IDBSiteData[];
                     const result:  {[subject: string]: SiteData} = {};
                     const rawDataPromises = rawData.map(async (x) => {
+                        x = {...x}  // make shallow copy of the object
                         const url = combineUrl(x.schemeAndHost, x.urlPath);
                         const labels: string[] = await this.getLabelsOfSpecificSite(url);
                         if (labels.length !== 0) {
                             x.labels = labels;
                         }
+                        delete x.id ;
                         result[url] = x;
                     });
                     Promise.all(rawDataPromises).then(() => resolve(result));
@@ -540,18 +558,22 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
                 const objectStore = writeTransaction.objectStore(IndexedDBStorage.SITE_DATA_TABLE);
                 const osIndex = objectStore.index('url');
 
-                const request = osIndex.getAllKeys();
+                const request = osIndex.openKeyCursor();
                 request.onerror = (err) => {
                     reject(`Unexpected error when getting all SiteData:` + err);
                 };
+
+                const result: string[] = [];
                 request.onsuccess = (event: any) => {
-                    const rawData = event.target.result as string[][];
-                    const result: string[] = [];
-                    rawData.forEach((x) => {
-                        const url = combineUrl(x[0], x[1]);
+                    let cursor: IDBCursor | null = event.target.result;
+                    if (cursor) {
+                        const indexKey = cursor.key as string[];
+                        const url: string = combineUrl(indexKey[0], indexKey[1]);
                         result.push(url);
-                    });
-                    resolve(result);
+                        cursor.continue();
+                    } else {
+                        resolve(result);
+                    }
                 };
             });
         };
@@ -715,7 +737,7 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
      *
      * @param db database connection object with which to create object stores
      */
-    private static v1Creation(db: IDBDatabase): boolean {
+    private static v1Creation(db: IDBDatabase, _: IDBTransaction): boolean {
         console.log('Adding siteData table');
         // Create an objectStore for this database
         const objectStore = db.createObjectStore(IndexedDBStorage.SITE_DATA_TABLE, { autoIncrement: true });
@@ -732,7 +754,7 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
      *
      * @param db database connection object with which to create object stores
      */
-    private static addSubjectTable(db: IDBDatabase): boolean {
+    private static addSubjectTable(db: IDBDatabase, _: IDBTransaction): boolean {
         console.log('Adding label table');
         const objectStore = db.createObjectStore(IndexedDBStorage.LABEL_TABLE,
             { keyPath: ['label', 'schemeAndHost', 'urlPath'] }
@@ -742,24 +764,33 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
         return false;
     }
 
-    private static copySiteDataIntoTemp(db: IDBDatabase): boolean {
+    /** 
+     * Adds id key to SITE_DATA_TABLE objectstore
+    *
+     * @param db database connection object with which to create object stores
+     * @param transaciton transaction entity associated with onupdated action 
+     */
+    private static addSiteDataIdKey(db: IDBDatabase, transaction: IDBTransaction): boolean {
+        IndexedDBStorage.copySiteDataIntoTemp(db, transaction);
+        IndexedDBStorage.recreateSiteDataObjectStore(db, transaction);
+        IndexedDBStorage.deleteTempTable(db);
+        return false;
+    }
+
+    private static copySiteDataIntoTemp(db: IDBDatabase, transaction: IDBTransaction): void {
         console.log("Starting Process of Adding KEY to site data table")
         db.createObjectStore(
             IndexedDBStorage.TEMP_TABLE , 
             {autoIncrement: true, keyPath: 'id'}
         );
-        IndexedDBStorage.POST_UPGRADE_ACTIONS.push(async (db: IDBDatabase) => {
-            await IndexedDBStorage.copyDatabaseContents(
-                db,
-                IndexedDBStorage.SITE_DATA_TABLE,
-                IndexedDBStorage.TEMP_TABLE
-            ); 
-            return;
-        });
-        return true;
+        IndexedDBStorage.copyDatabaseContents(
+            transaction,
+            IndexedDBStorage.SITE_DATA_TABLE,
+            IndexedDBStorage.TEMP_TABLE
+        ); 
     }
 
-    private static recreateSiteDataObjectStore(db: IDBDatabase): boolean {
+    private static recreateSiteDataObjectStore(db: IDBDatabase, transaction: IDBTransaction): void {
         console.log("DELETEING OLD TABLE")
         db.deleteObjectStore(IndexedDBStorage.SITE_DATA_TABLE);
         console.log("DELETION COMPLETE")
@@ -771,48 +802,36 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
         );
         newStore.createIndex('url', ['schemeAndHost', 'urlPath'], { unique: true });
         newStore.createIndex('schemeAndHost', 'schemeAndHost', { unique: false });
-        IndexedDBStorage.POST_UPGRADE_ACTIONS.push(async (db: IDBDatabase) => {
-            await IndexedDBStorage.copyDatabaseContents(
-                db,
-                IndexedDBStorage.TEMP_TABLE,
-                IndexedDBStorage.SITE_DATA_TABLE,
-            ); 
-            return;
-        });
-        return true;
+        IndexedDBStorage.copyDatabaseContents(
+            transaction,
+            IndexedDBStorage.TEMP_TABLE,
+            IndexedDBStorage.SITE_DATA_TABLE,
+        ); 
     }
 
-    private static deleteTempTable(db: IDBDatabase): boolean {
+    private static deleteTempTable(db: IDBDatabase): void {
         console.log("DELETEING TEMP TABLE")
         db.deleteObjectStore(IndexedDBStorage.TEMP_TABLE);
         console.log("DELETION COMPLETE");
-        return false;
     }
 
-    private static copyDatabaseContents(db: IDBDatabase,
+    private static copyDatabaseContents(transaction: IDBTransaction,
                                         sourceStoreName: string, 
-                                        destStoreName: string): Promise<void> {
-        return new Promise<void>((resolve, _) => {
-            console.log(`COPYING DATA FROM ${sourceStoreName} to ${destStoreName}`);
-            const transaction = db.transaction(
-                [sourceStoreName, destStoreName],
-                "readwrite"
-            );
-            const sourceStore = transaction.objectStore(sourceStoreName);
-            const destStore= transaction.objectStore(destStoreName);
-            sourceStore.openCursor().onsuccess = (event: Event) => {
-                const cursor = (event.target as IDBRequest).result;
-                if (cursor) {
-                    const data = cursor.value;
-                    destStore.put(data);
-                    cursor.continue();
-                } else {
-                    console.log(`COMPLETED COPY ${sourceStoreName} -> ${destStoreName}`);
-                    resolve();
-                    return;
-                }
-            };
-        });
+                                        destStoreName: string): void {
+        console.log(`COPYING DATA FROM ${sourceStoreName} to ${destStoreName}`);
+        const sourceStore = transaction.objectStore(sourceStoreName);
+        const destStore= transaction.objectStore(destStoreName);
+        sourceStore.openCursor().onsuccess = (event: Event) => {
+            const cursor = (event.target as IDBRequest).result;
+            if (cursor) {
+                const data = cursor.value;
+                destStore.put(data);
+                cursor.continue();
+            } else {
+                console.log(`COMPLETED COPY ${sourceStoreName} -> ${destStoreName}`);
+                return;
+            }
+        };
     }
 }
 

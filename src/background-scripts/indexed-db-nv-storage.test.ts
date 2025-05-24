@@ -1453,7 +1453,9 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                     missingWords: ["foo", "bar"]
                 };
                 await dao.storePageData(data,'https://www.foobar.com/yahoo');
-                const storeData = await dao.getPageData('https://www.foobar.com/yahoo');
+                let storeData = await dao.getPageData('https://www.foobar.com/yahoo');
+                storeData = {...storeData};
+                delete storeData.id;
                 expect(storeData).toEqual(data);
                 const sites = await dao.getAllPageUrls();
                 expect(sites).toHaveLength(4);
