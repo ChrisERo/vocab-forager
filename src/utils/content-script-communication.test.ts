@@ -15,7 +15,6 @@ describe('Contet-Script-Communication Package', () => {
     it.each([
         [{messageType: csc.CSMessageType.ActivationStateChange}, true],
         [{messageType: csc.CSMessageType.ActivationStateChange, payload: {newActivatedState: true}}, true],
-        [{messageType: csc.CSMessageType.ChangeHighlightStyle}, true],
         [{messageType: csc.CSMessageType.DeleteChosenHighlight}, true],
         [{messageType: csc.CSMessageType.StartQuiz}, true],
         [{messageType: 'wish this would fail, but it will not'}, true],

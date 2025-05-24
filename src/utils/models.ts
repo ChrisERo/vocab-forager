@@ -60,6 +60,7 @@ export interface SiteData {
     highlightOptions?: HighlightOptions;
     // title of website if one exists
     title?: string;
+    id?: number;
 }
 
 export function isSiteData(data: any): data is SiteData {
@@ -75,44 +76,6 @@ export function isSiteData(data: any): data is SiteData {
 export function isHighlightLight(highlightOptions?: HighlightOptions): boolean {
     return highlightOptions !== undefined && highlightOptions.fontColor === '#000000'
         && highlightOptions.backgroundColor === '#ffff01';
-}
-
-/**
- * Change highlights for a light webpage (yellow background with black text)
- * 
- * @param options current style options for a webpage
- */
-export function enforceExplicityLightMode(options?: HighlightOptions): HighlightOptions {
-    return setSiteDataHighlightOptions(options, '#ffff01', '#000000');
-}
-
-/**
- * Change highlights for a dark webpage (blue background with white text)
- *
- * @param options current style options
- */
-export function enforceExplicityDarkMode(options?: HighlightOptions): HighlightOptions {
-    return setSiteDataHighlightOptions(options, '#0008fa', '#ffffff');
-}
-
-/**
- * Set style options for background and font color for highlighted text.
- *
- * @param options 
- * @param backgroundColor 
- * @param fontColor 
- */
-function setSiteDataHighlightOptions(options: HighlightOptions | undefined, backgroundColor: string, fontColor: string): HighlightOptions {
-    if (!options) {
-        return {
-            fontColor: fontColor,
-            backgroundColor: backgroundColor
-        };
-    } else {
-        options.backgroundColor = backgroundColor;
-        options.fontColor = fontColor;
-        return options;
-    }
 }
 
 export function isEmpty(data: SiteData): boolean {
@@ -188,5 +151,6 @@ export function getLanguages(dc: GlobalDictionaryData): string[] {
 export interface SeeSiteData {
     url: string,
     title?: string,
+    id?: number  // TODO: I think this should be removed
 }
 
