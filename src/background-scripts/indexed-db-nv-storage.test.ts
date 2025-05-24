@@ -1455,7 +1455,7 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                 await dao.storePageData(data,'https://www.foobar.com/yahoo');
                 let storeData = await dao.getPageData('https://www.foobar.com/yahoo');
                 storeData = {...storeData};
-                delete storeData.id;
+                delete (storeData as any)['id'];
                 expect(storeData).toEqual(data);
                 const sites = await dao.getAllPageUrls();
                 expect(sites).toHaveLength(4);

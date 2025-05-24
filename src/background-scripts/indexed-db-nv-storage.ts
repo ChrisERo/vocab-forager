@@ -11,6 +11,7 @@ export const MAX_LABEL_LENGTH = 64;
 type SiteDataMap =  {[url: string]: SiteData}
 
 export interface IDBSiteData extends SiteData {
+    id?: number;
     schemeAndHost: string;
     urlPath: string;
     labels?: string[];
@@ -401,8 +402,8 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
 
                 const labelIndex = objectStore.index('url');
                 const request = labelIndex.openKeyCursor(IDBKeyRange.only(schemePathSeparation));
-                request.onerror = (err) => {
-                    reject(`Unexpected error when querying labels for ${url}: err `);
+                request.onerror = (err: any) => {
+                    reject(`Unexpected error when querying labels for ${url}: ${err.target.error} `);
                 };
                 const results: string[] = [];
                 request.onsuccess = (event: any) => {
@@ -488,7 +489,7 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
                     reject(`Unexpected error getting ${url} ${err.target.error}`);
                 };
                 getSiteDataForIndex.onsuccess = (event: any) => {
-                    const result = event.target.result as SiteData | undefined;
+                    const result = event.target.result as IDBSiteData | undefined;
                     if (result == undefined) {
                         resolve();
                         return;
