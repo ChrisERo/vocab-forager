@@ -25,15 +25,16 @@ const PRESENT_WORDS_SECTION = document.getElementById('present-words-section') a
 export const QUIZ_BUTTON = document.getElementById('quiz-button') as HTMLElement;
 
 
-export function setUpEditPage(url: string, siteDataPromise: Promise<SiteData>,
-    labelsPromise: Promise<string[]>): void {
+export async function setUpEditPage(url: string, siteDataPromise: Promise<SiteData>,
+    labelsPromise: Promise<string[]>): Promise<void> {
         HIGHLIGHT_COLORS_SECTION.style.display = 'inline-block';
         LABELS_SECTION.style.display = 'inline-block';
         PRESENT_WORDS_SECTION.style.display = 'inline-block';
         MISSING_WORDS_SECTION.style.display = 'inline-block';
         QUIZ_BUTTON.style.display = 'inline-block';
-        populateLabelsData(url, labelsPromise);
-        populateSiteData(url, siteDataPromise);
+        await populateLabelsData(url, labelsPromise);
+        await populateSiteData(url, siteDataPromise);
+        return;
 }
 
 export function clearEditPageComponents(): void {

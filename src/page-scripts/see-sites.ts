@@ -156,24 +156,21 @@ function extractPageId(): number | null {
     }
 }
 
-function setUpSiteDataPage(url: string, pageData: Promise<SiteData>, 
-                           labelData: Promise<string[]>): void {
+async function setUpSiteDataPage(url: string, pageData: Promise<SiteData>, 
+                           labelData: Promise<string[]>): Promise<void> {
     // Disable buttons from search sites as move towards specific site page
     DELETE_BUTTON.style.display = 'none';
-    REFRESH_PAGE_BUTTON.style.display = 'none';
     MODIFY_SITE_DATA_BUTTON.style.display = 'none';
     (document.getElementById('list-of-urls') as HTMLElement).innerHTML = '';
 
     REFRESH_PAGE_BUTTON.style.display = 'inline-block';
-    setUpEditPageMode(url, pageData, labelData);
-
+    await setUpEditPageMode(url, pageData, labelData);
 }
 
 function initEditPage(): Promise<boolean> {
     return new Promise((resolve) => {
         const pageId = extractPageId();
         if (pageId === null) {
-            clearEditPageComponents();
             resolve(false);
             return;
         }
@@ -198,24 +195,32 @@ function initEditPage(): Promise<boolean> {
             };
             const labelDataPromise: Promise<string[]> = chrome.runtime.sendMessage(request);
             const pageDataPromsie: Promise<SiteData> = Promise.resolve(data);
-            setUpSiteDataPage(url, pageDataPromsie, labelDataPromise);
+            setUpSiteDataPage(url, pageDataPromsie, labelDataPromise).then(() => {
+                resolve(true)
+            });
         });
     }); 
 }
 
-function setUpPageInit() {
-    DOMAIN_INPUT_SECTION.style.display = 'inline-block';
-    LABEL_INPUT_SECTION.style.display = 'inline-block';
-    SEARCH.style.display = 'inline-block';
-
+function setUpPageInit(): Promise<void> { 
     ERROR_MESSAGE.innerHTML = '';
     URL_LIST_ELEMENT.innerHTML = '';
     DELETE_BUTTON.style.display = 'none';
     REFRESH_PAGE_BUTTON.style.display = 'none';
     MODIFY_SITE_DATA_BUTTON.style.display = 'none';
 
-    initEditPage().then(editPageSet => {
-        if (!editPageSet) {
+    clearEditPageComponents();
+    return initEditPage().then(editPageSet => {
+        if (editPageSet) {
+            console.log('nulifying stuff for ' + window.location.href);
+            DOMAIN_INPUT_SECTION.style.display = 'none';
+            LABEL_INPUT_SECTION.style.display = 'none';
+            SEARCH.style.display = 'none';
+        } else {
+            console.log('FOOBAR ' + window.location.href);
+            DOMAIN_INPUT_SECTION.style.display = 'inline-block';
+            LABEL_INPUT_SECTION.style.display = 'inline-block';
+            SEARCH.style.display = 'inline-block';
             getSpecificGroupingClass(BSMessageType.GetAllDomains, DOMAIN_LIST_ELEMENT);
             getSpecificGroupingClass(BSMessageType.GetAllLabels, LABEL_LIST_ELEMENT);
         }
@@ -227,8 +232,8 @@ function setUpPageInit() {
  * Start executing JavaScript/TypeScript code for page
  */
 
-loadBannerHtml();
-setUpPageInit();
+const bannerLoaded = loadBannerHtml();
+const pageSetup = setUpPageInit();
 
 // Add Event Listeners to clear out unneeded search results
 DOMAIN_INPUT.addEventListener('focus', (event) => {
@@ -289,3 +294,5 @@ MODIFY_SITE_DATA_BUTTON.addEventListener('click', () => {
 
 // Delete all urls that were checked by user from non-volatile storage
 REFRESH_PAGE_BUTTON.addEventListener('click', setUpPageInit);
+
+export const setupDone = Promise.all([bannerLoaded, pageSetup]); // defined at end so listeners would already be set.
