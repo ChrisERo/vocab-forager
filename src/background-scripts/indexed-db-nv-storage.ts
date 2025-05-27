@@ -171,19 +171,20 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
     }
 
     getPageDataById(id: number): Promise<IDBSiteData | null> {
-        const query = (db: IDBDatabase): Promise<IDBSiteData> => {
+        const query = (db: IDBDatabase): Promise<IDBSiteData | null> => {
             const getTransaction = db.transaction(IndexedDBStorage.SITE_DATA_TABLE, "readonly");
             const objectStore = getTransaction.objectStore(IndexedDBStorage.SITE_DATA_TABLE);
             return new Promise((resolve) => {
                 const getRequest = objectStore.get(id);
                 getRequest.onerror = (ex) =>  {
                     console.error(`Failed to get site data: ${ex}`)
+                    resolve(null);
                 };
                 getRequest.onsuccess = (event: any) => {
-                    let siteData: IDBSiteData | undefined =
+                    let siteData: IDBSiteData | undefined | null =
                         event.target.result as (IDBSiteData | undefined);
                     if (siteData === undefined) {
-                        return null;
+                        siteData = null;
                     }
                     resolve(siteData);
                 };

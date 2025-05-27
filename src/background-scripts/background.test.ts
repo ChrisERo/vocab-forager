@@ -1051,6 +1051,78 @@ describe('Testing Service Worker', () => {
                 ]);
             }
         ],
+        [
+            'Basic Get Page Data by PK with Fake PK',
+            {
+                messageType: BSMessageType.GetPageDataByPK,
+                payload: {id: 5},
+            },
+            (result: any) => {
+                expect(result).toBeNull();
+                return;
+            }
+        ],
+        [
+            'Basic Get Page Data by PK',
+            {
+                messageType: BSMessageType.GetPageDataByPK,
+                payload: {id: 1},
+            },
+            (result: any) => {
+                expect(result).not.toBeNull();
+                const url = result.schemeAndHost + result.urlPath;
+                expect(url).toBe('https://foobar.io');
+                return;
+            }
+        ],
+        [
+            'Basic Get Page Data by PK 2',
+            {
+                messageType: BSMessageType.GetPageDataByPK,
+                payload: {id: 2},
+            },
+            (result: any) => {
+                expect(result).not.toBeNull();
+                const url = result.schemeAndHost + result.urlPath;
+                expect(url).toBe('https://darknetdiaries.com/episode/110');
+                return;
+            }
+        ],
+        [
+            'Get PK for Fake Page',
+            {
+                messageType: BSMessageType.GetPagePrimaryKey,
+                payload: {url: 'https://un.registered.page.com/should-not-exist'},
+            },
+            (result: any) => {
+                expect(result).toBeNull();
+                return;
+            }
+        ],
+        [
+            'Get Primary Key for Page 1',
+            {
+                messageType: BSMessageType.GetPagePrimaryKey,
+                payload: {url: 'https://foobar.io'},
+            },
+            (result: any) => {
+                expect(result).not.toBeNull();
+                expect(result).toBe(1);
+                return;
+            }
+        ],
+        [
+            'Basic Get Page Data by PK 2',
+            {
+                messageType: BSMessageType.GetPagePrimaryKey,
+                payload: {url: 'https://darknetdiaries.com/episode/110'},
+            },
+            (result: any) => {
+                expect(result).not.toBeNull();
+                expect(result).toBe(2);
+                return;
+            }
+        ],
 
     ])('makeHandler: [%s]', async (_name: string, message: BSMessage,
                                    test: AssertFunction) => {
