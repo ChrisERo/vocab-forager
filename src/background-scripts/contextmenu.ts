@@ -168,10 +168,11 @@ export class ContextMenuManager {
                     return siteDataStorage.getPageId(urlIn).then((response: any) => {
                         if (response === undefined) {
                             console.error(`No pageId found for ${urlIn}`);
-                            return Promise.resolve();
+                            return;
                         }
                         const url = `web_pages/see-sites.html?pageId=${response}`;
                         chrome.tabs.create({ url });
+                        return;
                     });
                 }
                 default: {
@@ -179,7 +180,7 @@ export class ContextMenuManager {
                     return Promise.resolve();
                 }
             }
-          });
+        });
     }
 
     /**
