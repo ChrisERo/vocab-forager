@@ -187,13 +187,7 @@ function initEditPage(): Promise<boolean> {
                 return;
             }
             const url = combineUrl(data.schemeAndHost, data.urlPath);
-            const request = {
-                messageType: BSMessageType.GetLabelsForSite,
-                payload: {
-                    url: url
-                }
-            };
-            const labelDataPromise: Promise<string[]> = chrome.runtime.sendMessage(request);
+            const labelDataPromise: Promise<string[]> = Promise.resolve(data.labels === undefined ? [] : data.labels);
             const pageDataPromsie: Promise<SiteData> = Promise.resolve(data);
             setUpSiteDataPage(url, pageDataPromsie, labelDataPromise).then(() => {
                 resolve(true)

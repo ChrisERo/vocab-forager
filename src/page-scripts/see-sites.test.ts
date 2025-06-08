@@ -123,6 +123,7 @@ describe('Script for see-sites.html page', () => {
                             let data: any;
                             if (siteDataPKMap.hasOwnProperty(id)) {
                                 data = siteDataPKMap[id];
+                                data['labels'] = ['platos', 'comida', 'Argentina'];
                             } else {
                                 data = null;
                             }
