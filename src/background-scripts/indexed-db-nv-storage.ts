@@ -44,13 +44,11 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
 
     // index  mapping database version to transform function to move from previous version of table to said table
     private static readonly ON_UPGRADE_CALLBACKS = [
-        () => {console.error("SHOULD NOT BE HERE"); return false;}, // noop
+        () => {console.error("SHOULD NOT BE HERE");}, // noop
         IndexedDBStorage.v1Creation,
         IndexedDBStorage.addSubjectTable,
         IndexedDBStorage.addSiteDataIdKey,
     ];
-
-    private pullLSSiteDataInSetup: boolean = false;
 
     // boolean flag indicating whether the setUp command has been fully ran to completion .
     //     This means that all required database upgrade action have been executed.
@@ -62,13 +60,10 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
     private dbPromise: Promise<IDBDatabase> | null = null;
 
     
-    async setUp(oldStorage?: LocalStorage): Promise<IDBDatabase> {
-        let dbVersion = DB_VERSION;
-        while (!this.setUpCompleted) {
-            await this.setUpHelper(oldStorage, dbVersion);
-            ++dbVersion;
-        }
-        return this.db as IDBDatabase;
+    setUp(oldStorage?: LocalStorage): Promise<IDBDatabase> {
+        return this.setUpCompleted
+            ? this.dbPromise as Promise<IDBDatabase>
+            : this.setUpHelper(oldStorage);
     }
 
 
@@ -82,11 +77,10 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
             openRequest.onerror = function (event: any) {
               reject(`Problem opening DB ${DB_NAME}:${dbVersion}: ${event.target.error}`);
             };
-            let haltedUpdatesPrematurely = false;
+            let shouldPullSiteDataFromLS: boolean = false;
             openRequest.onupgradeneeded = (event: any) => {
                 console.log(`Upgrading ${DB_NAME} to ${event.newVersion} from ${event.oldVersion}`);
-                this.pullLSSiteDataInSetup = this.pullLSSiteDataInSetup
-                    || event.oldVersion <= 0;
+                shouldPullSiteDataFromLS = event.oldVersion <= 0;
 
                 const db: IDBDatabase = event.target.result;
                 let transaction: IDBTransaction = event.target.transaction;
@@ -94,11 +88,7 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
                 for (let i = Math.max(0, event.oldVersion) + 1; i <= event.newVersion; i++) {
                     console.log(`Performing IndexedDB Transform ${i}`);
                     const func = IndexedDBStorage.ON_UPGRADE_CALLBACKS[i];
-                    const shouldStop: boolean = func(db, transaction);
-                    if (shouldStop) {
-                        haltedUpdatesPrematurely = true;
-                        break;
-                    }
+                    func(db, transaction);
                 }
 
             };
@@ -111,14 +101,8 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
                     IndexedDBStorage.POST_UPGRADE_ACTIONS.shift();
                 }
 
-                if (haltedUpdatesPrematurely) {
-                    console.log("Halted updates prematurely");
-                    resolve(this.db);  // TODO: not sure what to return here.
-                    return;
-                }
-
                 console.log('this.db set');
-                if (this.pullLSSiteDataInSetup && oldStorage !== undefined) {
+                if (shouldPullSiteDataFromLS && oldStorage !== undefined) {
                     // Use fact that localStorage mimics upload/download data format
                     console.log('Transferring any old localStorage http data to indexedDB');
                     const oldData = await oldStorage.getAllStorageData();
@@ -736,7 +720,7 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
      *
      * @param db database connection object with which to create object stores
      */
-    private static v1Creation(db: IDBDatabase, _: IDBTransaction): boolean {
+    private static v1Creation(db: IDBDatabase, _: IDBTransaction): void {
         console.log('Adding siteData table');
         // Create an objectStore for this database
         const objectStore = db.createObjectStore(IndexedDBStorage.SITE_DATA_TABLE, { autoIncrement: true });
@@ -744,7 +728,6 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
         // define what data items the objectStore will contain
         objectStore.createIndex('url', ['schemeAndHost', 'urlPath'], { unique: true });
         objectStore.createIndex('schemeAndHost', 'schemeAndHost', { unique: false });
-        return false;
     }
 
     /**
@@ -753,14 +736,13 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
      *
      * @param db database connection object with which to create object stores
      */
-    private static addSubjectTable(db: IDBDatabase, _: IDBTransaction): boolean {
+    private static addSubjectTable(db: IDBDatabase, _: IDBTransaction): void {
         console.log('Adding label table');
         const objectStore = db.createObjectStore(IndexedDBStorage.LABEL_TABLE,
             { keyPath: ['label', 'schemeAndHost', 'urlPath'] }
         );
         objectStore.createIndex('url', ['schemeAndHost', 'urlPath'], { unique: false });
         objectStore.createIndex('label', 'label', { unique: false });
-        return false;
     }
 
     /** 
@@ -769,11 +751,10 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
      * @param db database connection object with which to create object stores
      * @param transaciton transaction entity associated with onupdated action 
      */
-    private static addSiteDataIdKey(db: IDBDatabase, transaction: IDBTransaction): boolean {
+    private static addSiteDataIdKey(db: IDBDatabase, transaction: IDBTransaction): void {
         IndexedDBStorage.copySiteDataIntoTemp(db, transaction);
         IndexedDBStorage.recreateSiteDataObjectStore(db, transaction);
         IndexedDBStorage.deleteTempTable(db);
-        return false;
     }
 
     private static copySiteDataIntoTemp(db: IDBDatabase, transaction: IDBTransaction): void {
