@@ -164,11 +164,17 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
                     console.error(`Failed to get site data: ${ex}`)
                     resolve(null);
                 };
-                getRequest.onsuccess = (event: any) => {
+                getRequest.onsuccess = async (event: any) => {
                     let siteData: IDBSiteData | undefined | null =
                         event.target.result as (IDBSiteData | undefined);
                     if (siteData === undefined) {
-                        siteData = null;
+                        resolve(null);
+                        return;
+                    }
+                    const urlOfSite: string = combineUrl(siteData.schemeAndHost, siteData.urlPath);
+                    const labels = await this.getLabelsOfSpecificSite(urlOfSite);
+                    if (labels !== null && labels.length > 0) {
+                        siteData = {...siteData, labels};
                     }
                     resolve(siteData);
                 };
