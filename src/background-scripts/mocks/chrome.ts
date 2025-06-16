@@ -65,6 +65,9 @@ export class MockLocalStorage implements chrome.storage.LocalStorageArea {
         });
     }
 
+    getKeys(): Promise<string[]> {
+        return Promise.resolve(Object.keys(this.storage));
+    }
     get(callback: (items: { [key: string]: any; }) => void): void;
     get(keys?: string | string[] | { [key: string]: any; } | null | undefined): Promise<{ [key: string]: any; }>;
     get(keys: string | string[] | { [key: string]: any; } | null, callback: (items: { [key: string]: any; }) => void): void;
@@ -118,6 +121,7 @@ export const setUpMockBrowser = () => {
             selected: false,
             discarded: false,
             autoDiscardable: false,
+            frozen: false,
             groupId: 0
         },
         {
@@ -131,6 +135,7 @@ export const setUpMockBrowser = () => {
             selected: false,
             discarded: false,
             autoDiscardable: false,
+            frozen: false,
             groupId: 0
         },
         {
@@ -145,6 +150,7 @@ export const setUpMockBrowser = () => {
             discarded: false,
             autoDiscardable: false,
             groupId: 0,
+            frozen: false,
             title: "DO_NOT_SEND"
         },
         {
@@ -158,6 +164,7 @@ export const setUpMockBrowser = () => {
             selected: false,
             discarded: false,
             autoDiscardable: false,
+            frozen: false,
             groupId: 0
         }
     ];
@@ -199,6 +206,7 @@ export const setUpMockBrowser = () => {
                     selected: false,
                     discarded: false,
                     autoDiscardable: false,
+                    frozen: false,
                     groupId: 0
                 }
                 tabs.push(newTab);
