@@ -220,7 +220,6 @@ export function makeHandler(siteDateStorage: Readonly<IndexedDBStorage>): Handle
                 if (isGetDataForPageRequest(request.payload)) {
                     const pageUrl = request.payload.url;
                     const pageId = await siteDateStorage.getPageId(pageUrl);
-                    console.log(`From the Database, I received ${pageId}`)
                     sendResponse(pageId);
                 } else {
                     logUnexpected('payload', request.payload);
@@ -408,7 +407,7 @@ export const listenerSetupPromise: Promise<void> =  // Promise for unittests
             indexedDBStorage = siteDataStorage;
             const asyncHandler: HandlerType = makeHandler(siteDataStorage);
             chrome.runtime.onMessage.addListener(makeRealHandler(asyncHandler));
-            contextMenuManager.setUpContextMenus(siteDataStorage);
+            return contextMenuManager.setUpContextMenus(siteDataStorage);
 });
 
 
