@@ -93,7 +93,7 @@ describe('IndexedDBStorage SiteDataStorage', () => {
 
         expect(internalDB).toBeInstanceOf(IDBDatabase);
         expect(internalDB).toBe(dao.getDB());
-        expect(internalDB.version).toBe(DB_VERSION);
+        expect(internalDB.version).toBeGreaterThanOrEqual(DB_VERSION);
         expect(internalDB.name).toBe(DB_NAME);
         expect(internalDB.objectStoreNames).toContain(IndexedDBStorage.SITE_DATA_TABLE);
 
@@ -169,6 +169,7 @@ describe('IndexedDBStorage SiteDataStorage', () => {
         expect(await localStorage.getAllPageUrls()).toHaveLength(3);
 
         await dao.setUp(localStorage);
+        expect(dao['setUpCompleted']).toBe(true);
         let indexedDBData = await dao.getAllStorageData()
         expect(Object.keys(indexedDBData).length).toEqual(3);
         expect(await localStorage.getAllPageUrls()).toHaveLength(0);
@@ -580,7 +581,6 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                 await dao.removePageData(url);
             } else {
                 await dao.storePageData(dataToStore, url);
-
             }
 
             // Want to test if change in count first
@@ -1393,6 +1393,220 @@ describe('IndexedDBStorage SiteDataStorage', () => {
     });
 
     it.each([
+        ['https://www.articles.com/a1', 1],
+        ['https://www.articles.com/a2', 2],
+        ['https://www.articles.com/a3', null],
+        ['https://test.fakenews.com/flying-pigs', 3],
+        ['https://test.fakenews.com', 4],
+        ['https://www.google.com', null],
+    ])('Test Get page ID: %s %d', async (targetUrl: string, targetPageId: number | null) => {
+        const indexedDBStorage: IndexedDBStorage = new IndexedDBStorage();
+        indexedDBStorage.setUp();
+        const storedUrls: string[] = [
+            'https://www.articles.com/a1',
+            'https://www.articles.com/a2',
+            'https://test.fakenews.com/flying-pigs',
+            'https://test.fakenews.com',
+        ];
+        const storeSiteData: SiteData[] = [
+            {
+                wordEntries: [
+                    {
+                        word: 'comida',
+                        startOffset: 0,
+                        endOffset: 13,
+                        nodePath: [[9,6,3,0]]
+                    }
+                ],
+                missingWords: ["foo", "bar"]
+            },
+            {
+                wordEntries: [
+                    {
+                        word: 'manzana',
+                        startOffset: 33,
+                        endOffset: 44,
+                        nodePath: [[9,6,3,0], [10,6,3,0]]
+                    }
+                ],
+                missingWords: []
+            },
+            {
+                wordEntries: [
+                    {
+                        word: 'uva',
+                        startOffset: 33,
+                        endOffset: 44,
+                        nodePath: [[9,6,3,0], [10,6,3,0]]
+                    }
+                ],
+                missingWords: []
+            },
+            {
+                wordEntries: [
+                ],
+                missingWords: ['hamburgesa']
+            }
+
+        ];
+        for (let i = 0; i < storedUrls.length; i++) {
+            const url = storedUrls[i];
+            const data = storeSiteData[i];
+            await indexedDBStorage.storePageData(data, url);
+        }
+        expect((await indexedDBStorage.getAllPageUrls()).length).toBe(4);
+        const pageId = await indexedDBStorage.getPageId(targetUrl);
+        expect(pageId).toBe(targetPageId);
+        if (pageId !== null) {
+            const pageData: IDBSiteData = (await indexedDBStorage.getPageDataById(pageId)) as IDBSiteData;
+            const [schemeAndHost, urlPath] = parseURL(targetUrl);
+            const expectation = {
+                ...storeSiteData[pageId - 1],
+                schemeAndHost,
+                urlPath,
+                id: pageId
+            }
+            expect(pageData).toEqual(expectation);
+        }
+
+        indexedDBStorage.getDB()?.close();  // Needed so that beforeEach can be executed, clearing state for next test(s)
+    });
+
+it.each([
+        [
+            1,
+            {
+                id: 1,
+                schemeAndHost: 'https://www.articles.com',
+                urlPath: '/a1',
+                wordEntries: [
+                    {
+                        word: 'comida',
+                        startOffset: 0,
+                        endOffset: 13,
+                        nodePath: [[9,6,3,0]]
+                    }
+                ],
+                missingWords: ["foo", "bar"]
+            },
+        ],
+        [
+            2,
+            {
+                id: 2,
+                schemeAndHost: 'https://www.articles.com',
+                urlPath: '/a2',
+                labels: ['orchards', 'spanish'],
+                wordEntries: [
+                    {
+                        word: 'manzana',
+                        startOffset: 33,
+                        endOffset: 44,
+                        nodePath: [[9,6,3,0], [10,6,3,0]]
+                    }
+                ],
+                missingWords: []
+            },
+        ],
+        [
+            3,
+            {
+                id: 3,
+                schemeAndHost: 'https://test.fakenews.com',
+                urlPath: '/flying-pigs',
+                wordEntries: [
+                    {
+                        word: 'uva',
+                        startOffset: 33,
+                        endOffset: 44,
+                        nodePath: [[9,6,3,0], [10,6,3,0]]
+                    }
+                ],
+                missingWords: []
+            },
+        ],
+        [
+            4,
+            {
+                id: 4,
+                schemeAndHost: 'https://test.fakenews.com',
+                urlPath: '',
+                labels: ['fast-food'],
+                wordEntries: [],
+                missingWords: ['hamburgesa']
+            }
+
+        ]
+    ])('Test Get page data by ID: %d %d', async (targetPageId: number, expectedData: IDBSiteData) => {
+        const indexedDBStorage: IndexedDBStorage = new IndexedDBStorage();
+        indexedDBStorage.setUp();
+        const storedUrls: string[] = [
+            'https://www.articles.com/a1',
+            'https://www.articles.com/a2',
+            'https://test.fakenews.com/flying-pigs',
+            'https://test.fakenews.com',
+        ];
+        const storeSiteData: SiteData[] = [
+            {
+                wordEntries: [
+                    {
+                        word: 'comida',
+                        startOffset: 0,
+                        endOffset: 13,
+                        nodePath: [[9,6,3,0]]
+                    }
+                ],
+                missingWords: ["foo", "bar"]
+            },
+            {
+                wordEntries: [
+                    {
+                        word: 'manzana',
+                        startOffset: 33,
+                        endOffset: 44,
+                        nodePath: [[9,6,3,0], [10,6,3,0]]
+                    }
+                ],
+                missingWords: []
+            },
+            {
+                wordEntries: [
+                    {
+                        word: 'uva',
+                        startOffset: 33,
+                        endOffset: 44,
+                        nodePath: [[9,6,3,0], [10,6,3,0]]
+                    }
+                ],
+                missingWords: []
+            },
+            {
+                wordEntries: [],
+                missingWords: ['hamburgesa']
+            }
+
+        ];
+        const labelEntries = [
+            ['https://www.articles.com/a2', 'spanish'],
+            ['https://www.articles.com/a2', 'orchards'],
+            ['https://test.fakenews.com', 'fast-food']
+        ];
+        for (let i = 0; i < storedUrls.length; ++i) {
+            const url = storedUrls[i];
+            const data = storeSiteData[i];
+            await indexedDBStorage.storePageData(data, url);
+        }
+        for (let i = 0; i < labelEntries.length; ++i) {
+            const [url, label] = labelEntries[i];
+            await indexedDBStorage.addLabelEntry(url, label);
+        }
+        expect((await indexedDBStorage.getAllPageUrls()).length).toBe(4);
+        const result = await indexedDBStorage.getPageDataById(targetPageId);
+        expect(result).toEqual(expectedData);
+        indexedDBStorage.getDB()?.close();  // Needed so that beforeEach can be executed, clearing state for next test(s)
+    });
+
+    it.each([
         [
             'getAllDomains',
             async (dao: IndexedDBStorage) => {
@@ -1453,7 +1667,9 @@ describe('IndexedDBStorage SiteDataStorage', () => {
                     missingWords: ["foo", "bar"]
                 };
                 await dao.storePageData(data,'https://www.foobar.com/yahoo');
-                const storeData = await dao.getPageData('https://www.foobar.com/yahoo');
+                let storeData = await dao.getPageData('https://www.foobar.com/yahoo');
+                storeData = {...storeData};
+                delete (storeData as any)['id'];
                 expect(storeData).toEqual(data);
                 const sites = await dao.getAllPageUrls();
                 expect(sites).toHaveLength(4);

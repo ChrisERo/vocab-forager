@@ -64,38 +64,6 @@ describe('Models Package', () => {
     });
 
     it.each([
-        [undefined],
-        [{fontColor: '#000000', backgroundColor: '#ffff01'}],
-        [{fontColor: '#000000', backgroundColor: '#faff01'}],
-        [{fontColor: '#000001', backgroundColor: '#faff01'}],
-        [{fontColor: '#ffff01', backgroundColor: '#000000'}],
-        [{backgroundColor: '#0008fa', fontColor: '#ffffff'}], 
-    ])('Force LightMode: %p', (opt: models.HighlightOptions | undefined) => {
-        const result = models.enforceExplicityLightMode(opt);
-        expect(models.isHighlightLight(result)).toEqual(true);
-        if (opt !== undefined) {
-            expect(models.isHighlightLight(opt)).toEqual(true);
-        }
-    });
-
-    it.each([
-        [undefined],
-        [{fontColor: '#000000', backgroundColor: '#ffff01'}],
-        [{fontColor: '#000000', backgroundColor: '#faff01'}],
-        [{fontColor: '#000001', backgroundColor: '#faff01'}],
-        [{fontColor: '#ffff01', backgroundColor: '#000000'}],
-        [{backgroundColor: '#0008fa', fontColor: '#ffffff'}], 
-    ])('Force DarkMode: %p', (opt: models.HighlightOptions | undefined) => {
-        const result = models.enforceExplicityDarkMode(opt);
-        expect(result.fontColor).toEqual('#ffffff');
-        expect(result.backgroundColor).toEqual('#0008fa');
-        if (opt !== undefined) {
-            expect(opt.fontColor).toEqual('#ffffff');
-            expect(opt.backgroundColor).toEqual('#0008fa');
-        }
-    });
-
-    it.each([
         [{wordEntries: [], missingWords: []}, true],
         [{wordEntries: [], missingWords: ['foo']}, false],
         [{wordEntries: [{word: 'bar', startOffset: 13, endOffset: 16, nodePath: [[0, 1, 2,3, 4, 5]]}], missingWords: []}, false],

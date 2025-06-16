@@ -1,4 +1,5 @@
 import { CSMessage, CSMessageType } from "../utils/content-script-communication";
+import { IndexedDBStorage } from "./indexed-db-nv-storage";
 import { NonVolatileBrowserStorage } from "./non-volatile-browser-storage";
 
 
@@ -6,13 +7,13 @@ export class ContextMenuManager {
     static readonly activationID = 'activation';
     static readonly quizID = 'quiz';
     static readonly deleteHighlightsID = "delete_highlight";
-    static readonly changeHighlightStylingID = 'highlight-style';
+    static readonly goToSiteDataPageID = 'site-data-page';
 
     static readonly activateActivationCMTitle = '🟢   Activate';
     static readonly deactivateActivationCMTitle = '🔴  Deactivate';
     static readonly quizCMTitle = "🧠  Quiz";
     static readonly deleteHighlightCMTitle = '❌  Delete Highlighted Text';
-    static readonly changeHighlightStyleingTitle = '🖌 Change Highlight Style';
+    static readonly goToSitePageTitle = '🕮 Go to site data page';
 
     setUpCMsCalled: boolean;  // true iff context menus have already been set up
     storage: NonVolatileBrowserStorage;
@@ -28,7 +29,7 @@ export class ContextMenuManager {
      * for usage with their intial configurations; also sets up the context menu listeners.
      * Future calls will be noops.
      */
-    async setUpContextMenus(): Promise<void> {
+    async setUpContextMenus(siteDataStorage?: IndexedDBStorage): Promise<void> {
         if (this.setUpCMsCalled) {
             console.warn("setUpContextMenus called again");
             return;
@@ -37,7 +38,7 @@ export class ContextMenuManager {
         this.setUpCMsCalled = true;
         const isActivated = await this.storage.getCurrentActivation();
         this.setUpContextMenuGraphicalComponents(isActivated);
-        this.setUpContextMenuListeners();
+        this.setUpContextMenuListeners(siteDataStorage);
         return;
     }
 
@@ -70,8 +71,8 @@ export class ContextMenuManager {
             contexts: ["all"]
           });
           chrome.contextMenus.create({
-            id: ContextMenuManager.changeHighlightStylingID,
-            title: ContextMenuManager.changeHighlightStyleingTitle,
+            id: ContextMenuManager.goToSiteDataPageID,
+            title: ContextMenuManager.goToSitePageTitle,
             contexts: ["all"],
           });
           chrome.contextMenus.create({
@@ -112,8 +113,8 @@ export class ContextMenuManager {
     /**
      * Instantiates context menu listeners
      */
-    private setUpContextMenuListeners(): void {
-        chrome.contextMenus.onClicked.addListener((info, tab): Promise<void> => {
+    private setUpContextMenuListeners(siteDataStorage?: IndexedDBStorage): void {
+        chrome.contextMenus.onClicked.addListener((info: any, tab: chrome.tabs.Tab | undefined): Promise<void> => {
             switch(info.menuItemId) {
                 case ContextMenuManager.activationID: {
                     return new Promise<void>(async (resolve) => {
@@ -153,19 +154,33 @@ export class ContextMenuManager {
                         'quiz triggered without active tab'
                     );
                 }
-                case ContextMenuManager.changeHighlightStylingID: {
-                    return this.specificTabSend(
-                        tab,
-                        CSMessageType.ChangeHighlightStyle,
-                        'highlight change triggered without active tab'
-                    );
+                case ContextMenuManager.goToSiteDataPageID: {
+                    const urlIn: string | undefined = tab?.url;
+                    if (urlIn === undefined) {
+                        console.error(`URL of tab ${tab?.index} is undefined`);
+                        return Promise.resolve();
+                    }
+                    if (siteDataStorage === undefined) {
+                        console.log('No access to siteData persistent storage');
+                        return Promise.resolve();
+                    }
+
+                    return siteDataStorage.getPageId(urlIn).then((response: any) => {
+                        if (response === undefined) {
+                            console.error(`No pageId found for ${urlIn}`);
+                            return;
+                        }
+                        const url = `web_pages/see-sites.html?pageId=${response}`;
+                        chrome.tabs.create({ url });
+                        return;
+                    });
                 }
                 default: {
                     console.error(`unexpected menu item ${info.menuItemId}`)
                     return Promise.resolve();
                 }
             }
-          });
+        });
     }
 
     /**
@@ -195,5 +210,4 @@ export class ContextMenuManager {
             title,
         });
     }
-
 }

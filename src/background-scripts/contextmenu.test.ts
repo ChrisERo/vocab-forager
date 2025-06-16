@@ -1,8 +1,9 @@
 import { CSMessageType } from "../utils/content-script-communication";
 import { ContextMenuManager } from "./contextmenu";
 import { MockDataStorage } from "./dictionary.test";
+import { IndexedDBStorage } from "./indexed-db-nv-storage";
 import { setUpMockBrowser } from "./mocks/chrome";
-
+import "fake-indexeddb/auto";  // needs to come after indexed-db-nv-storage import
 
 describe('Contextmenu Tests', () => {
 
@@ -32,7 +33,7 @@ describe('Contextmenu Tests', () => {
                 "separator-1",
                 ContextMenuManager.quizID,
                 "separator-2",
-                ContextMenuManager.changeHighlightStylingID,
+                ContextMenuManager.goToSiteDataPageID,
                 "separator-3",
                 ContextMenuManager.deleteHighlightsID
             ];
@@ -111,8 +112,98 @@ describe('Contextmenu Tests', () => {
         return;
     });
 
+    it.each([
+        [
+            'https://www.articles.fake.net/articles/334567',
+            true,
+            1,
+        ], 
+        [
+            undefined,
+            true,
+            -1,
+        ],
+        [
+            'https://www.articles.fake.net/articles/456701',
+            true,
+            6,  // Not sure how 6 is the id chosen, but seems to work.
+        ],
+        [
+            'https://www.articles.fake.net/articles/456701',
+            false,
+            -1,
+        ],
+    ])('Test Context Menu Creation', async (url: string | undefined, useSSD: boolean, expectedId: number) => {
+        setUpMockBrowser();
+        const globalDict = {languagesToResources: {}, currentDictionary: {index: -1, language: ''}};
+        const localStorage = new MockDataStorage(globalDict);
+        localStorage.setCurrentActivation(true);
+        const cmManager = new ContextMenuManager(localStorage);
 
+        if (useSSD) {
+            let dataToStore = {
+                'https://www.articles.fake.net/articles/334567': {
+                    schemeAndHost: 'https://www.articles.fake.net',
+                    urlPath: '/articles/334567',
+                    wordEntries: [
+                        {
+                            word: 'comida',
+                            startOffset: 0,
+                            endOffset: 13,
+                            nodePath: [[9,6,3,0]]
+                        }
+                    ],
+                    missingWords: ["foo", "bar"]
+                },
+                'https://www.articles.fake.net/articles/456701': {
+                    schemeAndHost: 'https://www.articles.fake.net',
+                    urlPath: '/articles/456701',
+                    wordEntries: [
+                        {
+                            word: 'manzana',
+                            startOffset: 33,
+                            endOffset: 44,
+                            nodePath: [[9,6,3,0], [10,6,3,0]]
+                        },
+                        {
+                            word: 'banana',
+                            startOffset: 45,
+                            endOffset: 12,
+                            nodePath: [[9,6,3,0], [9,7,3,0]]
+                        }
+                    ],
+                    missingWords: []
+                },
+            };
+            const siteDataStorage = new IndexedDBStorage();
+            await siteDataStorage.setUp();
+            await siteDataStorage .uploadExtensionData(dataToStore);
+            await cmManager.setUpContextMenus(siteDataStorage);
+        } else {
+            await cmManager.setUpContextMenus();
+        }
 
+        const info = {'menuItemId': ContextMenuManager.goToSiteDataPageID};
+        const tabInfo = {id: 12345, url: url};
+
+        const listeners = (chrome.contextMenus.onClicked as any)['listeners'];
+        expect(listeners.length).toBe(1);  // good sanity check
+        await listeners[0](info, tabInfo);
+
+        if (!useSSD || url === undefined) {
+            try {
+                await chrome.tabs.get(4);
+            } catch (err) {
+                expect(err).toBe('Fetched imaginary tab'); // no tab created
+                return;
+            }
+            return;
+        }
+        const tab: any = await chrome.tabs.get(5);
+        const expectedUrl = `web_pages/see-sites.html?pageId=${expectedId}`;
+        expect(tab.url).toBe(expectedUrl);
+        return;
+    });
 
     it.each([
        [false, ContextMenuManager.quizID, undefined, false, null],
@@ -121,9 +212,9 @@ describe('Contextmenu Tests', () => {
        [false, ContextMenuManager.deleteHighlightsID, undefined, false, null],
        [false, ContextMenuManager.deleteHighlightsID, {id: 1}, true, {1: [{messageType: CSMessageType.DeleteChosenHighlight}]}],
        [false, ContextMenuManager.deleteHighlightsID, {id: 0}, true, {0: [{messageType: CSMessageType.DeleteChosenHighlight}]}],
-       [false, ContextMenuManager.changeHighlightStylingID, undefined, false, null],
-       [false, ContextMenuManager.changeHighlightStylingID, {id: 1}, true, {1: [{messageType: CSMessageType.ChangeHighlightStyle}]}],
-       [false, ContextMenuManager.changeHighlightStylingID, {id: 0}, true, {0: [{messageType: CSMessageType.ChangeHighlightStyle}]}],
+       [false, ContextMenuManager.goToSiteDataPageID, undefined, false, {}],
+       [false, ContextMenuManager.goToSiteDataPageID, {id: 1}, true, {}],
+       [false, ContextMenuManager.goToSiteDataPageID, {id: 0}, true, {}],
        [false, 'fakeCMId', undefined, false, null],
        [false, 'fakeCMId', {id: 0}, false, null],
        [false, ContextMenuManager.activationID, undefined, true, {

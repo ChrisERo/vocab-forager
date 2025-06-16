@@ -2,6 +2,8 @@ import { BSMessage, BSMessageType } from "../utils/background-script-communicati
 import { SeeSiteData, SiteData } from "../utils/models";
 import { loadBannerHtml } from "./fetch-banner";
 import {clearEditPageComponents, setUpEditPage as setUpEditPageMode} from "./edit-site-data";
+import { IDBSiteData } from "../background-scripts/indexed-db-nv-storage";
+import { combineUrl } from "../utils/utils";
 
 const ERROR_MESSAGE = document.getElementById('error-message') as HTMLElement
 
@@ -138,20 +140,85 @@ function getSpecificGroupingClass(messageType: BSMessageType, listElement: HTMLD
 
 }
 
-function setUpPageInit() {
-    DOMAIN_INPUT_SECTION.style.display = 'inline-block';
-    LABEL_INPUT_SECTION.style.display = 'inline-block';
-    SEARCH.style.display = 'inline-block';
+function extractPageId(): number | null {
+    const url = new URL(window.location.href);
+    const search: URLSearchParams = url.searchParams;
+    const pageId = search.get('pageId');
+    if (pageId === null) {
+        return null;
+    } else {
+        const pageIdNum = parseInt(pageId);
+        if (isNaN(pageIdNum)) {
+            return null;
+        } else {
+            return pageIdNum;
+        }
+    }
+}
 
+async function setUpSiteDataPage(url: string, pageData: Promise<SiteData>, 
+                           labelData: Promise<string[]>): Promise<void> {
+    // Disable buttons from search sites as move towards specific site page
+    DELETE_BUTTON.style.display = 'none';
+    MODIFY_SITE_DATA_BUTTON.style.display = 'none';
+    (document.getElementById('list-of-urls') as HTMLElement).innerHTML = '';
+
+    REFRESH_PAGE_BUTTON.style.display = 'inline-block';
+    await setUpEditPageMode(url, pageData, labelData);
+}
+
+function initEditPage(): Promise<boolean> {
+    return new Promise((resolve) => {
+        const pageId = extractPageId();
+        if (pageId === null) {
+            resolve(false);
+            return;
+        }
+        const request: BSMessage = {
+            messageType: BSMessageType.GetPageDataByPK,
+            payload: {
+                id: pageId
+            }
+        };
+        chrome.runtime.sendMessage(request, (data: IDBSiteData | null) => {
+            if (data === null) {
+                console.warn('Failed to find site data for pageId: ' + pageId);
+                resolve(false);
+                return;
+            }
+            const url = combineUrl(data.schemeAndHost, data.urlPath);
+            const labelDataPromise: Promise<string[]> = Promise.resolve(data.labels === undefined ? [] : data.labels);
+            const pageDataPromsie: Promise<SiteData> = Promise.resolve(data);
+            setUpSiteDataPage(url, pageDataPromsie, labelDataPromise).then(() => {
+                resolve(true)
+            });
+        });
+    }); 
+}
+
+function setUpPageInit(): Promise<void> { 
     ERROR_MESSAGE.innerHTML = '';
     URL_LIST_ELEMENT.innerHTML = '';
     DELETE_BUTTON.style.display = 'none';
     REFRESH_PAGE_BUTTON.style.display = 'none';
     MODIFY_SITE_DATA_BUTTON.style.display = 'none';
-    clearEditPageComponents();
 
-    getSpecificGroupingClass(BSMessageType.GetAllDomains, DOMAIN_LIST_ELEMENT);
-    getSpecificGroupingClass(BSMessageType.GetAllLabels, LABEL_LIST_ELEMENT);
+    clearEditPageComponents();
+    return initEditPage().then(editPageSet => {
+        if (editPageSet) {
+            console.log('nulifying stuff for ' + window.location.href);
+            DOMAIN_INPUT_SECTION.style.display = 'none';
+            LABEL_INPUT_SECTION.style.display = 'none';
+            SEARCH.style.display = 'none';
+        } else {
+            console.log('FOOBAR ' + window.location.href);
+            DOMAIN_INPUT_SECTION.style.display = 'inline-block';
+            LABEL_INPUT_SECTION.style.display = 'inline-block';
+            SEARCH.style.display = 'inline-block';
+            getSpecificGroupingClass(BSMessageType.GetAllDomains, DOMAIN_LIST_ELEMENT);
+            getSpecificGroupingClass(BSMessageType.GetAllLabels, LABEL_LIST_ELEMENT);
+        }
+     });
 }
 
 
@@ -159,8 +226,8 @@ function setUpPageInit() {
  * Start executing JavaScript/TypeScript code for page
  */
 
-loadBannerHtml();
-setUpPageInit();
+const bannerLoaded = loadBannerHtml();
+const pageSetup = setUpPageInit();
 
 // Add Event Listeners to clear out unneeded search results
 DOMAIN_INPUT.addEventListener('focus', (event) => {
@@ -216,16 +283,10 @@ MODIFY_SITE_DATA_BUTTON.addEventListener('click', () => {
     const pageData: Promise<SiteData> = chrome.runtime.sendMessage(request);
     request.messageType = BSMessageType.GetLabelsForSite;
     const labelData: Promise<string[]> = chrome.runtime.sendMessage(request);
-
-    // Disable buttons from search sites as move towards specific site page
-    DELETE_BUTTON.style.display = 'none';
-    REFRESH_PAGE_BUTTON.style.display = 'none';
-    MODIFY_SITE_DATA_BUTTON.style.display = 'none';
-    (document.getElementById('list-of-urls') as HTMLElement).innerHTML = '';
-
-    REFRESH_PAGE_BUTTON.style.display = 'inline-block';
-    setUpEditPageMode(url, pageData, labelData);
+    setUpSiteDataPage(url, pageData, labelData);
 })
 
 // Delete all urls that were checked by user from non-volatile storage
 REFRESH_PAGE_BUTTON.addEventListener('click', setUpPageInit);
+
+export const setupDone = Promise.all([bannerLoaded, pageSetup]); // defined at end so listeners would already be set.

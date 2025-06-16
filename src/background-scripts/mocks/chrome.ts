@@ -211,7 +211,7 @@ export const setUpMockBrowser = () => {
                         return tab;
                     }
                 }
-                throw 'Updated imaginary tab';
+                throw 'Fetched imaginary tab';
             },
             messagesSent: messagesSentToTabs,
             sendMessage: async (tabId: number, message: any): Promise<void> => {

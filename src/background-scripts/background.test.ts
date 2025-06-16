@@ -5,7 +5,7 @@ import "./dictionary";
 import { setUpMockBrowser } from "./mocks/chrome";
 import { BSMessage, BSMessageType } from "../utils/background-script-communication";
 import { Dictionary, DictionaryIdentifier, SiteData } from "../utils/models";
-import { HandlerType, backgroundWorkerPromise, browserStorage, contextMenuManager, dictionaryManager, indexedDBStorage, makeHandler} from "./background";
+import { HandlerType, backgroundWorkerPromise, browserStorage, contextMenuManager, dictionaryManager, indexedDBStorage, listenerSetupPromise, makeHandler} from "./background";
 
 jest.mock("./contextmenu");
 jest.mock("./dictionary");
@@ -105,6 +105,7 @@ describe('Testing Service Worker', () => {
     });
 
     test('initial setup is correct', async () => {
+        await listenerSetupPromise;
         expect(contextMenuManager.setUpContextMenus).toHaveBeenCalledTimes(1);
 
         // Test that listener was indeed registered
@@ -1048,6 +1049,78 @@ describe('Testing Service Worker', () => {
                     'https://store.gamersnexus.net/products/gn-wireframe-mouse-mat',
                     'https://www.justandsinner.org/donate.html'
                 ]);
+            }
+        ],
+        [
+            'Basic Get Page Data by PK with Fake PK',
+            {
+                messageType: BSMessageType.GetPageDataByPK,
+                payload: {id: 5},
+            },
+            (result: any) => {
+                expect(result).toBeNull();
+                return;
+            }
+        ],
+        [
+            'Basic Get Page Data by PK',
+            {
+                messageType: BSMessageType.GetPageDataByPK,
+                payload: {id: 1},
+            },
+            (result: any) => {
+                expect(result).not.toBeNull();
+                const url = result.schemeAndHost + result.urlPath;
+                expect(url).toBe('https://foobar.io');
+                return;
+            }
+        ],
+        [
+            'Basic Get Page Data by PK 2',
+            {
+                messageType: BSMessageType.GetPageDataByPK,
+                payload: {id: 2},
+            },
+            (result: any) => {
+                expect(result).not.toBeNull();
+                const url = result.schemeAndHost + result.urlPath;
+                expect(url).toBe('https://darknetdiaries.com/episode/110');
+                return;
+            }
+        ],
+        [
+            'Get PK for Fake Page',
+            {
+                messageType: BSMessageType.GetPagePrimaryKey,
+                payload: {url: 'https://un.registered.page.com/should-not-exist'},
+            },
+            (result: any) => {
+                expect(result).toBeNull();
+                return;
+            }
+        ],
+        [
+            'Get Primary Key for Page 1',
+            {
+                messageType: BSMessageType.GetPagePrimaryKey,
+                payload: {url: 'https://foobar.io'},
+            },
+            (result: any) => {
+                expect(result).not.toBeNull();
+                expect(result).toBe(1);
+                return;
+            }
+        ],
+        [
+            'Basic Get Page Data by PK 2',
+            {
+                messageType: BSMessageType.GetPagePrimaryKey,
+                payload: {url: 'https://darknetdiaries.com/episode/110'},
+            },
+            (result: any) => {
+                expect(result).not.toBeNull();
+                expect(result).toBe(2);
+                return;
             }
         ],
 
