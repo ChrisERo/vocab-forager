@@ -44,7 +44,7 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
 
     // index  mapping database version to transform function to move from previous version of table to said table
     private static readonly ON_UPGRADE_CALLBACKS = [
-        () => {console.error("SHOULD NOT BE HERE");}, // noop
+        () => {console.error("SHOULD NOT BE HERE"); return Promise.resolve();}, // noop
         IndexedDBStorage.v1Creation,
         IndexedDBStorage.addSubjectTable,
         IndexedDBStorage.addSiteDataIdKey,
@@ -78,6 +78,7 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
               reject(`Problem opening DB ${DB_NAME}:${dbVersion}: ${event.target.error}`);
             };
             let shouldPullSiteDataFromLS: boolean = false;
+            let upgradesCompletedPromise: null | Promise<void[]> = null;
             openRequest.onupgradeneeded = (event: any) => {
                 console.log(`Upgrading ${DB_NAME} to ${event.newVersion} from ${event.oldVersion}`);
                 shouldPullSiteDataFromLS = event.oldVersion <= 0;
@@ -85,14 +86,18 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
                 const db: IDBDatabase = event.target.result;
                 let transaction: IDBTransaction = event.target.transaction;
                 // Only perform transformations asociated with newer versions (older transforms not needed)
+                const updateOperations: Promise<void>[] = [];
                 for (let i = Math.max(0, event.oldVersion) + 1; i <= event.newVersion; i++) {
                     console.log(`Performing IndexedDB Transform ${i}`);
                     const func = IndexedDBStorage.ON_UPGRADE_CALLBACKS[i];
-                    func(db, transaction);
+                    updateOperations.push(func(db, transaction));
                 }
-
+                upgradesCompletedPromise = Promise.all(updateOperations)
             };
             openRequest.onsuccess = async (event: any) => {
+                if (upgradesCompletedPromise !== null) {
+                    await upgradesCompletedPromise;
+                }
                 this.db = event.target.result as IDBDatabase;
                 while (IndexedDBStorage.POST_UPGRADE_ACTIONS.length > 0) {
                     // only remove action after it has completed successfully
@@ -726,7 +731,7 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
      *
      * @param db database connection object with which to create object stores
      */
-    private static v1Creation(db: IDBDatabase, _: IDBTransaction): void {
+    private static v1Creation(db: IDBDatabase, _: IDBTransaction): Promise<void> {
         console.log('Adding siteData table');
         // Create an objectStore for this database
         const objectStore = db.createObjectStore(IndexedDBStorage.SITE_DATA_TABLE, { autoIncrement: true });
@@ -734,6 +739,7 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
         // define what data items the objectStore will contain
         objectStore.createIndex('url', ['schemeAndHost', 'urlPath'], { unique: true });
         objectStore.createIndex('schemeAndHost', 'schemeAndHost', { unique: false });
+        return Promise.resolve();
     }
 
     /**
@@ -742,13 +748,14 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
      *
      * @param db database connection object with which to create object stores
      */
-    private static addSubjectTable(db: IDBDatabase, _: IDBTransaction): void {
+    private static addSubjectTable(db: IDBDatabase, _: IDBTransaction): Promise<void> {
         console.log('Adding label table');
         const objectStore = db.createObjectStore(IndexedDBStorage.LABEL_TABLE,
             { keyPath: ['label', 'schemeAndHost', 'urlPath'] }
         );
         objectStore.createIndex('url', ['schemeAndHost', 'urlPath'], { unique: false });
         objectStore.createIndex('label', 'label', { unique: false });
+        return Promise.resolve();
     }
 
     /** 
@@ -757,26 +764,27 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
      * @param db database connection object with which to create object stores
      * @param transaciton transaction entity associated with onupdated action 
      */
-    private static addSiteDataIdKey(db: IDBDatabase, transaction: IDBTransaction): void {
-        IndexedDBStorage.copySiteDataIntoTemp(db, transaction);
-        IndexedDBStorage.recreateSiteDataObjectStore(db, transaction);
+    private static async addSiteDataIdKey(db: IDBDatabase, transaction: IDBTransaction): Promise<void> {
+        await IndexedDBStorage.copySiteDataIntoTemp(db, transaction);
+        await IndexedDBStorage.recreateSiteDataObjectStore(db, transaction);
         IndexedDBStorage.deleteTempTable(db);
+        return;
     }
 
-    private static copySiteDataIntoTemp(db: IDBDatabase, transaction: IDBTransaction): void {
+    private static copySiteDataIntoTemp(db: IDBDatabase, transaction: IDBTransaction): Promise<void> {
         console.log("Starting Process of Adding KEY to site data table")
         db.createObjectStore(
             IndexedDBStorage.TEMP_TABLE , 
             {autoIncrement: true, keyPath: 'id'}
         );
-        IndexedDBStorage.copyDatabaseContents(
+        return IndexedDBStorage.copyDatabaseContents(
             transaction,
             IndexedDBStorage.SITE_DATA_TABLE,
             IndexedDBStorage.TEMP_TABLE
         ); 
     }
 
-    private static recreateSiteDataObjectStore(db: IDBDatabase, transaction: IDBTransaction): void {
+    private static recreateSiteDataObjectStore(db: IDBDatabase, transaction: IDBTransaction): Promise<void> {
         console.log("DELETEING OLD TABLE")
         db.deleteObjectStore(IndexedDBStorage.SITE_DATA_TABLE);
         console.log("DELETION COMPLETE")
@@ -788,7 +796,7 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
         );
         newStore.createIndex('url', ['schemeAndHost', 'urlPath'], { unique: true });
         newStore.createIndex('schemeAndHost', 'schemeAndHost', { unique: false });
-        IndexedDBStorage.copyDatabaseContents(
+        return IndexedDBStorage.copyDatabaseContents(
             transaction,
             IndexedDBStorage.TEMP_TABLE,
             IndexedDBStorage.SITE_DATA_TABLE,
@@ -803,21 +811,24 @@ export class IndexedDBStorage implements NonVolatileBrowserStorage {
 
     private static copyDatabaseContents(transaction: IDBTransaction,
                                         sourceStoreName: string, 
-                                        destStoreName: string): void {
-        console.log(`COPYING DATA FROM ${sourceStoreName} to ${destStoreName}`);
-        const sourceStore = transaction.objectStore(sourceStoreName);
-        const destStore= transaction.objectStore(destStoreName);
-        sourceStore.openCursor().onsuccess = (event: Event) => {
-            const cursor = (event.target as IDBRequest).result;
-            if (cursor) {
-                const data = cursor.value;
-                destStore.put(data);
-                cursor.continue();
-            } else {
-                console.log(`COMPLETED COPY ${sourceStoreName} -> ${destStoreName}`);
-                return;
-            }
-        };
+                                        destStoreName: string): Promise<void> {
+        return new Promise<void>( (resolve) => {
+            console.log(`COPYING DATA FROM ${sourceStoreName} to ${destStoreName}`);
+            const sourceStore = transaction.objectStore(sourceStoreName);
+            const destStore= transaction.objectStore(destStoreName);
+            sourceStore.openCursor().onsuccess = (event: Event) => {
+                const cursor = (event.target as IDBRequest).result;
+                if (cursor) {
+                    const data = cursor.value;
+                    destStore.put(data);
+                    cursor.continue();
+                } else {
+                    console.log(`COMPLETED COPY ${sourceStoreName} -> ${destStoreName}`);
+                    resolve();
+                    return;
+                }
+            };
+        });
     }
 }
 
