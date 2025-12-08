@@ -1,3 +1,4 @@
+import browser from 'webextension-polyfill';
 import { BSMessage, BSMessageType } from "../utils/background-script-communication";
 import { Dictionary, DictionaryIdentifier } from "../utils/models";
 import { loadBannerHtml } from "./fetch-banner";
@@ -25,15 +26,16 @@ function resetStyles(): void {
         messageType: BSMessageType.GetCurrentDictionary,
         payload: null
     }
-    chrome.runtime.sendMessage(getDictReq, (cd: DictionaryIdentifier) => {
+    browser.runtime.sendMessage(getDictReq).then(response => {
+        const cd: DictionaryIdentifier = response as DictionaryIdentifier;
         currentDictId.language = cd.language;
         currentDictId.index = cd.index;
         let getLangsReq: BSMessage = {
             messageType: BSMessageType.GetLanguages,
             payload: null
         };
-        chrome.runtime.sendMessage(getLangsReq, 
-            (langs: string[]) =>  {
+        browser.runtime.sendMessage(getLangsReq).then( response =>  {
+                const langs: string[] = response as string[];
                 makeLanguageSelection(langs, currentDictId);
                 setUpDictsAndLangsElements(langs, currentDictId);
             });
@@ -82,8 +84,8 @@ dleteDictElement.addEventListener("click", () => {
             messageType: BSMessageType.DeleteExitingDictionary,
             payload: dict
         };
-        chrome.runtime.sendMessage(mssg, (isDelete: boolean) => {
-            if (isDelete) {
+        browser.runtime.sendMessage(mssg).then(isDelete => {
+            if (isDelete) {  // isDelete should be a boolean
                 setUpItems(); // Reset select items
                 // Confirm Deletion
                 const status = document.getElementById('show-status') as HTMLElement;
@@ -102,7 +104,8 @@ editDict.addEventListener("click", () =>  {
             messageType: BSMessageType.GetExistingDictionary,
             payload: dictInfo
         };
-        chrome.runtime.sendMessage(message, (dict: Dictionary) => {
+        browser.runtime.sendMessage(message).then(response => {
+            const dict: Dictionary = response as Dictionary;
             if (dict.name === '' && dict.url === '') {
                 return;
             }
@@ -137,7 +140,7 @@ saveElem.addEventListener("click", () => {
         }
     }
 
-    chrome.runtime.sendMessage(message, (result) => {
+    browser.runtime.sendMessage(message).then(result => {
             setUpItems();
             resetStyles();
 

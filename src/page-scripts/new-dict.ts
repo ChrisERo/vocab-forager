@@ -1,3 +1,4 @@
+import browser from 'webextension-polyfill';
 import { BSMessage, BSMessageType } from "../utils/background-script-communication";
 import { Dictionary } from "../utils/models";
 import { loadBannerHtml } from "./fetch-banner";
@@ -17,7 +18,7 @@ import { loadBannerHtml } from "./fetch-banner";
             lang: language,
         }
     }
-    chrome.runtime.sendMessage(addDictMssg);
+    browser.runtime.sendMessage(addDictMssg);
 }
 
 /**

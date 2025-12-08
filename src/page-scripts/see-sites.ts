@@ -1,3 +1,4 @@
+import browser from 'webextension-polyfill';
 import { BSMessage, BSMessageType } from "../utils/background-script-communication";
 import { SeeSiteData, SiteData } from "../utils/models";
 import { loadBannerHtml } from "./fetch-banner";
@@ -54,7 +55,8 @@ function addURLOption(data: SeeSiteData): void {
  * opening the url.
  */
 function getSites(message: BSMessage): void {
-    chrome.runtime.sendMessage(message, (data: SeeSiteData[]) => {
+    browser.runtime.sendMessage(message).then(response => {
+        const data: SeeSiteData[] = response as SeeSiteData[];
         data.sort((a, b) => {
             const titleA = a.title === undefined ? a.url : a.title;
             const titleB = b.title === undefined ? b.url : b.title;
@@ -131,7 +133,8 @@ function getSpecificGroupingClass(messageType: BSMessageType, listElement: HTMLD
         messageType: messageType,
         payload: null
     }
-    chrome.runtime.sendMessage(message, (searchKeys: string[]) => {
+    browser.runtime.sendMessage(message).then((response) => {
+        const searchKeys = response as string[];
         searchKeys.sort();
         for (let i = 0; i < searchKeys.length; i++) {
             addDomainOption(searchKeys[i], listElement);
@@ -180,7 +183,8 @@ function initEditPage(): Promise<boolean> {
                 id: pageId
             }
         };
-        chrome.runtime.sendMessage(request, (data: IDBSiteData | null) => {
+        browser.runtime.sendMessage(request).then((response) => {
+            const data = response as IDBSiteData | null;
             if (data === null) {
                 console.warn('Failed to find site data for pageId: ' + pageId);
                 resolve(false);
@@ -192,6 +196,9 @@ function initEditPage(): Promise<boolean> {
             setUpSiteDataPage(url, pageDataPromsie, labelDataPromise).then(() => {
                 resolve(true)
             });
+        }).catch(error => {
+            console.error('Error fetching page data:', error);
+            resolve(false);
         });
     }); 
 }
@@ -251,7 +258,7 @@ DELETE_BUTTON.addEventListener('click', () => {
                 url
             }
         };
-        chrome.runtime.sendMessage(removeMsg);
+        browser.runtime.sendMessage(removeMsg);
         checkBoxes[i].parentElement?.remove();
     }
     ERROR_MESSAGE.innerHTML = '';
@@ -280,9 +287,9 @@ MODIFY_SITE_DATA_BUTTON.addEventListener('click', () => {
             url: url
         }
     };
-    const pageData: Promise<SiteData> = chrome.runtime.sendMessage(request);
+    const pageData: Promise<SiteData> = browser.runtime.sendMessage(request);
     request.messageType = BSMessageType.GetLabelsForSite;
-    const labelData: Promise<string[]> = chrome.runtime.sendMessage(request);
+    const labelData: Promise<string[]> = browser.runtime.sendMessage(request);
     setUpSiteDataPage(url, pageData, labelData);
 })
 

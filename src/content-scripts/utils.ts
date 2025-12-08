@@ -1,3 +1,4 @@
+import browser from 'webextension-polyfill';
 import { BSMessage, BSMessageType, SearchRequest } from "../utils/background-script-communication";
 
 export const HILIGHT_CLASS = 'vf-highlighted'; // class of hilighted sections in html page
@@ -19,7 +20,7 @@ export function defineWord(word: string|null) {
             } as SearchRequest
         };
         
-        chrome.runtime.sendMessage(mssg);
+        browser.runtime.sendMessage(mssg);
     }
 }
 

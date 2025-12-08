@@ -1,3 +1,4 @@
+import browser from 'webextension-polyfill';
 import { BSMessage, BSMessageType } from "../utils/background-script-communication";
 import { loadBannerHtml } from "./fetch-banner";
 import { addNavToButton } from "./utils";
@@ -31,7 +32,7 @@ importPath.addEventListener("change", (e) => {
                 data: data
             }
         };
-        chrome.runtime.sendMessage(message);
+        browser.runtime.sendMessage(message);
         importPath.value = '';
 
     });
@@ -50,5 +51,5 @@ document.getElementById('export-data')?.addEventListener('click', () => {
         messageType: BSMessageType.GetAllExtensionData,
         payload: null
     };
-    chrome.runtime.sendMessage(message, saveData);
+    browser.runtime.sendMessage(message).then(saveData);
 });

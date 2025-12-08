@@ -1,3 +1,4 @@
+import browser from 'webextension-polyfill';
 import { BSMessage, BSMessageType } from "../utils/background-script-communication";
 import { CSMessage, CSMessageType } from "../utils/content-script-communication";
 import { Dictionary, DictionaryIdentifier, isNullDictionaryID } from "../utils/models";
@@ -18,7 +19,8 @@ function initButtons(): void {
         messageType: BSMessageType.GetCurrentActivation,
         payload: null
     };
-    chrome.runtime.sendMessage(getActive, (isActive: boolean) => {
+    browser.runtime.sendMessage(getActive).then(response => {
+        const isActive: boolean = response as boolean;
         const activeToggle = document.getElementById('activate') as HTMLInputElement;
         activeToggle.checked = isActive;
         activeToggle.addEventListener('change',  () =>  {
@@ -30,10 +32,10 @@ function initButtons(): void {
                     isActivated: isActive
                 }
             };
-            chrome.runtime.sendMessage(setChecked); 
+            browser.runtime.sendMessage(setChecked); 
             // Send message to currently all tabs to update based on new state we set
-            const get_tabs = chrome.tabs.query({});
-            get_tabs.then((tabs) => {
+            const get_tabs = browser.tabs.query({});
+            get_tabs.then((tabs: browser.Tabs.Tab[]) => {
                 for (let i = 0; i < tabs.length; i++) {
                     const tab = tabs[i];
                     // TODO: make this with value
@@ -42,12 +44,12 @@ function initButtons(): void {
                         payload: {newActivatedState: isActive},
                     }
                     if (tab.id !== undefined) {
-                        chrome.tabs.sendMessage(tab.id, message);
+                        browser.tabs.sendMessage(tab.id, message);
                     }
                 }
             });
+            });
         });
-    });
 }
 
 /**
@@ -84,7 +86,7 @@ function processRequestedData(dictInfo: DictionaryIdentifier, langs: string[]): 
                         language: myLang
                     }
                 }
-                chrome.runtime.sendMessage(setDictMssg);
+                browser.runtime.sendMessage(setDictMssg);
                 dictInfo.language = myLang;
                 dictInfo.index = dictIndex;
             }
@@ -105,7 +107,7 @@ function processRequestedData(dictInfo: DictionaryIdentifier, langs: string[]): 
                     language: myLang
                 }
             }
-            chrome.runtime.sendMessage(setDictMssg);
+            browser.runtime.sendMessage(setDictMssg);
             dictInfo.language = myLang;
             dictInfo.index = dictIndex;
         }
@@ -123,13 +125,14 @@ let getDictReq: BSMessage = {
     messageType: BSMessageType.GetCurrentDictionary,
     payload: null
 }
-chrome.runtime.sendMessage(getDictReq, (cd: DictionaryIdentifier) => {
-    currentDictId.language = cd.language;
-    currentDictId.index = cd.index;
+browser.runtime.sendMessage(getDictReq).then((cd: any) => {
+    const dictId = cd as DictionaryIdentifier;
+    currentDictId.language = dictId.language;
+    currentDictId.index = dictId.index;
     let getLangsReq: BSMessage = {
         messageType: BSMessageType.GetLanguages,
         payload: null
     };
-    chrome.runtime.sendMessage(getLangsReq, 
-        (langs: string[]) => processRequestedData(currentDictId, langs))
+    browser.runtime.sendMessage(getLangsReq).then(
+        (langs: unknown) => processRequestedData(currentDictId, langs as string[]))
 });

@@ -1,3 +1,5 @@
+import browser from 'webextension-polyfill';
+import type { Tabs } from 'webextension-polyfill';
 import { CSMessage, CSMessageType } from "../utils/content-script-communication";
 import { IndexedDBStorage } from "./indexed-db-nv-storage";
 import { NonVolatileBrowserStorage } from "./non-volatile-browser-storage";
@@ -48,39 +50,39 @@ export class ContextMenuManager {
      * @param isActivated whether addon should be considered activated or not
      */
     private setUpContextMenuGraphicalComponents(isActivated: boolean): void {
-        chrome.contextMenus.create({
+        browser.contextMenus.create({
             id: ContextMenuManager.activationID,
             title: isActivated ?
                 ContextMenuManager.deactivateActivationCMTitle :
                 ContextMenuManager.activateActivationCMTitle,
             contexts: ["all"],
           });
-          chrome.contextMenus.create({
+          browser.contextMenus.create({
             id: "separator-1",
             type: "separator",
             contexts: ["all"]
           });
-          chrome.contextMenus.create({
+          browser.contextMenus.create({
             id: ContextMenuManager.quizID,
             title: ContextMenuManager.quizCMTitle,
             contexts: ["all"],
           });
-          chrome.contextMenus.create({
+          browser.contextMenus.create({
             id: "separator-2",
             type: "separator",
             contexts: ["all"]
           });
-          chrome.contextMenus.create({
+          browser.contextMenus.create({
             id: ContextMenuManager.goToSiteDataPageID,
             title: ContextMenuManager.goToSitePageTitle,
             contexts: ["all"],
           });
-          chrome.contextMenus.create({
+          browser.contextMenus.create({
             id: "separator-3",
             type: "separator",
             contexts: ["all"]
           });
-          chrome.contextMenus.create({
+          browser.contextMenus.create({
             id: ContextMenuManager.deleteHighlightsID,
             title: ContextMenuManager.deleteHighlightCMTitle,
             contexts: ["all"],
@@ -96,7 +98,7 @@ export class ContextMenuManager {
      * @param messageType type of message to send to listener in tab
      * @param errorMessage error message to log if tab contains invalid data
      */
-    private async specificTabSend(tab: chrome.tabs.Tab | undefined, messageType: CSMessageType, errorMessage: string): Promise<void> {
+    private async specificTabSend(tab: Tabs.Tab | undefined, messageType: CSMessageType, errorMessage: string): Promise<void> {
         // notify triggering tab that it needs to delete something
         if (tab === undefined || tab.id === undefined) {
             console.error(errorMessage);
@@ -106,7 +108,7 @@ export class ContextMenuManager {
             messageType,
         }
 
-        await chrome.tabs.sendMessage(tab.id, message);
+        await browser.tabs.sendMessage(tab.id, message);
         return;
     }
 
@@ -114,7 +116,7 @@ export class ContextMenuManager {
      * Instantiates context menu listeners
      */
     private setUpContextMenuListeners(siteDataStorage?: IndexedDBStorage): void {
-        chrome.contextMenus.onClicked.addListener((info: any, tab: chrome.tabs.Tab | undefined): Promise<void> => {
+        browser.contextMenus.onClicked.addListener((info: any, tab: Tabs.Tab | undefined): Promise<void> => {
             switch(info.menuItemId) {
                 case ContextMenuManager.activationID: {
                     return new Promise<void>(async (resolve) => {
@@ -123,7 +125,7 @@ export class ContextMenuManager {
                         const newIsActivatedState = !isActivatedNow;
                         this.storage.setCurrentActivation(newIsActivatedState);
                         this.updateContextMenuBasedOnActivation(newIsActivatedState);
-                        const tabs: chrome.tabs.Tab[] = await chrome.tabs.query({});
+                        const tabs: Tabs.Tab[] = await browser.tabs.query({});
                         const message: CSMessage = {
                             messageType: CSMessageType.ActivationStateChange,
                             payload: {newActivatedState: newIsActivatedState},
@@ -131,7 +133,7 @@ export class ContextMenuManager {
                         for (let tabElement of tabs) {
                             if (tabElement.id !== undefined) {
                                 try {
-                                    await chrome.tabs.sendMessage(tabElement.id, message);
+                                    await browser.tabs.sendMessage(tabElement.id, message);
                                 } catch (err) {  // if extension is not running in certain sites, could get an error
                                     console.warn(`Failed to send message to tab ${tabElement.index}-${tabElement.title}: ${err}`);
                                 }
@@ -171,7 +173,7 @@ export class ContextMenuManager {
                             return;
                         }
                         const url = `web_pages/see-sites.html?pageId=${response}`;
-                        chrome.tabs.create({ url });
+                        browser.tabs.create({ url });
                         return;
                     });
                 }
@@ -187,7 +189,7 @@ export class ContextMenuManager {
      * Exposes context menu for deleteing a highlighted text from page meta-data
      */
     exposeDeleteContextMenu(): void {
-       chrome.contextMenus.update(ContextMenuManager.deleteHighlightsID,
+       browser.contextMenus.update(ContextMenuManager.deleteHighlightsID,
         {visible: true});
     }
 
@@ -195,7 +197,7 @@ export class ContextMenuManager {
      * Hides context menu that exposeDeleteContextMenu reveals
      */
     hideDeleteContextMenu(): void {
-        chrome.contextMenus.update(ContextMenuManager.deleteHighlightsID,
+        browser.contextMenus.update(ContextMenuManager.deleteHighlightsID,
             {visible: false});
     }
 
@@ -206,7 +208,7 @@ export class ContextMenuManager {
         let title = isActivated ?
             ContextMenuManager.deactivateActivationCMTitle :
             ContextMenuManager.activateActivationCMTitle;
-        chrome.contextMenus.update(ContextMenuManager.activationID, {
+        browser.contextMenus.update(ContextMenuManager.activationID, {
             title,
         });
     }
