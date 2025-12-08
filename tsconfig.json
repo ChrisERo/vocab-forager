@@ -9,7 +9,8 @@
       "rootDir": "src",
       "outDir": "extension/js",
       "noEmitOnError": false,
-      "typeRoots": [ "node_modules/@types" ]
+      "typeRoots": [ "node_modules/@types" ],
+      "types": ["webextension-polyfill", "chrome", "jest"]
    },
    "exclude": [
       "*.test.ts"
