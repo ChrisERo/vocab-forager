@@ -172,7 +172,9 @@ export class ContextMenuManager {
                             console.error(`No pageId found for ${urlIn}`);
                             return;
                         }
-                        const url = `web_pages/see-sites.html?pageId=${response}`;
+
+                        // Though not needed for correctness, using absolute path for consistency
+                        const url = browser.runtime.getURL(`web_pages/see-sites.html?pageId=${response}`);
                         browser.tabs.create({ url });
                         return;
                     });

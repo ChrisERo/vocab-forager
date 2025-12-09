@@ -8,8 +8,9 @@ import browser from 'webextension-polyfill';
  */
  export function addNavToButton(pageName: string): void {
     const htmle = document.getElementById(pageName) as HTMLElement;
+    const url = browser.runtime.getURL(`web_pages/${pageName}.html`);
     htmle.addEventListener("click", () => {
-        browser.tabs.create({ url: `web_pages/${pageName}.html` });
+        browser.tabs.create({ url });
     });
 }
 
