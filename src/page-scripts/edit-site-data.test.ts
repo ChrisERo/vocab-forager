@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs';
 import { JSDOM } from "jsdom";
-import { setUpMockBrowser } from "../background-scripts/mocks/chrome";
+import { setUpMockBrowser } from "../__mocks__/chrome";
 setUpMockBrowser();
 import { SiteData } from '../utils/models';
 

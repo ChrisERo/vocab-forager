@@ -2,6 +2,7 @@ import path from 'path';
 import { readFileSync } from 'fs';
 import { JSDOM } from "jsdom";
 import { BSMessage, BSMessageType } from '../utils/background-script-communication';
+import { overrideBrowserState } from '../__mocks__/chrome';
 
 describe('Script for see-sites.html page', () => {
     function setUpDOM(url: string): Promise<JSDOM> {
@@ -78,45 +79,27 @@ describe('Script for see-sites.html page', () => {
                 },
             }
         };
-        global.chrome = {
+        overrideBrowserState({
             runtime: {
                 getURL: (pathFromPublic: string) => {
                     const relativePath = '../../public/' + pathFromPublic;
                     const absolutePath = path.resolve(__dirname, relativePath);
                     return `file://${absolutePath}`;
                 },
-                sendMessage(message:any, callback: (response: any) => void) {
+                sendMessage(message:any): Promise<any> {
                     const request = message as BSMessage;
                     switch (request.messageType) {
                         case BSMessageType.GetAllDomains: {
                             const domains = ['https://fake.test.com'];
-                            if (callback !== undefined) {
-                                callback(domains);
-                            }
-                            else  {
-                                return Promise.resolve(domains);
-                            }
-                            break;
+                            return Promise.resolve(domains);
                         }
                         case BSMessageType.GetAllLabels: {
                             const labels = ['platos', 'Argentina', 'comida', 'historia', 'España'];
-                            if (callback !== undefined) {
-                                callback(labels);
-                            }
-                            else  {
-                                return Promise.resolve(labels);
-                            }
-                            break;
+                            return Promise.resolve(labels);
                         }
                         case BSMessageType.GetLabelsForSite: {
                             const labels = ['platos', 'comida', 'Argentina'];
-                            if (callback !== undefined) {
-                                callback(labels);
-                            }
-                            else  {
-                                return Promise.resolve(labels);
-                            }
-                            break;
+                            return Promise.resolve(labels);
                         }
                         case BSMessageType.GetPageDataByPK: {
                             const id = (request.payload as any)['id']
@@ -127,13 +110,7 @@ describe('Script for see-sites.html page', () => {
                             } else {
                                 data = null;
                             }
-                            if (callback !== undefined) {
-                                callback(data);
-                            }
-                            else  {
-                                return Promise.resolve(data);
-                            }
-                            break;
+                            return Promise.resolve(data);
                         }
                         default: {
                             return Promise.reject('Unknown message type '
@@ -142,7 +119,7 @@ describe('Script for see-sites.html page', () => {
                     }
                 }
             }
-        } as any;
+        } as any);
         const dom: JSDOM = await setUpDOM(url);
         expect(dom.window.location.href).toBe(url);
         expect(window.location.href).toBe(url);

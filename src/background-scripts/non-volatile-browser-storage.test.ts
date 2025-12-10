@@ -1,5 +1,6 @@
 import { GlobalDictionaryData, SeeSiteData, SiteData } from "../utils/models";
-import { setUpMockBrowser } from "./mocks/chrome";
+import { setUpMockBrowser } from "../__mocks__/chrome";
+import browser from "webextension-polyfill";
 import { LocalStorage, getLocalStorage } from "./non-volatile-browser-storage";
 
 
@@ -20,7 +21,7 @@ describe('Test LocalStorage', () => {
         [undefined, false],
     ])('Test activation [from %s to %s]', async (isActivatedOG: boolean | undefined | null, newCurrentActivation: boolean) => {
         if (isActivatedOG !== undefined) {
-            await chrome.storage.local.set({'is_activated': isActivatedOG});
+            await browser.storage.local.set({'is_activated': isActivatedOG});
         }
         const storage: LocalStorage =  getLocalStorage();
 
@@ -204,7 +205,7 @@ describe('Test LocalStorage', () => {
         ]
     ])('Dictionary data', async (ogDictData: GlobalDictionaryData | null | undefined, newDictData: GlobalDictionaryData) => {
         if (ogDictData !== undefined) {
-            await chrome.storage.local.set({'dicts': ogDictData});
+            await browser.storage.local.set({'dicts': ogDictData});
         }
         const dao: LocalStorage= getLocalStorage();
         const storedDataOG = await dao.getDictionaryData();
@@ -299,7 +300,7 @@ describe('Test LocalStorage', () => {
             ['https://www.learncpp.com', 'https://www.typescriptlang.org']
         ],
     ])('Test ', async (originalData: any, domainsListExpected: string[]) => {
-        await chrome.storage.local.set(originalData);
+        await browser.storage.local.set(originalData);
         const storage: LocalStorage =  getLocalStorage();
 
         const domainList = await storage.getAllDomains();

@@ -1,5 +1,6 @@
 import { JSDOM } from "jsdom";
-import { setUpMockBrowser } from "../background-scripts/mocks/chrome";
+import { setUpMockBrowser } from "../__mocks__/chrome";
+import browser  from "webextension-polyfill";
 
 setUpMockBrowser();  // needed to setting fetch-banner's constant for test.
 import { loadBannerHtml } from "./fetch-banner";
@@ -20,7 +21,7 @@ describe('Testing Service Worker', () => {
                 <p>Hello World!</p>
             </body>
             `,
-            chrome.runtime.getURL('web_pages/popup.html'),
+            browser.runtime.getURL('web_pages/popup.html'),
             `
             <head></head><body>
                 <div id="banner_anchor"><div class="banner">
@@ -57,7 +58,7 @@ describe('Testing Service Worker', () => {
             <div id="banner_anchor"></div> 
             </body>
             `,
-            chrome.runtime.getURL('web_pages/popup.html'),
+            browser.runtime.getURL('web_pages/popup.html'),
             `
             <head></head>
             <body>
@@ -96,7 +97,7 @@ describe('Testing Service Worker', () => {
                 <div id="banner_anchor"></div> 
             </body>
             `,
-            chrome.runtime.getURL('web_pages/myCustomPage.html'),
+            browser.runtime.getURL('web_pages/myCustomPage.html'),
             `
             <head></head><body>
                 <div id="banner_text">VocabForager</div> 
@@ -117,7 +118,7 @@ describe('Testing Service Worker', () => {
                 <p>Hello World!</p>
             </body>
             `,
-            chrome.runtime.getURL('web_pages/myPersonalPage.html'),
+            browser.runtime.getURL('web_pages/myPersonalPage.html'),
             `
             <head></head><body>
                 <div id="banner_anchor"><div class="banner">

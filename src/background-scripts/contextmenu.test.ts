@@ -2,7 +2,8 @@ import { CSMessageType } from "../utils/content-script-communication";
 import { ContextMenuManager } from "./contextmenu";
 import { MockDataStorage } from "./dictionary.test";
 import { IndexedDBStorage } from "./indexed-db-nv-storage";
-import { setUpMockBrowser } from "./mocks/chrome";
+import { setUpMockBrowser } from "../__mocks__/chrome";
+import browser from "webextension-polyfill";
 import "fake-indexeddb/auto";  // needs to come after indexed-db-nv-storage import
 
 describe('Contextmenu Tests', () => {
@@ -24,7 +25,7 @@ describe('Contextmenu Tests', () => {
             await cmManager.setUpContextMenus();
         }
 
-        const contextMenusStuff = (chrome.contextMenus as any)['contextMenuStuff']
+        const contextMenusStuff = (browser.contextMenus as any)['contextMenuStuff']
         if (isEmptyExpected) {
             expect(Object.keys(contextMenusStuff).length).toBe(0);
         } else {
@@ -68,7 +69,7 @@ describe('Contextmenu Tests', () => {
         const cmManager = new ContextMenuManager(localStorage);
 
         await cmManager.setUpContextMenus();
-        const contextMenusStuff = (chrome.contextMenus as any)['contextMenuStuff']
+        const contextMenusStuff = (browser.contextMenus as any)['contextMenuStuff']
         if (isActivatedOG) {
             expect(contextMenusStuff[ContextMenuManager.activationID].title).toBe(ContextMenuManager.deactivateActivationCMTitle)
         } else {
@@ -93,7 +94,7 @@ describe('Contextmenu Tests', () => {
         const cmManager = new ContextMenuManager(localStorage);
 
         await cmManager.setUpContextMenus();
-        const contextMenusStuff = (chrome.contextMenus as any)['contextMenuStuff']
+        const contextMenusStuff = (browser.contextMenus as any)['contextMenuStuff']
         expect(contextMenusStuff[ContextMenuManager.deleteHighlightsID].visible).toBeFalsy();
 
         cmManager.exposeDeleteContextMenu();
@@ -186,22 +187,23 @@ describe('Contextmenu Tests', () => {
         const info = {'menuItemId': ContextMenuManager.goToSiteDataPageID};
         const tabInfo = {id: 12345, url: url};
 
-        const listeners = (chrome.contextMenus.onClicked as any)['listeners'];
+        const listeners = (browser.contextMenus.onClicked as any)['listeners'];
         expect(listeners.length).toBe(1);  // good sanity check
         await listeners[0](info, tabInfo);
 
         if (!useSSD || url === undefined) {
             try {
-                await chrome.tabs.get(4);
+                await browser.tabs.get(4);
             } catch (err) {
                 expect(err).toBe('Fetched imaginary tab'); // no tab created
                 return;
             }
             return;
         }
-        const tab: any = await chrome.tabs.get(5);
+        const tab: any = await browser.tabs.get(5);
         const expectedUrl = `web_pages/see-sites.html?pageId=${expectedId}`;
-        expect(tab.url).toBe(expectedUrl);
+        expect(tab.url).toContain(expectedUrl);
+        expect(tab.url.substring(tab.url.length - expectedUrl.length)).toContain(expectedUrl);
         return;
     });
 
@@ -240,7 +242,7 @@ describe('Contextmenu Tests', () => {
         await cmManager.setUpContextMenus();
         const info = {menuItemId}
 
-        const listeners = (chrome.contextMenus.onClicked as any)['listeners'];
+        const listeners = (browser.contextMenus.onClicked as any)['listeners'];
         expect(listeners.length).toBe(1);
         try {
             for (let i = 0; i < listeners.length; i++) {
@@ -255,7 +257,7 @@ describe('Contextmenu Tests', () => {
             throw ex;
         }
 
-        const sentMessages = (chrome.tabs as any)['messagesSent'];
+        const sentMessages = (browser.tabs as any)['messagesSent'];
         expect(sentMessages).toEqual(messagesSentExpected);
         return;
     });
