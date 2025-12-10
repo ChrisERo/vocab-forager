@@ -2,7 +2,6 @@ import path from 'path';
 import { readFileSync } from 'fs';
 import { JSDOM } from "jsdom";
 import { BSMessage, BSMessageType } from '../utils/background-script-communication';
-import { overrideBrowserState } from '../__mocks__/chrome';
 
 describe('Script for see-sites.html page', () => {
     function setUpDOM(url: string): Promise<JSDOM> {
@@ -79,7 +78,8 @@ describe('Script for see-sites.html page', () => {
                 },
             }
         };
-        overrideBrowserState({
+        const wp = await import('webextension-polyfill');
+        (wp as any)['overrideBrowserState']({
             runtime: {
                 getURL: (pathFromPublic: string) => {
                     const relativePath = '../../public/' + pathFromPublic;
