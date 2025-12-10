@@ -78,6 +78,8 @@ describe('Script for see-sites.html page', () => {
                 },
             }
         };
+
+        // need to set mock this way so that see-sites import bellow uses same state for browser.
         const wp = await import('webextension-polyfill');
         (wp as any)['overrideBrowserState']({
             runtime: {

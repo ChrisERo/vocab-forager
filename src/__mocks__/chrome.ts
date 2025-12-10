@@ -290,11 +290,7 @@ const makeMockBrowser = () => {
     };
 }
 
-let browserInstance: any;
-if (browserInstance === undefined) {
-    browserInstance = makeMockBrowser();
-}
-
+let browserInstance: any = makeMockBrowser();;
 const browserProxy = new Proxy(browserInstance, {
     get(target, prop) {
         return browserInstance[prop as keyof typeof browserInstance];
