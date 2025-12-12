@@ -2,7 +2,8 @@ import "fake-indexeddb/auto";  // needs to come after indexed-db-nv-storage impo
 import { DB_NAME, IndexedDBStorage } from "./indexed-db-nv-storage";
 import "./contextmenu";
 import "./dictionary";
-import { setUpMockBrowser } from "./mocks/chrome";
+import { setUpMockBrowser } from "../__mocks__/chrome";
+import browser from "webextension-polyfill";
 import { BSMessage, BSMessageType } from "../utils/background-script-communication";
 import { Dictionary, DictionaryIdentifier, SiteData } from "../utils/models";
 import { HandlerType, backgroundWorkerPromise, browserStorage, contextMenuManager, dictionaryManager, indexedDBStorage, listenerSetupPromise, makeHandler} from "./background";
@@ -115,7 +116,7 @@ describe('Testing Service Worker', () => {
             payload: null
         };
         const sendResponse: (response?: any) => void = (_?: any) => {};
-        (chrome.runtime.onMessage as any).testExecute(
+        (browser.runtime.onMessage as any).testExecute(
             message,
             null,
             sendResponse
@@ -130,7 +131,7 @@ describe('Testing Service Worker', () => {
                 index: 0, 
             } 
         };
-        (chrome.runtime.onMessage as any).testExecute(
+        (browser.runtime.onMessage as any).testExecute(
             message,
             null,
             sendResponse
@@ -430,7 +431,7 @@ describe('Testing Service Worker', () => {
             async () => {
                 expect(dictionaryManager.getWordSearchURL)
                     .toHaveBeenCalledTimes(1);
-                const myTab: chrome.tabs.Tab = await chrome.tabs.get(1);
+                const myTab: browser.Tabs.Tab = await browser.tabs.get(1);
                 expect(myTab.url).toBe('https://spanishdict.com/palabra')
             }
         ],
@@ -444,7 +445,7 @@ describe('Testing Service Worker', () => {
             async () => {
                 expect(dictionaryManager.getWordSearchURL)
                     .toHaveBeenCalledTimes(1);
-                const myTab: chrome.tabs.Tab = await chrome.tabs.get(5);
+                const myTab: browser.Tabs.Tab = await browser.tabs.get(5);
                 expect(myTab.url).toBe('https://spanishdict.com/uva')
             }
         ],

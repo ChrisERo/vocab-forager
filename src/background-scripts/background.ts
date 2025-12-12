@@ -1,3 +1,4 @@
+import browser from 'webextension-polyfill';
 import { DictionaryManager } from "./dictionary";
 import { getLocalStorage, LocalStorage, NonVolatileBrowserStorage } from "./non-volatile-browser-storage";
 import { ContextMenuManager } from "./contextmenu"
@@ -33,13 +34,13 @@ function logUnexpected(key: string, value: any) {
  * @param url url in which to open new tab
  */
 function openNewDefineTab(url: string): Promise<void> {
-    const message: chrome.tabs.CreateProperties = {
+    const message: browser.Tabs.CreateCreatePropertiesType = {
         active: true,
         url: url
     };
 
     return  new Promise<void>(async (resolve, reject) => {
-        await chrome.tabs.create(message).then(async (newTab) => {
+        await browser.tabs.create(message).then(async (newTab) => {
             if (newTab.id) {
                 await browserStorage.setTabId(newTab.id);
                 resolve();
@@ -61,7 +62,7 @@ function openNewDefineTab(url: string): Promise<void> {
  */
 async function isTabCurrentlyOpen(id: number, expectedTabId: number): Promise<boolean> {
     try {
-        const t = await chrome.tabs.get(id);
+        const t = await browser.tabs.get(id);
         return t.id === expectedTabId;  // If need be, we can add checks on tab's URL
     } catch {  // Not present
         return false;
@@ -77,11 +78,11 @@ async function isTabCurrentlyOpen(id: number, expectedTabId: number): Promise<bo
 async function openTab(url: string): Promise<void> {
     const definedTabId = await browserStorage.getTabId();
     if (definedTabId !== null && await isTabCurrentlyOpen(definedTabId, definedTabId)) {
-        const updateMessage: chrome.tabs.UpdateProperties = {
+        const updateMessage: browser.Tabs.UpdateUpdatePropertiesType= {
             active: true,
             url: url
         }
-        await chrome.tabs.update(definedTabId, updateMessage);
+        await browser.tabs.update(definedTabId, updateMessage);
     } else {
         await openNewDefineTab(url);
     }
@@ -95,7 +96,7 @@ async function openTab(url: string): Promise<void> {
  * when loading popup menu for the first time.
  */
 export function makeHandler(siteDateStorage: Readonly<IndexedDBStorage>): HandlerType {
-    return async (request: any, _: chrome.runtime.MessageSender,
+    return async (request: any, _,
                   sendResponse: sendResponseFunction): Promise<boolean> => {
         if (!isBsMessage(request)) {
             logUnexpected("request structure", request);
@@ -393,7 +394,7 @@ export function makeHandler(siteDateStorage: Readonly<IndexedDBStorage>): Handle
  * @returns function that invokes handler, but returns an actual boolean instead of a
  */
 function makeRealHandler(handler: HandlerType) {
-    return (message: any, sender: any, sendResponse: sendResponseFunction): boolean => {
+    return (message: any, sender: any, sendResponse: sendResponseFunction): true => {
         handler(message, sender, sendResponse);
         // once/if bug gets fixed, can remove this middle-step
         return true;  // return true regardless of output to keep connection alive
@@ -406,7 +407,7 @@ export const listenerSetupPromise: Promise<void> =  // Promise for unittests
         .then((siteDataStorage: IndexedDBStorage) => {
             indexedDBStorage = siteDataStorage;
             const asyncHandler: HandlerType = makeHandler(siteDataStorage);
-            chrome.runtime.onMessage.addListener(makeRealHandler(asyncHandler));
+            browser.runtime.onMessage.addListener(makeRealHandler(asyncHandler));
             return contextMenuManager.setUpContextMenus(siteDataStorage);
 });
 

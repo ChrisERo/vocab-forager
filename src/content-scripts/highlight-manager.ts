@@ -1,3 +1,4 @@
+import browser from 'webextension-polyfill';
 import { BSMessage, BSMessageType } from '../utils/background-script-communication';
 import { HighlightOptions, SiteData, Word } from '../utils/models'
 import { highlightRecovery } from './highlight-recovery';
@@ -277,7 +278,7 @@ class Highlight {
                 messageType: BSMessageType.ShowDeleteHighlightsCM,
                 payload: null
             }
-            chrome.runtime.sendMessage(message);
+            browser.runtime.sendMessage(message);
 
             let elements = document.querySelectorAll(`[id^=word_${this.id}_]`);
             for (let el of elements) {
@@ -290,7 +291,7 @@ class Highlight {
                 messageType: BSMessageType.HideDeleteHighlightsCM,
                 payload: null
             }
-            chrome.runtime.sendMessage(message);
+            browser.runtime.sendMessage(message);
 
             let elements = document.querySelectorAll(
                 `[id^=word_${this.id}_]`);

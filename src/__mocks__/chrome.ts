@@ -2,7 +2,7 @@ import { readFileSync } from 'fs';
 import { resolve } from "path";
 
 // Path to public directory (where html and other webpage assets live)
-const PUBLIC_DIR = __dirname + '/../../../public';
+const PUBLIC_DIR = __dirname + '/../../public';
 
 export class MockLocalStorage implements chrome.storage.LocalStorageArea {
 
@@ -104,7 +104,7 @@ export class MockLocalStorage implements chrome.storage.LocalStorageArea {
     }
 }
 
-export const setUpMockBrowser = () => {
+const makeMockBrowser = () => {
     const onMessageListenersList: Function[] = [];
     const contextMenuStuff: any = {};
     const messagesSentToTabs: any = {};
@@ -169,7 +169,7 @@ export const setUpMockBrowser = () => {
         }
     ];
     const listeners: ((info: chrome.contextMenus.OnClickData, tab?: chrome.tabs.Tab | undefined) => void) [] = [];
-    global.chrome = {
+    return {
         contextMenus: {
             contextMenuStuff: contextMenuStuff,
             update: (id: string | number, updateProperties: any, callback?: () => void): void => {
@@ -287,8 +287,27 @@ export const setUpMockBrowser = () => {
             managed: new MockLocalStorage(),
             onChanged: {} as chrome.storage.StorageChange,
         }
-    } as unknown as typeof chrome;
+    };
+}
 
+let browserInstance: any = makeMockBrowser();;
+const browserProxy = new Proxy(browserInstance, {
+    get(target, prop) {
+        return browserInstance[prop as keyof typeof browserInstance];
+    }
+});
+
+export default browserProxy;
+
+export function overrideBrowserState(newBrowser: any) {
+    browserInstance = newBrowser;
+}
+
+function resetBrowser() {
+    overrideBrowserState(makeMockBrowser());
+}
+
+export const setUpMockBrowser = () => {
     global.fetch = jest.fn((url: string) => {
         // Assuming url uses file:// protocol as in getURL
         const filePath: string = url.replace('file://', '');
@@ -299,4 +318,5 @@ export const setUpMockBrowser = () => {
         })
     }) as jest.Mock;
 
+    resetBrowser();
 }

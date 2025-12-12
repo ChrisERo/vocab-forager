@@ -1,3 +1,4 @@
+import browser from 'webextension-polyfill';
 import { BSMessage, BSMessageType } from "../utils/background-script-communication";
 import { CSMessageType, isCsMessage, isNewActivatedState } from "../utils/content-script-communication";
 import { isHighlightLight, SiteData, Word } from "../utils/models";
@@ -246,8 +247,8 @@ function saveData(hm: HighlightsManager, missingWords: string[]): void {
             url: window.location.href,
             data: data
         }
-    } 
-    chrome.runtime.sendMessage(saveMessage);
+    };
+    browser.runtime.sendMessage(saveMessage).catch(console.error);
 }
 
 const MAIN_BUTTON = 0;  // see https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/button
@@ -268,21 +269,21 @@ const previousOnMouseUp = document.onmouseup; // on mouse up value before extens
             url: window.location.href
         }
     };
-    chrome.runtime.sendMessage(getSDRequest, 
-        (data: SiteData) => { 
-            highlightManager.setStyleOptionsFromSiteData(data);
-            const neededRehighlight = !highlightManager.highlightAllData(data);
-            for (let i = 0; i < data.missingWords.length; i++) {
-                missingWords.push(data.missingWords[i]);
+    browser.runtime.sendMessage(getSDRequest)
+        .then((data: unknown) => {
+            const siteData = data as SiteData;
+            highlightManager.setStyleOptionsFromSiteData(siteData);
+            const neededRehighlight = !highlightManager.highlightAllData(siteData);
+            for (let i = 0; i < siteData.missingWords.length; i++) {
+                missingWords.push(siteData.missingWords[i]);
             }
             if (neededRehighlight || (
-                (data.missingWords.length !== 0 || data.wordEntries.length !== 0) && 
-                data.title === undefined && 
+                (siteData.missingWords.length !== 0 || siteData.wordEntries.length !== 0) && 
+                siteData.title === undefined && 
                 document.title !== '')
                 ) {
                     saveData(highlightManager, missingWords);
             }
-
             document.onmouseup = (event: MouseEvent) => {
                 let selected = window.getSelection();
                 if (event.button === MAIN_BUTTON && selected !== null) {
@@ -361,13 +362,13 @@ setTimeout(() => {
         payload: null
     };
     
-    chrome.runtime.sendMessage(getActivationMssg,
-        (result: boolean) =>  {
-            isActivated = result;
+    browser.runtime.sendMessage(getActivationMssg)
+        .then((result: unknown) => {
+            isActivated = result as boolean;
             if (isActivated) {
                 setUp();
             }
-
-            chrome.runtime.onMessage.addListener(handler);
-        });
+            browser.runtime.onMessage.addListener(handler);
+        })
+        .catch(console.error);
 }, 800);

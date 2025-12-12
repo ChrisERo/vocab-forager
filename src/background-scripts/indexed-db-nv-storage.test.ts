@@ -3,7 +3,8 @@ import "fake-indexeddb/auto";  // needs to come after indexed-db-nv-storage impo
 import { GlobalDictionaryData, SeeSiteData, SiteData } from "../utils/models";
 import { combineUrl, parseURL } from "../utils/utils";
 import { getLocalStorage, LocalStorage } from "./non-volatile-browser-storage";
-import { setUpMockBrowser } from "./mocks/chrome";
+import { setUpMockBrowser } from "../__mocks__/chrome";
+import browser from "webextension-polyfill";
 
 
 type queryFunction = (a: IndexedDBStorage) => void;
@@ -77,7 +78,7 @@ describe('IndexedDBStorage SiteDataStorage', () => {
 
     beforeEach(() => {
         indexedDB.deleteDatabase(DB_NAME);
-        chrome.storage.local.clear();
+        browser.storage.local.clear();
     });
 
     afterEach(() => {
@@ -161,8 +162,8 @@ describe('IndexedDBStorage SiteDataStorage', () => {
             'dicts': {},
         };
 
-        await chrome.storage.local.clear();
-        await chrome.storage.local.set(dataToStore);
+        await browser.storage.local.clear();
+        await browser.storage.local.set(dataToStore);
 
         dao = new IndexedDBStorage();
         const localStorage: LocalStorage = getLocalStorage();
@@ -1318,8 +1319,8 @@ describe('IndexedDBStorage SiteDataStorage', () => {
             'dicts': {},
         };
 
-        await chrome.storage.local.clear();
-        await chrome.storage.local.set(dataToStore);
+        await browser.storage.local.clear();
+        await browser.storage.local.set(dataToStore);
         dao = new IndexedDBStorage();
         const localStorage: LocalStorage = getLocalStorage();
         expect(dao.getDB()).toBeNull();
@@ -1778,8 +1779,8 @@ it.each([
             'dicts': {},
         };
 
-        await chrome.storage.local.clear();
-        await chrome.storage.local.set(dataToStore);
+        await browser.storage.local.clear();
+        await browser.storage.local.set(dataToStore);
         dao = new IndexedDBStorage();
         const localStorage: LocalStorage = getLocalStorage();
         expect(dao.getDB()).toBeNull();

@@ -1,4 +1,6 @@
-const POPUP_URL = chrome.runtime.getURL('web_pages/popup.html');
+import browser from 'webextension-polyfill';
+
+const POPUP_URL = browser.runtime.getURL('web_pages/popup.html');
 
 /**
  * Fetches html for banner and inserts them into current web page, inside
@@ -7,7 +9,7 @@ const POPUP_URL = chrome.runtime.getURL('web_pages/popup.html');
  * Assumes page has a div with id as "banner_anchor"
  */
  export function loadBannerHtml(): Promise<void> {
-    return fetch(chrome.runtime.getURL("cross-page-assets/banner.html")).then(
+    return fetch(browser.runtime.getURL("cross-page-assets/banner.html")).then(
         async function(response) {
             const bannerHtml: string = await response.text();
             const bannerAnchor = 
@@ -18,7 +20,7 @@ const POPUP_URL = chrome.runtime.getURL('web_pages/popup.html');
             if (window.location.href !== POPUP_URL) {
                 const bannerText = document.getElementById('banner_text') as HTMLElement;
                 bannerText.onclick = function () {
-                    const url = chrome.runtime.getURL("web_pages/index.html")
+                    const url = browser.runtime.getURL("web_pages/index.html")
                     window.location.href = url;
                 };
             }

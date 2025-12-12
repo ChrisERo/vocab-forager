@@ -1,7 +1,7 @@
 import { QuizManager } from "../content-scripts/quiz";
+import browser from 'webextension-polyfill';
 import { BSMessage, BSMessageType } from "../utils/background-script-communication";
 import { HighlightOptions, SiteData } from "../utils/models";
-
 
 export const SITE_NAME_HEADER= document.getElementById('site-name-header') as HTMLElement;
 export const LABELS_LIST_SECTION = document.getElementById('labels-list-section') as HTMLDivElement;
@@ -62,7 +62,7 @@ async function populateLabelsData(url: string,
                     label: label
                 }
             };
-            chrome.runtime.sendMessage(removeMsg);
+            browser.runtime.sendMessage(removeMsg);
         };
         createTextEntries(labels, 'labels-list-section', labels, labelsRemoveFunction);
         addPlusSignToLabelsSection(labels, url, labelsRemoveFunction);
@@ -91,7 +91,7 @@ function addPlusSignToLabelsSection(labels: string[], url: string,
                 label: content
             }
         };
-        chrome.runtime.sendMessage(addMsg);
+        browser.runtime.sendMessage(addMsg);
         createTextEntries(labels, 'labels-list-section', labels, labelsRemoveFunction);
         addPlusSignToLabelsSection(labels, url, labelsRemoveFunction);
     });
@@ -163,7 +163,7 @@ function saveSiteData(url: string, siteData: SiteData): void {
             data: siteData
         }
     };
-    chrome.runtime.sendMessage(msg);
+    browser.runtime.sendMessage(msg);
 }
 
 function createTextEntries<T>(textList: string[], divListElementSectionId: string,

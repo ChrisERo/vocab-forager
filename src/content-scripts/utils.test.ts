@@ -1,4 +1,5 @@
-import { setUpMockBrowser } from "../background-scripts/mocks/chrome";
+import { setUpMockBrowser } from "../__mocks__/chrome";
+import browser from "webextension-polyfill";
 import { defineWord, getNodeFromNodePath, isTextNode, nodeToTreePath } from "./utils";
 import { JSDOM } from "jsdom";
 import { BSMessage, BSMessagePayload, BSMessageType, isBsMessage, isSearchRequest, SearchRequest } from "../utils/background-script-communication";
@@ -16,7 +17,7 @@ describe('Contextmenu Tests', () => {
         ])('defineWord %s %', (word: string|null, 
                           shouldHaveSent: boolean) => {
             setUpMockBrowser();
-            const messageQueue: any[] = (chrome.runtime as any)
+            const messageQueue: any[] = (browser.runtime as any)
                 .messagesSentToWorkerScript;
             const originalQueueSize = messageQueue.length;
             

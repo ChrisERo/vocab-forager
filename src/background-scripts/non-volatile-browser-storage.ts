@@ -1,3 +1,4 @@
+import browser from 'webextension-polyfill';
 import {GlobalDictionaryData, isEmpty, SeeSiteData, SiteData} from "../utils/models"
 import { parseURL } from "../utils/utils";
 
@@ -89,7 +90,7 @@ export interface NonVolatileBrowserStorage {
 type StoredActivatedState = 1|0;  // type of data the represents data stored in activated state
 
 /**
- * Implementation of NonVolatileBrowserStorage with chrome.storage.local
+ * Implementation of NonVolatileBrowserStorage with browser.storage.local
  */
 export class LocalStorage implements NonVolatileBrowserStorage {
     readonly isActivatedKey: string;
@@ -102,7 +103,7 @@ export class LocalStorage implements NonVolatileBrowserStorage {
     }
 
     private async getFromLS(key: string): Promise<any|null> {
-        const fetchedResults = await chrome.storage.local.get(key);
+        const fetchedResults = await browser.storage.local.get(key);
 
         if (!fetchedResults.hasOwnProperty(key)) {
             return null;
@@ -115,15 +116,15 @@ export class LocalStorage implements NonVolatileBrowserStorage {
         const payload = {
             [key]: value
         }
-        return chrome.storage.local.set(payload);
+        return browser.storage.local.set(payload);
     }
 
-    private removeFromLS(key: string): void {
-        chrome.storage.local.remove(key);
+    private removeFromLS(key: string): Promise<void> {
+        return browser.storage.local.remove(key);
     }
 
     private async getAllEntireLS(): Promise<{[key: string]: any}> {
-        return chrome.storage.local.get(null);
+        return browser.storage.local.get(null);
     }
 
     async getCurrentActivation(): Promise<boolean> {
@@ -227,8 +228,8 @@ export class LocalStorage implements NonVolatileBrowserStorage {
      * @param data Data to store into non-volatile storage
      */
     async uploadExtensionData(data: any): Promise<boolean> {
-        await chrome.storage.local.clear();
-        await chrome.storage.local.set(data);
+        await browser.storage.local.clear();
+        await browser.storage.local.set(data);
         return this.getCurrentActivation();
     }
 

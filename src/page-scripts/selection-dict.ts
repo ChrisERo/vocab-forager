@@ -1,3 +1,4 @@
+import browser from 'webextension-polyfill';
 import { BSMessage, BSMessageType } from "../utils/background-script-communication";
 import { Dictionary, DictionaryIdentifier, isNullDictionaryID } from "../utils/models";
 
@@ -85,8 +86,8 @@ export function makeLanguageSelection(languages: string[], currentDictInfo: Dict
             language: language
         }
     };
-    chrome.runtime.sendMessage(getDictsRequest, 
-        (result: Dictionary[]) => makeDictionarySelection(result, dictInfo));
+    browser.runtime.sendMessage(getDictsRequest).then( 
+        result => makeDictionarySelection(result as Dictionary[], dictInfo));
 }
 
 /**
