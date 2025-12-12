@@ -1,5 +1,5 @@
 import { JSDOM } from "jsdom";
-import { setUpMockBrowser } from "../__mocks__/chrome";
+import { setUpMockBrowser } from "../__mocks__/webextension-polyfill";
 import browser  from "webextension-polyfill";
 
 setUpMockBrowser();  // needed to setting fetch-banner's constant for test.

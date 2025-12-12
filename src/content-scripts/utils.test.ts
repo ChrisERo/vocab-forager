@@ -1,4 +1,4 @@
-import { setUpMockBrowser } from "../__mocks__/chrome";
+import { setUpMockBrowser } from "../__mocks__/webextension-polyfill";
 import browser from "webextension-polyfill";
 import { defineWord, getNodeFromNodePath, isTextNode, nodeToTreePath } from "./utils";
 import { JSDOM } from "jsdom";

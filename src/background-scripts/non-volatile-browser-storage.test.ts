@@ -1,5 +1,5 @@
 import { GlobalDictionaryData, SeeSiteData, SiteData } from "../utils/models";
-import { setUpMockBrowser } from "../__mocks__/chrome";
+import { setUpMockBrowser } from "../__mocks__/webextension-polyfill";
 import browser from "webextension-polyfill";
 import { LocalStorage, getLocalStorage } from "./non-volatile-browser-storage";
 
