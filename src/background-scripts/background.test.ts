@@ -431,7 +431,7 @@ describe('Testing Service Worker', () => {
             async () => {
                 expect(dictionaryManager.getWordSearchURL)
                     .toHaveBeenCalledTimes(1);
-                const myTab: any = await browser.tabs.get(1);
+                const myTab: browser.Tabs.Tab = await browser.tabs.get(1);
                 expect(myTab.url).toBe('https://spanishdict.com/palabra')
             }
         ],
@@ -445,7 +445,7 @@ describe('Testing Service Worker', () => {
             async () => {
                 expect(dictionaryManager.getWordSearchURL)
                     .toHaveBeenCalledTimes(1);
-                const myTab: any = await browser.tabs.get(5);
+                const myTab: browser.Tabs.Tab = await browser.tabs.get(5);
                 expect(myTab.url).toBe('https://spanishdict.com/uva')
             }
         ],

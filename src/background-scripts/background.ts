@@ -34,7 +34,7 @@ function logUnexpected(key: string, value: any) {
  * @param url url in which to open new tab
  */
 function openNewDefineTab(url: string): Promise<void> {
-    const message = {
+    const message: browser.Tabs.CreateCreatePropertiesType = {
         active: true,
         url: url
     };
@@ -78,7 +78,7 @@ async function isTabCurrentlyOpen(id: number, expectedTabId: number): Promise<bo
 async function openTab(url: string): Promise<void> {
     const definedTabId = await browserStorage.getTabId();
     if (definedTabId !== null && await isTabCurrentlyOpen(definedTabId, definedTabId)) {
-        const updateMessage = {
+        const updateMessage: browser.Tabs.UpdateUpdatePropertiesType= {
             active: true,
             url: url
         }

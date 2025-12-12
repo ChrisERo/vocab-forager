@@ -316,7 +316,7 @@ export const setUpMockBrowser = () => {
             json: () => Promise.resolve({}),
             text: () => Promise.resolve(content),
         })
-    }) as jest.Mock; 
+    }) as jest.Mock;
 
     resetBrowser();
 }

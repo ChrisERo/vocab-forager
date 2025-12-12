@@ -34,7 +34,7 @@ function resetStyles(): void {
             messageType: BSMessageType.GetLanguages,
             payload: null
         };
-        browser.runtime.sendMessage(getLangsReq).then( response =>  {
+        browser.runtime.sendMessage(getLangsReq).then(response =>  {
                 const langs: string[] = response as string[];
                 makeLanguageSelection(langs, currentDictId);
                 setUpDictsAndLangsElements(langs, currentDictId);
@@ -85,7 +85,7 @@ dleteDictElement.addEventListener("click", () => {
             payload: dict
         };
         browser.runtime.sendMessage(mssg).then(isDelete => {
-            if (isDelete) {  // isDelete should be a boolean
+            if (isDelete) {  // should be boolean, so truthy check should be fine
                 setUpItems(); // Reset select items
                 // Confirm Deletion
                 const status = document.getElementById('show-status') as HTMLElement;
