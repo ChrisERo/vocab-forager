@@ -1,7 +1,7 @@
 {
   "name": "VocabForager",
   "description": "VocabForager is a browser extension built for people build their vocabulary for one, or several, languages.",
-  "version": "2.1.6",
+  "version": "2.2.0",
   "manifest_version": 3,
   "browser_specific_settings": {
       "gecko": {
