@@ -1,34 +1,70 @@
 import { readFileSync } from 'fs';
 import { resolve } from "path";
+import type { Tabs, Storage, Events, Menus } from 'webextension-polyfill';
 
 // Path to public directory (where html and other webpage assets live)
 const PUBLIC_DIR = __dirname + '/../../public';
 
-export class MockLocalStorage implements chrome.storage.LocalStorageArea {
-
+export class MockLocalStorage implements Storage.StorageArea {
     private storage: {[key: string]: any};
     QUOTA_BYTES: number;
-
-    onChanged: chrome.storage.StorageAreaChangedEvent;
+    onChanged: Events.Event<(changes: Storage.StorageAreaOnChangedChangesType) => void>;
 
     constructor() {
         this.storage = {};
-        this.QUOTA_BYTES = -1;
-        this.onChanged = {} as chrome.storage.StorageAreaChangedEvent;
-    }
-    setAccessLevel(accessOptions: { accessLevel: "TRUSTED_AND_UNTRUSTED_CONTEXTS" | "TRUSTED_CONTEXTS"; }): Promise<void>;
-    setAccessLevel(accessOptions: { accessLevel: "TRUSTED_AND_UNTRUSTED_CONTEXTS" | "TRUSTED_CONTEXTS"; }, callback: () => void): void;
-    setAccessLevel(accessOptions: unknown, callback?: unknown): void | Promise<void> {
-        throw new Error("Method not implemented.");
+        this.QUOTA_BYTES = 1024 * 1024; // 1MB default quota
+        this.onChanged = {
+            addListener: () => { /* no-op */ },
+            removeListener: () => { /* no-op */ },
+            hasListener: () => false,
+            hasListeners: () => false,
+            addRules: () => Promise.resolve([]),
+            removeRules: () => Promise.resolve(),
+            getRules: () => Promise.resolve([])
+        } as unknown as Events.Event<(changes: Storage.StorageAreaOnChangedChangesType) => void>;
     }
 
-
+    setAccessLevel(accessOptions: { accessLevel: "TRUSTED_AND_UNTRUSTED_CONTEXTS" | "TRUSTED_CONTEXTS" }): Promise<void> {
+        // No-op for mock
+        return Promise.resolve();
+    }
 
     getBytesInUse(callback: (bytesInUse: number) => void): void;
-    getBytesInUse(keys?: string | string[] | null | undefined): Promise<number>;
+    getBytesInUse(keys?: string | string[] | null): Promise<number>;
     getBytesInUse(keys: string | string[] | null, callback: (bytesInUse: number) => void): void;
     getBytesInUse(keys?: unknown, callback?: unknown): void | Promise<number> {
-        throw new Error("Method not implemented.");
+        const calculateSize = (keysToCheck: string[]): number => {
+            return keysToCheck.reduce((total, key) => {
+                const value = this.storage[key];
+                if (value !== undefined) {
+                    total += JSON.stringify(value).length;
+                }
+                return total;
+            }, 0);
+        };
+
+        if (typeof callback === 'function') {
+            if (keys === null || keys === undefined) {
+                const size = calculateSize(Object.keys(this.storage));
+                callback(size);
+            } else if (typeof keys === 'string' || Array.isArray(keys)) {
+                const keysToCheck = Array.isArray(keys) ? keys : [keys];
+                const size = calculateSize(keysToCheck);
+                callback(size);
+            }
+            return;
+        }
+
+        return new Promise<number>((resolve) => {
+            if (keys === null || keys === undefined) {
+                resolve(calculateSize(Object.keys(this.storage)));
+            } else if (typeof keys === 'string' || Array.isArray(keys)) {
+                const keysToCheck = Array.isArray(keys) ? keys : [keys];
+                resolve(calculateSize(keysToCheck));
+            } else {
+                resolve(0);
+            }
+        });
     }
     clear(): Promise<void>;
     clear(callback?: (() => void) | undefined): void;
@@ -109,7 +145,7 @@ const makeMockBrowser = () => {
     const contextMenuStuff: any = {};
     const messagesSentToTabs: any = {};
     const messagesSentToWorkerScript: any[] = [];
-    const tabs: chrome.tabs.Tab [] = [
+    const tabs: Tabs.Tab[] = [
         {
             id: 1,
             index: 0,
@@ -118,39 +154,33 @@ const makeMockBrowser = () => {
             windowId: 0,
             active: false,
             incognito: false,
-            selected: false,
             discarded: false,
             autoDiscardable: false,
-            frozen: false,
             groupId: 0
         },
         {
             id: 2,
             index: 1,
             pinned: false,
-            highlighted: false,
             windowId: 0,
             active: false,
             incognito: false,
-            selected: false,
+            highlighted: false,
             discarded: false,
             autoDiscardable: false,
-            frozen: false,
             groupId: 0
         },
         {
             id: -13,
             index: 3,
             pinned: false,
-            highlighted: false,
             windowId: 0,
             active: false,
             incognito: false,
-            selected: false,
+            highlighted: false,
             discarded: false,
             autoDiscardable: false,
             groupId: 0,
-            frozen: false,
             title: "DO_NOT_SEND"
         },
         {
@@ -161,14 +191,12 @@ const makeMockBrowser = () => {
             windowId: 0,
             active: false,
             incognito: false,
-            selected: false,
             discarded: false,
             autoDiscardable: false,
-            frozen: false,
             groupId: 0
         }
     ];
-    const listeners: ((info: chrome.contextMenus.OnClickData, tab?: chrome.tabs.Tab | undefined) => void) [] = [];
+    const listeners: ((info: Menus.OnClickData, tab?: Tabs.Tab | undefined) => void) [] = [];
     return {
         contextMenus: {
             contextMenuStuff: contextMenuStuff,
@@ -185,16 +213,16 @@ const makeMockBrowser = () => {
             },
             onClicked: {
                 listeners: listeners,
-                addListener: (callback: (info: chrome.contextMenus.OnClickData, tab?: chrome.tabs.Tab | undefined) => any): void => {
+                addListener: (callback: (info: Menus.OnClickData, tab?: Tabs.Tab | undefined) => any): void => {
                     listeners.push(callback);
                 }
             }
         },
         tabs: {
-            create: async (message: chrome.tabs.CreateProperties): 
-                Promise<chrome.tabs.Tab> => {
+            create: async (message: Tabs.CreateCreatePropertiesType): 
+                Promise<Tabs.Tab> => {
                 const newId = tabs.length + 1;
-                const newTab: chrome.tabs.Tab = {
+                const newTab: Tabs.Tab = {
                     ...message,
                     id: newId,
                     index: 0,
@@ -203,18 +231,16 @@ const makeMockBrowser = () => {
                     windowId: 0,
                     active: false,
                     incognito: false,
-                    selected: false,
                     discarded: false,
                     autoDiscardable: false,
-                    frozen: false,
                     groupId: 0
                 }
                 tabs.push(newTab);
                 return newTab
             },
-            get: async (tabId: number): Promise<chrome.tabs.Tab> => {
+            get: async (tabId: number): Promise<Tabs.Tab> => {
                 for (let i = 0; i < tabs.length; i++) {
-                    const tab: chrome.tabs.Tab = tabs[i];
+                    const tab: Tabs.Tab = tabs[i];
                     if (tab.id === tabId) {
                         return tab;
                     }
@@ -235,10 +261,10 @@ const makeMockBrowser = () => {
                 return;
             },
             query: (x: any) => new Promise((resolve, _) => resolve(tabs)),
-            update: async (tabId: number, message: chrome.tabs.UpdateProperties): 
-            Promise<chrome.tabs.Tab> => {
+            update: async (tabId: number, message: Tabs.UpdateUpdatePropertiesType): 
+            Promise<Tabs.Tab> => {
                 for (let i = 0; i < tabs.length; i++) {
-                    const tab: chrome.tabs.Tab = tabs[i];
+                    const tab: Tabs.Tab = tabs[i];
                     if (tab.id === tabId) {
                         tabs[i] = {
                             ...tab,
@@ -282,10 +308,10 @@ const makeMockBrowser = () => {
                 MAX_ITEMS: -1,
                 MAX_WRITE_OPERATIONS_PER_HOUR: -1,
                 MAX_WRITE_OPERATIONS_PER_MINUTE: -1,
-            } as chrome.storage.SyncStorageArea,
+            },
             session: new MockLocalStorage(),
             managed: new MockLocalStorage(),
-            onChanged: {} as chrome.storage.StorageChange,
+            onChanged: {} as Storage.StorageChange,
         }
     };
 }

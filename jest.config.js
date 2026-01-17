@@ -4,6 +4,6 @@ module.exports = {
   testEnvironment: 'node',
   coveragePathIgnorePatterns: ['/node_modules/', '/__mocks__/'],
    moduleNameMapper: {
-    '^webextension-polyfill$': '<rootDir>/src/__mocks__/webextension-polyfill.ts',
+    '^webextension-polyfill$': '<rootDir>/src/__mocks__/webextension-polyfill-mock.ts',
   },
 };

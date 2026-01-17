@@ -1,5 +1,5 @@
 import { JSDOM } from "jsdom";
-import { setUpMockBrowser } from "../__mocks__/webextension-polyfill";
+import { setUpMockBrowser } from "../__mocks__/webextension-polyfill-mock";
 import browser  from "webextension-polyfill";
 
 setUpMockBrowser();  // needed to setting fetch-banner's constant for test.
@@ -157,7 +157,7 @@ describe('Testing Service Worker', () => {
             // JSDOM does not support href change in sourcecode:
             // https://github.com/jsdom/jsdom?tab=readme-ov-file#reconfiguring-the-jsdom-with-reconfiguresettings
             //expect(dom.window.location.href).toBe(
-            //    chrome.runtime.getURL("web_pages/index.html")
+            //    browser.runtime.getURL("web_pages/index.html")
             //);
         } else {
             if (bannerTextElement !== null) {

@@ -2,7 +2,7 @@ import "fake-indexeddb/auto";  // needs to come after indexed-db-nv-storage impo
 import { DB_NAME, IndexedDBStorage } from "./indexed-db-nv-storage";
 import "./contextmenu";
 import "./dictionary";
-import { setUpMockBrowser } from "../__mocks__/webextension-polyfill";
+import { setUpMockBrowser } from "../__mocks__/webextension-polyfill-mock";
 import browser from "webextension-polyfill";
 import { BSMessage, BSMessageType } from "../utils/background-script-communication";
 import { Dictionary, DictionaryIdentifier, SiteData } from "../utils/models";

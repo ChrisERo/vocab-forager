@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs';
 import { JSDOM } from "jsdom";
-import { setUpMockBrowser } from "../__mocks__/webextension-polyfill";
+import { setUpMockBrowser } from "../__mocks__/webextension-polyfill-mock";
 setUpMockBrowser();
 import { SiteData } from '../utils/models';
 

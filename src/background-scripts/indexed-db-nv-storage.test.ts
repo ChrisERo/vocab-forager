@@ -3,7 +3,7 @@ import "fake-indexeddb/auto";  // needs to come after indexed-db-nv-storage impo
 import { GlobalDictionaryData, SeeSiteData, SiteData } from "../utils/models";
 import { combineUrl, parseURL } from "../utils/utils";
 import { getLocalStorage, LocalStorage } from "./non-volatile-browser-storage";
-import { setUpMockBrowser } from "../__mocks__/webextension-polyfill";
+import { setUpMockBrowser } from "../__mocks__/webextension-polyfill-mock";
 import browser from "webextension-polyfill";
 
 

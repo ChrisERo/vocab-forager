@@ -2,7 +2,7 @@ import { CSMessageType } from "../utils/content-script-communication";
 import { ContextMenuManager } from "./contextmenu";
 import { MockDataStorage } from "./dictionary.test";
 import { IndexedDBStorage } from "./indexed-db-nv-storage";
-import { setUpMockBrowser } from "../__mocks__/webextension-polyfill";
+import { setUpMockBrowser } from "../__mocks__/webextension-polyfill-mock";
 import browser from "webextension-polyfill";
 import "fake-indexeddb/auto";  // needs to come after indexed-db-nv-storage import
 
