@@ -253,7 +253,8 @@ export class LocalStorage implements NonVolatileBrowserStorage {
 }
 
 /**
- * @returns NonVolatileBrowserStorage implementation using chrome.local.storage
+ * @returns NonVolatileBrowserStorage implementation using browser's local
+ * storage API
  */
 export function getLocalStorage(): LocalStorage {
     return new LocalStorage('is_activated', 'dicts');
