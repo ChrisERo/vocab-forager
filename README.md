@@ -9,14 +9,25 @@ themselves.
 For more information on how to use VocabForager, please read the [User Manual](./docs/user-manual.md).
 
 ## Installation
-The standard way of installing this extension is through the
-[Chrome Web Store](https://chrome.google.com/webstore/detail/vocabforager/balmgepggidbdfihlbiknlabfnhbahpf).
+The standard way of installing this extension is through the appropriate browser webstore.
+- For Chrome and Chromium browsers, use the [Chrome Web Store](https://chrome.google.com/webstore/detail/vocabforager/balmgepggidbdfihlbiknlabfnhbahpf).
 
-If this proves difficult, one can download this repository and "build" the extension locally using npm.
-```console
+## Building locally
+
+One can download this git repository and "build" the extension locally using npm.
+
+Building the project as a zip file can be done with [this build script](./scripts/build.bash) from the root directory.
+
+Alternatively, you can run the following to just build the project into a directory named `extension`.
+
+```bash
 npm install  # downloads all dependencies that source code depends on
+npm run clear # removes any build files that may have been made before
 npm run build-prod  # compiles source code and bundles code and assets into extension directory
 ```
+
+This may be needed to perform local testing.
+
 After doing this, the extension can be installed onto Chrome (or some other Chromium-based browser) by
 navigating to `Extensions > Manage Extensions > Load unpacked` and selecting the extension
 packaged extension. The exact steps may vary depending on the browser, but the steps the

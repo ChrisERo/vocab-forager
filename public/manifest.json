@@ -6,7 +6,13 @@
   "browser_specific_settings": {
       "gecko": {
         "id": "@vocabforager.dev",
-        "strict_min_version": "145.0"
+        "strict_min_version": "145.0",
+        "data_collection_permissions": {
+            "required": [
+                "browsingActivity",
+                "websiteContent"
+            ]
+        }
       }
   },
   "icons": {
